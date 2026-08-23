@@ -27,7 +27,7 @@ export async function GET(
             fontFamily: "sans-serif",
           }}
         >
-          PC
+          CQ
         </span>
       </div>
     ),

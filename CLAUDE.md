@@ -1,4 +1,4 @@
-# Planche Coach — Spec projet pour Claude Code
+# CalisIQ (ex-Planche Coach) — Spec projet pour Claude Code
 
 ## Mission
 

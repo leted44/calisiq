@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Planche Coach",
-    short_name: "Planche Coach",
-    description: "Analyse biomécanique de tes holds de planche en calisthénie",
+    name: "CalisIQ",
+    short_name: "CalisIQ",
+    description: "Analyse biomécanique de tes mouvements de calisthénie",
     start_url: "/dashboard",
     display: "standalone",
     background_color: "#0b0f19",

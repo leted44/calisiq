@@ -43,12 +43,12 @@ export default function LoginPage() {
       >
         <div className="space-y-1 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-lg font-bold text-white">
-            PC
+            CQ
           </div>
           <h1 className="text-xl font-semibold text-white">
             {mode === "signin" ? "Connexion" : "Créer un compte"}
           </h1>
-          <p className="text-sm text-slate-400">Planche Coach</p>
+          <p className="text-sm text-slate-400">CalisIQ</p>
         </div>
 
         <div className="space-y-3">

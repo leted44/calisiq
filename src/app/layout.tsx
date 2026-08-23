@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Planche Coach",
-  description: "Analyse biomécanique de tes holds de planche en calisthénie",
+  title: "CalisIQ",
+  description: "Analyse biomécanique de tes mouvements de calisthénie",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Planche Coach",
+    title: "CalisIQ",
   },
   icons: {
     icon: "/icon/192",
