@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "CalisIQ",
     short_name: "CalisIQ",
     description: "Analyse biomécanique de tes mouvements de calisthénie",
-    start_url: "/dashboard",
+    start_url: "/",
     display: "standalone",
     background_color: "#0b0f19",
     theme_color: "#0b0f19",

@@ -1,9 +1,7 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Progression } from "@/lib/pose/grid";
-import UploadForm from "./UploadForm";
-import VideoPoseOverlay from "./VideoPoseOverlay";
-import DeleteSessionButton from "./DeleteSessionButton";
+import VideoPoseOverlay from "../_components/VideoPoseOverlay";
+import DeleteSessionButton from "../_components/DeleteSessionButton";
 
 const PROGRESSION_LABELS: Record<string, string> = {
   tuck_planche: "Tuck planche",
@@ -18,15 +16,8 @@ const STATUS_LABELS: Record<string, string> = {
   error: "Erreur",
 };
 
-export default async function UploadPage() {
+export default async function HistoriquePage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   const { data: sessions } = await supabase
     .from("sessions")
@@ -43,14 +34,15 @@ export default async function UploadPage() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col items-center gap-8 bg-slate-950 p-4 py-10">
-      <UploadForm />
+    <div className="flex flex-col items-center gap-4 px-4 pt-10">
+      <div className="w-full max-w-md">
+        <h1 className="text-2xl font-bold text-white">Historique</h1>
+        <p className="text-sm text-slate-400">Tes figures analysées.</p>
+      </div>
 
       <div className="w-full max-w-md space-y-4">
-        <h2 className="text-lg font-semibold text-white">Mes holds</h2>
-
         {sessionsWithUrls.length === 0 && (
-          <p className="text-sm text-slate-500">Aucun upload pour l&apos;instant.</p>
+          <p className="text-sm text-slate-500">Aucune analyse pour l&apos;instant.</p>
         )}
 
         {sessionsWithUrls.map((session) => (
