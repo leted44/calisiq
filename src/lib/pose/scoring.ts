@@ -20,6 +20,18 @@ function scoreFromThreshold(
   return 10 / (1 + ratio * ratio);
 }
 
+// Critère "seuil minimum" : score plein dès que la mesure atteint le seuil,
+// pas de pénalité au-delà (utilisé pour la protraction : plus n'est jamais pire)
+function scoreFromMinimum(
+  measured: number,
+  minimum: number,
+  ramp: number
+): number {
+  if (measured >= minimum) return 10;
+  const deficit = minimum - measured;
+  return Math.max(0, 10 * (1 - deficit / ramp));
+}
+
 export function scoreAngles(
   angles: PoseAngles,
   progression: Progression
@@ -29,7 +41,7 @@ export function scoreAngles(
   return [
     {
       critere: "shoulder_protraction",
-      score: scoreFromThreshold(
+      score: scoreFromMinimum(
         angles.shoulderProtraction,
         grid.shoulder_protraction.target,
         grid.shoulder_protraction.tolerance
