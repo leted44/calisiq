@@ -16,6 +16,8 @@ import {
   AdvancedTuckIcon,
   StraddlePlancheIcon,
   FullPlancheIcon,
+  HandstandPushUpIcon,
+  OneArmHandstandIcon,
   HoldTypeIcon,
   PressTypeIcon,
   PushUpTypeIcon,
@@ -23,6 +25,8 @@ import {
 
 type Figure = "planche" | "handstand";
 type ExerciseType = "hold" | "press" | "push_up";
+type HandstandVariation = "handstand" | "handstand_push_up" | "one_arm_handstand";
+type Variation = Progression | HandstandVariation;
 
 const FIGURES: {
   value: Figure;
@@ -31,15 +35,29 @@ const FIGURES: {
   Icon: typeof PlancheFigureIcon;
 }[] = [
   { value: "planche", label: "Planche", available: true, Icon: PlancheFigureIcon },
-  { value: "handstand", label: "Handstand", available: false, Icon: HandstandFigureIcon },
+  { value: "handstand", label: "Handstand", available: true, Icon: HandstandFigureIcon },
 ];
 
-const PROGRESSIONS: { value: Progression; label: string; Icon: typeof TuckPlancheIcon }[] = [
-  { value: "tuck_planche", label: "Tuck", Icon: TuckPlancheIcon },
-  { value: "advanced_tuck_planche", label: "Advanced tuck", Icon: AdvancedTuckIcon },
-  { value: "straddle_planche", label: "Straddle", Icon: StraddlePlancheIcon },
-  { value: "full_planche", label: "Full", Icon: FullPlancheIcon },
-];
+type VariationOption = {
+  value: Variation;
+  label: string;
+  Icon: typeof TuckPlancheIcon;
+  available: boolean;
+};
+
+const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
+  planche: [
+    { value: "tuck_planche", label: "Tuck", Icon: TuckPlancheIcon, available: true },
+    { value: "advanced_tuck_planche", label: "Advanced tuck", Icon: AdvancedTuckIcon, available: true },
+    { value: "straddle_planche", label: "Straddle", Icon: StraddlePlancheIcon, available: true },
+    { value: "full_planche", label: "Full", Icon: FullPlancheIcon, available: true },
+  ],
+  handstand: [
+    { value: "handstand", label: "Handstand", Icon: HandstandFigureIcon, available: false },
+    { value: "handstand_push_up", label: "Handstand Push-up", Icon: HandstandPushUpIcon, available: false },
+    { value: "one_arm_handstand", label: "One Arm Handstand", Icon: OneArmHandstandIcon, available: false },
+  ],
+};
 
 const EXERCISE_TYPES: {
   value: ExerciseType;
@@ -89,10 +107,20 @@ export default function AnalysisForm() {
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [figure, setFigure] = useState<Figure | null>(null);
-  const [progression, setProgression] = useState(PROGRESSIONS[0].value);
+  const [progression, setProgression] = useState<Variation>(
+    VARIATIONS_BY_FIGURE.planche[0].value
+  );
   const [exerciseType, setExerciseType] = useState<ExerciseType>(
     EXERCISE_TYPES[0].value
   );
+
+  function selectFigure(next: Figure) {
+    setFigure((current) => {
+      if (current === next) return null;
+      setProgression(VARIATIONS_BY_FIGURE[next][0].value);
+      return next;
+    });
+  }
 
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -351,8 +379,8 @@ export default function AnalysisForm() {
       return;
     }
 
-    if (exerciseType !== "hold") {
-      setError("Ce type d'exercice n'est pas encore disponible.");
+    if (exerciseType !== "hold" || figure !== "planche") {
+      setError("Cette combinaison figure/variation n'est pas encore disponible.");
       return;
     }
 
@@ -364,7 +392,7 @@ export default function AnalysisForm() {
       const analysisResult = await runPoseAnalysis({
         video: previewVideoRef.current,
         canvas: canvasRef.current,
-        progression,
+        progression: progression as Progression,
         rangeStart: trimStart,
         rangeEnd: trimEnd,
         onProgress: setProgressPercent,
@@ -380,6 +408,10 @@ export default function AnalysisForm() {
       setError("L'analyse a échoué : " + (err as Error).message);
     }
   }
+
+  const variationAvailable = figure
+    ? VARIATIONS_BY_FIGURE[figure].some((v) => v.value === progression && v.available)
+    : false;
 
   return (
     <div className="w-full max-w-md space-y-6">
@@ -402,7 +434,7 @@ export default function AnalysisForm() {
                 key={f.value}
                 type="button"
                 disabled={!f.available}
-                onClick={() => setFigure(figure === f.value ? null : f.value)}
+                onClick={() => selectFigure(f.value)}
                 className={`relative flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-colors ${
                   !f.available
                     ? "cursor-not-allowed border-slate-800 bg-slate-800/40 text-slate-600"
@@ -411,7 +443,11 @@ export default function AnalysisForm() {
                     : "border-slate-700 bg-slate-800 text-slate-200 hover:border-slate-600"
                 }`}
               >
-                <f.Icon className={`h-9 w-9 ${selected ? "text-cyan-400" : ""}`} />
+                <f.Icon
+                  className={`h-9 w-9 ${
+                    selected ? "text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]" : ""
+                  }`}
+                />
                 <span className="font-medium">{f.label}</span>
                 {!f.available && (
                   <span className="block text-xs text-slate-500">
@@ -430,22 +466,34 @@ export default function AnalysisForm() {
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Variation
         </p>
-        <div className="grid grid-cols-4 gap-2">
-          {PROGRESSIONS.map((p) => {
-            const selected = progression === p.value;
+        <div className={`grid gap-2 ${figure === "planche" ? "grid-cols-4" : "grid-cols-3"}`}>
+          {VARIATIONS_BY_FIGURE[figure].map((v) => {
+            const selected = progression === v.value;
             return (
               <button
-                key={p.value}
+                key={v.value}
                 type="button"
-                onClick={() => setProgression(p.value)}
-                className={`flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-center transition-colors ${
-                  selected
+                disabled={!v.available}
+                onClick={() => setProgression(v.value)}
+                className={`relative flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-center transition-colors ${
+                  !v.available
+                    ? "cursor-not-allowed border-slate-800 bg-slate-800/40 text-slate-600"
+                    : selected
                     ? "border-cyan-500 bg-cyan-500/10 text-white"
                     : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600"
                 }`}
               >
-                <p.Icon className={`h-8 w-8 ${selected ? "text-cyan-400" : ""}`} />
-                <span className="text-xs font-medium">{p.label}</span>
+                <v.Icon
+                  className={`h-8 w-8 ${
+                    selected && v.available
+                      ? "text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]"
+                      : ""
+                  }`}
+                />
+                <span className="text-xs font-medium">{v.label}</span>
+                {!v.available && (
+                  <span className="block text-[10px] text-slate-500">Bientôt</span>
+                )}
               </button>
             );
           })}
@@ -484,7 +532,14 @@ export default function AnalysisForm() {
         </div>
       </div>
 
-      {!videoUrl && !cameraMode && (
+      {!variationAvailable && !videoUrl && (
+        <p className="rounded-lg bg-orange-500/10 p-3 text-sm text-orange-400">
+          L&apos;analyse pour cette variation n&apos;est pas encore disponible —
+          ses critères de score sont en cours de calibration.
+        </p>
+      )}
+
+      {variationAvailable && !videoUrl && !cameraMode && (
         <div className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Vidéo

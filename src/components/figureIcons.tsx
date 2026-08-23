@@ -81,6 +81,32 @@ export function FullPlancheIcon({ className = base }: IconProps) {
   );
 }
 
+export function HandstandPushUpIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <circle cx="12" cy="16.5" r="1.6" {...stroke} />
+      <path d="M9.5 15 12 12l2.5 3" {...stroke} />
+      <path d="M12 12V9" {...stroke} />
+      <path d="M12 9V3" {...stroke} />
+      <path d="M8 20h8" {...stroke} />
+      <path d="M12 20v-3" {...stroke} />
+    </svg>
+  );
+}
+
+export function OneArmHandstandIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <circle cx="12" cy="16.5" r="1.6" {...stroke} />
+      <path d="M12 15v-6" {...stroke} />
+      <path d="M12 9V3" {...stroke} />
+      <path d="M12 9 17 6" {...stroke} />
+      <path d="M9.5 20h5" {...stroke} />
+      <path d="M12 20v-3" {...stroke} />
+    </svg>
+  );
+}
+
 const smallStroke = { ...stroke, strokeWidth: 1.7 };
 
 export function HoldTypeIcon({ className = "h-5 w-5" }: IconProps) {
