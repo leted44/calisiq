@@ -42,7 +42,13 @@ const FIGURES: {
     Icon: PlancheFigureIcon,
     image: "/figures/planche.png",
   },
-  { value: "handstand", label: "Handstand", available: true, Icon: HandstandFigureIcon },
+  {
+    value: "handstand",
+    label: "Handstand",
+    available: true,
+    Icon: HandstandFigureIcon,
+    image: "/figures/handstand.png",
+  },
 ];
 
 type VariationOption = {
