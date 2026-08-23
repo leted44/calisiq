@@ -106,6 +106,7 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
           ref={videoRef}
           src={videoUrl}
           controls
+          crossOrigin="anonymous"
           className="w-full rounded"
         />
         <canvas
