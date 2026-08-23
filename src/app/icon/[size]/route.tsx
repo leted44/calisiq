@@ -16,7 +16,7 @@ export async function GET(
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #0b0f19 0%, #0369a1 100%)",
+          background: "linear-gradient(135deg, #0b0f19 0%, #0891b2 100%)",
         }}
       >
         <span

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { LogoutIcon } from "@/components/icons";
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -21,8 +22,9 @@ export default function LogoutButton() {
       type="button"
       onClick={handleLogout}
       disabled={loading}
-      className="w-full rounded-lg border border-red-900/50 bg-red-500/10 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50"
+      className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-900/50 bg-red-500/10 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50"
     >
+      <LogoutIcon className="h-4 w-4" />
       {loading ? "Déconnexion..." : "Se déconnecter"}
     </button>
   );

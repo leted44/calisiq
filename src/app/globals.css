@@ -44,7 +44,7 @@ input[type="range"].dual-range::-webkit-slider-thumb {
   height: 18px;
   border-radius: 9999px;
   background: white;
-  border: 3px solid #38bdf8;
+  border: 3px solid #22d3ee;
   cursor: pointer;
 }
 
@@ -54,7 +54,7 @@ input[type="range"].dual-range::-moz-range-thumb {
   height: 18px;
   border-radius: 9999px;
   background: white;
-  border: 3px solid #38bdf8;
+  border: 3px solid #22d3ee;
   cursor: pointer;
   border-style: solid;
 }

@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis";
+import type { PoseAngles } from "@/lib/pose/angles";
+import type { Progression } from "@/lib/pose/grid";
+import CaptureTipsModal, { shouldSkipTips } from "./CaptureTipsModal";
+import ResultCard from "./ResultCard";
+import { UploadCloudIcon, CameraIcon, ChangeVideoIcon, TrashIcon } from "@/components/icons";
 
 type Figure = "planche" | "handstand";
 
@@ -11,7 +17,7 @@ const FIGURES: { value: Figure; label: string; available: boolean }[] = [
   { value: "handstand", label: "Handstand", available: false },
 ];
 
-const PROGRESSIONS = [
+const PROGRESSIONS: { value: Progression; label: string }[] = [
   { value: "tuck_planche", label: "Tuck" },
   { value: "advanced_tuck_planche", label: "Advanced tuck" },
   { value: "straddle_planche", label: "Straddle" },
@@ -47,6 +53,7 @@ export default function AnalysisForm() {
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -66,9 +73,15 @@ export default function AnalysisForm() {
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
 
-  const [uploading, setUploading] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"import" | "camera" | null>(null);
+
+  const [analyzing, setAnalyzing] = useState(false);
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [liveAngles, setLiveAngles] = useState<PoseAngles | null>(null);
+  const [result, setResult] = useState<PoseAnalysisResult | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -87,7 +100,8 @@ export default function AnalysisForm() {
 
   async function loadSelectedFile(selected: File) {
     setError(null);
-    setSuccess(false);
+    setResult(null);
+    setSaveError(null);
 
     let videoDuration: number;
     try {
@@ -118,12 +132,32 @@ export default function AnalysisForm() {
     setDuration(null);
     setTrimStart(0);
     setTrimEnd(0);
-    setSuccess(false);
+    setResult(null);
+    setSaveError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function handleChangeVideo() {
-    fileInputRef.current?.click();
+  function requestImport() {
+    if (shouldSkipTips()) {
+      fileInputRef.current?.click();
+    } else {
+      setPendingAction("import");
+    }
+  }
+
+  function requestCamera() {
+    if (shouldSkipTips()) {
+      openCamera();
+    } else {
+      setPendingAction("camera");
+    }
+  }
+
+  function confirmTips() {
+    const action = pendingAction;
+    setPendingAction(null);
+    if (action === "import") fileInputRef.current?.click();
+    if (action === "camera") openCamera();
   }
 
   async function openCamera() {
@@ -136,9 +170,7 @@ export default function AnalysisForm() {
       streamRef.current = stream;
       setCameraMode(true);
     } catch (err) {
-      setError(
-        "Impossible d'accéder à la caméra : " + (err as Error).message
-      );
+      setError("Impossible d'accéder à la caméra : " + (err as Error).message);
     }
   }
 
@@ -174,10 +206,7 @@ export default function AnalysisForm() {
     recorder.start();
     setRecording(true);
     setRecordSeconds(0);
-    recordTimerRef.current = setInterval(
-      () => setRecordSeconds((s) => s + 1),
-      1000
-    );
+    recordTimerRef.current = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
   }
 
   function stopRecording() {
@@ -204,11 +233,82 @@ export default function AnalysisForm() {
     seekPreview(next);
   }
 
+  async function persist(analysisResult: PoseAnalysisResult) {
+    if (!file) return;
+
+    setSaving(true);
+    setSaveError(null);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setSaveError("Session expirée, reconnecte-toi.");
+      setSaving(false);
+      return;
+    }
+
+    const extension = file.name.split(".").pop() ?? "mp4";
+    const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await supabase.storage.from("videos").upload(path, file);
+    if (uploadError) {
+      setSaveError(uploadError.message);
+      setSaving(false);
+      return;
+    }
+
+    const { data: session, error: insertError } = await supabase
+      .from("sessions")
+      .insert({
+        user_id: user.id,
+        video_url: path,
+        progression,
+        status: analysisResult.ok ? "done" : "error",
+        trim_start: trimStart,
+        trim_end: trimEnd,
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !session) {
+      setSaveError(insertError?.message ?? "Erreur lors de l'enregistrement.");
+      setSaving(false);
+      return;
+    }
+
+    if (analysisResult.ok) {
+      await supabase.from("scores").insert(
+        analysisResult.scores.map((s) => ({
+          session_id: session.id,
+          critere: s.critere,
+          score: s.score,
+          valeur_mesuree: s.valeurMesuree,
+          valeur_cible: s.valeurCible,
+        }))
+      );
+
+      if (analysisResult.recommendations.length > 0) {
+        await supabase.from("recommendations").insert(
+          analysisResult.recommendations.map((r) => ({
+            session_id: session.id,
+            exercice: r.exercice,
+            raison: r.raison,
+          }))
+        );
+      }
+    }
+
+    setSaving(false);
+    router.refresh();
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (!file || !duration) {
+    if (!file || !duration || !previewVideoRef.current || !canvasRef.current) {
       setError("Choisis ou filme une vidéo.");
       return;
     }
@@ -220,54 +320,40 @@ export default function AnalysisForm() {
       return;
     }
 
-    setUploading(true);
+    setAnalyzing(true);
+    setResult(null);
+    setProgressPercent(0);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      const analysisResult = await runPoseAnalysis({
+        video: previewVideoRef.current,
+        canvas: canvasRef.current,
+        progression,
+        rangeStart: trimStart,
+        rangeEnd: trimEnd,
+        onProgress: setProgressPercent,
+        onLiveAngles: setLiveAngles,
+      });
 
-    if (!user) {
-      setError("Session expirée, reconnecte-toi.");
-      setUploading(false);
-      return;
+      setAnalyzing(false);
+      setResult(analysisResult);
+      await persist(analysisResult);
+    } catch (err) {
+      console.error(err);
+      setAnalyzing(false);
+      setError("L'analyse a échoué : " + (err as Error).message);
     }
-
-    const extension = file.name.split(".").pop() ?? "mp4";
-    const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("videos")
-      .upload(path, file);
-
-    if (uploadError) {
-      setError(uploadError.message);
-      setUploading(false);
-      return;
-    }
-
-    const { error: insertError } = await supabase.from("sessions").insert({
-      user_id: user.id,
-      video_url: path,
-      progression,
-      status: "processing",
-      trim_start: trimStart,
-      trim_end: trimEnd,
-    });
-
-    setUploading(false);
-
-    if (insertError) {
-      setError(insertError.message);
-      return;
-    }
-
-    handleRemoveVideo();
-    setSuccess(true);
-    router.refresh();
   }
 
   return (
     <div className="w-full max-w-md space-y-6">
+      {pendingAction && (
+        <CaptureTipsModal
+          onContinue={confirmTips}
+          onClose={() => setPendingAction(null)}
+        />
+      )}
+
       <div className="space-y-3">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Figure
@@ -285,7 +371,7 @@ export default function AnalysisForm() {
                   !f.available
                     ? "cursor-not-allowed border-slate-800 bg-slate-800/40 text-slate-600"
                     : selected
-                    ? "border-sky-500 bg-sky-500/10 text-white"
+                    ? "border-cyan-500 bg-cyan-500/10 text-white"
                     : "border-slate-700 bg-slate-800 text-slate-200 hover:border-slate-600"
                 }`}
               >
@@ -313,7 +399,7 @@ export default function AnalysisForm() {
               onClick={() => setProgression(p.value)}
               className={`rounded-lg border px-2 py-2 text-xs font-medium transition-colors ${
                 progression === p.value
-                  ? "border-sky-500 bg-sky-500/10 text-white"
+                  ? "border-cyan-500 bg-cyan-500/10 text-white"
                   : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600"
               }`}
             >
@@ -331,18 +417,18 @@ export default function AnalysisForm() {
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex flex-col items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 py-6 text-sm font-medium text-slate-200 hover:border-slate-600"
+              onClick={requestImport}
+              className="flex flex-col items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 py-6 text-sm font-medium text-slate-200 hover:border-cyan-700"
             >
-              <span className="text-2xl">📁</span>
+              <UploadCloudIcon className="h-7 w-7 text-cyan-400" />
               Importer
             </button>
             <button
               type="button"
-              onClick={openCamera}
-              className="flex flex-col items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 py-6 text-sm font-medium text-slate-200 hover:border-slate-600"
+              onClick={requestCamera}
+              className="flex flex-col items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 py-6 text-sm font-medium text-slate-200 hover:border-cyan-700"
             >
-              <span className="text-2xl">🎥</span>
+              <CameraIcon className="h-7 w-7 text-cyan-400" />
               Se filmer
             </button>
           </div>
@@ -359,12 +445,7 @@ export default function AnalysisForm() {
       {cameraMode && (
         <div className="space-y-3">
           <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-black">
-            <video
-              ref={cameraVideoRef}
-              muted
-              playsInline
-              className="w-full -scale-x-100"
-            />
+            <video ref={cameraVideoRef} muted playsInline className="w-full -scale-x-100" />
             {recording && (
               <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
@@ -393,7 +474,7 @@ export default function AnalysisForm() {
               <button
                 type="button"
                 onClick={startRecording}
-                className="flex-1 rounded-lg bg-gradient-to-r from-sky-400 to-blue-600 py-2.5 text-sm font-medium text-white"
+                className="flex-1 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 text-sm font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)]"
               >
                 Démarrer l&apos;enregistrement
               </button>
@@ -411,89 +492,154 @@ export default function AnalysisForm() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={handleChangeVideo}
-                className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:border-slate-600"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:border-slate-600"
               >
+                <ChangeVideoIcon className="h-3.5 w-3.5" />
                 Changer
               </button>
               <button
                 type="button"
                 onClick={handleRemoveVideo}
-                className="rounded-md border border-slate-700 px-2 py-1 text-xs text-red-400 hover:border-red-800"
+                className="flex items-center gap-1 rounded-md border border-slate-700 px-2 py-1 text-xs text-red-400 hover:border-red-800"
               >
+                <TrashIcon className="h-3.5 w-3.5" />
                 Supprimer
               </button>
             </div>
           </div>
 
           <div className="relative overflow-hidden rounded-xl border border-slate-800">
-            <video
-              ref={previewVideoRef}
-              src={videoUrl}
-              controls
-              playsInline
-              className="w-full"
+            <video ref={previewVideoRef} src={videoUrl} controls playsInline className="w-full" />
+            <canvas
+              ref={canvasRef}
+              className="pointer-events-none absolute left-0 top-0 h-full w-full"
             />
           </div>
 
-          <div>
-            <p className="mb-2 text-xs text-slate-500">
-              Sélectionne uniquement le passage à analyser
-            </p>
-            <div className="relative h-6">
-              <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-full bg-slate-700" />
-              <div
-                className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gradient-to-r from-sky-400 to-blue-600"
-                style={{
-                  left: `${(trimStart / duration) * 100}%`,
-                  right: `${100 - (trimEnd / duration) * 100}%`,
-                }}
-              />
-              <input
-                type="range"
-                min={0}
-                max={duration}
-                step={0.1}
-                value={trimStart}
-                onChange={(e) => handleTrimStartChange(Number(e.target.value))}
-                className="dual-range"
-              />
-              <input
-                type="range"
-                min={0}
-                max={duration}
-                step={0.1}
-                value={trimEnd}
-                onChange={(e) => handleTrimEndChange(Number(e.target.value))}
-                className="dual-range"
-              />
-            </div>
+          {!analyzing && !result && (
+            <div>
+              <p className="mb-2 text-xs text-slate-500">
+                Sélectionne uniquement le passage à analyser
+              </p>
+              <div className="relative h-6">
+                <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-full bg-slate-700" />
+                <div
+                  className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"
+                  style={{
+                    left: `${(trimStart / duration) * 100}%`,
+                    right: `${100 - (trimEnd / duration) * 100}%`,
+                  }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={duration}
+                  step={0.1}
+                  value={trimStart}
+                  onChange={(e) => handleTrimStartChange(Number(e.target.value))}
+                  className="dual-range"
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={duration}
+                  step={0.1}
+                  value={trimEnd}
+                  onChange={(e) => handleTrimEndChange(Number(e.target.value))}
+                  className="dual-range"
+                />
+              </div>
 
-            <div className="mt-2 flex justify-between text-xs text-slate-400">
-              <span>Début : {formatTime(trimStart)}</span>
-              <span>Fin : {formatTime(trimEnd)}</span>
-              <span>Durée : {formatTime(trimEnd - trimStart)}</span>
+              <div className="mt-2 flex justify-between text-xs text-slate-400">
+                <span>Début : {formatTime(trimStart)}</span>
+                <span>Fin : {formatTime(trimEnd)}</span>
+                <span>Durée : {formatTime(trimEnd - trimStart)}</span>
+              </div>
             </div>
-          </div>
+          )}
+
+          {analyzing && (
+            <div className="space-y-2">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              {liveAngles && (
+                <p className="font-mono text-xs text-slate-500">
+                  coude: {liveAngles.elbowAngle.toFixed(0)}° · hanche:{" "}
+                  {liveAngles.hipAngle.toFixed(0)}°
+                </p>
+              )}
+            </div>
+          )}
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={uploading}
-            className="w-full rounded-lg bg-gradient-to-r from-sky-400 to-blue-600 py-2.5 font-medium text-white disabled:opacity-50"
-          >
-            {uploading ? "Envoi en cours..." : "Analyser"}
-          </button>
+          {result && !result.ok && (
+            <p className="rounded-lg bg-orange-500/10 p-2 text-xs text-orange-400">
+              {result.warning} Ta vidéo est tout de même enregistrée dans
+              l&apos;historique.
+            </p>
+          )}
+
+          {result && result.ok && (
+            <>
+              {result.warning && (
+                <p className="rounded-lg bg-orange-500/10 p-2 text-xs text-orange-400">
+                  {result.warning}
+                </p>
+              )}
+              <ResultCard
+                globalScoreValue={result.globalScoreValue}
+                representativeFrame={result.representativeFrameDataUrl}
+                scores={result.scores}
+                recommendations={result.recommendations}
+              />
+            </>
+          )}
+
+          {saveError && (
+            <p className="text-xs text-red-400">
+              Analyse calculée mais non sauvegardée : {saveError}
+            </p>
+          )}
+
+          {!result && !analyzing && (
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)] disabled:opacity-50"
+            >
+              Analyser
+            </button>
+          )}
+
+          {analyzing && (
+            <button
+              type="button"
+              disabled
+              className="w-full rounded-lg bg-slate-800 py-2.5 font-medium text-slate-400"
+            >
+              Analyse en cours...
+            </button>
+          )}
+
+          {result && (
+            <button
+              type="button"
+              onClick={handleRemoveVideo}
+              className="w-full rounded-lg border border-slate-700 py-2.5 font-medium text-slate-200 hover:border-slate-600"
+            >
+              Nouvelle analyse
+            </button>
+          )}
+
+          {saving && (
+            <p className="text-center text-xs text-slate-500">Enregistrement...</p>
+          )}
         </form>
-      )}
-
-      {!videoUrl && error && <p className="text-sm text-red-400">{error}</p>}
-
-      {!videoUrl && success && (
-        <p className="rounded-lg bg-green-500/10 p-3 text-sm text-green-400">
-          Envoyé. Retrouve l&apos;analyse dans l&apos;onglet Historique.
-        </p>
       )}
     </div>
   );
