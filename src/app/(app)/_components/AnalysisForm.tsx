@@ -33,8 +33,15 @@ const FIGURES: {
   label: string;
   available: boolean;
   Icon: typeof PlancheFigureIcon;
+  image?: string;
 }[] = [
-  { value: "planche", label: "Planche", available: true, Icon: PlancheFigureIcon },
+  {
+    value: "planche",
+    label: "Planche",
+    available: true,
+    Icon: PlancheFigureIcon,
+    image: "/figures/planche.png",
+  },
   { value: "handstand", label: "Handstand", available: true, Icon: HandstandFigureIcon },
 ];
 
@@ -443,11 +450,22 @@ export default function AnalysisForm() {
                     : "border-slate-700 bg-slate-800 text-slate-200 hover:border-slate-600"
                 }`}
               >
-                <f.Icon
-                  className={`h-9 w-9 ${
-                    selected ? "text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]" : ""
-                  }`}
-                />
+                {f.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={f.image}
+                    alt={f.label}
+                    className={`h-16 w-full rounded-md object-cover ${
+                      selected ? "drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]" : ""
+                    }`}
+                  />
+                ) : (
+                  <f.Icon
+                    className={`h-9 w-9 ${
+                      selected ? "text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]" : ""
+                    }`}
+                  />
+                )}
                 <span className="font-medium">{f.label}</span>
                 {!f.available && (
                   <span className="block text-xs text-slate-500">
