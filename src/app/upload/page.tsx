@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { Progression } from "@/lib/pose/grid";
 import UploadForm from "./UploadForm";
 import VideoPoseOverlay from "./VideoPoseOverlay";
 
@@ -44,7 +45,11 @@ export default async function UploadPage() {
               {session.progression} — {session.status}
             </p>
             {session.signedUrl && (
-              <VideoPoseOverlay videoUrl={session.signedUrl} />
+              <VideoPoseOverlay
+                videoUrl={session.signedUrl}
+                sessionId={session.id}
+                progression={session.progression as Progression}
+              />
             )}
           </div>
         ))}

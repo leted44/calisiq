@@ -14,6 +14,9 @@ import {
   type PoseAngles,
   type HoldWindow,
 } from "@/lib/pose/angles";
+import { scoreAngles, globalScore, type CriterionScore } from "@/lib/pose/scoring";
+import type { Progression } from "@/lib/pose/grid";
+import { createClient } from "@/lib/supabase/client";
 
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
@@ -36,7 +39,15 @@ function getLandmarker() {
   return sharedLandmarkerPromise;
 }
 
-export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
+export default function VideoPoseOverlay({
+  videoUrl,
+  sessionId,
+  progression,
+}: {
+  videoUrl: string;
+  sessionId: string;
+  progression: Progression;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const framesRef = useRef<NormalizedLandmark[][]>([]);
@@ -46,6 +57,31 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
   const [currentAngles, setCurrentAngles] = useState<PoseAngles | null>(null);
   const [summaryAngles, setSummaryAngles] = useState<PoseAngles | null>(null);
   const [holdWindow, setHoldWindow] = useState<HoldWindow | null>(null);
+  const [scores, setScores] = useState<CriterionScore[] | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  async function saveScores(criteriaScores: CriterionScore[]) {
+    const supabase = createClient();
+
+    await supabase.from("scores").delete().eq("session_id", sessionId);
+
+    const { error: scoresError } = await supabase.from("scores").insert(
+      criteriaScores.map((s) => ({
+        session_id: sessionId,
+        critere: s.critere,
+        score: s.score,
+        valeur_mesuree: s.valeurMesuree,
+        valeur_cible: s.valeurCible,
+      }))
+    );
+    if (scoresError) throw scoresError;
+
+    const { error: sessionError } = await supabase
+      .from("sessions")
+      .update({ status: "done" })
+      .eq("id", sessionId);
+    if (sessionError) throw sessionError;
+  }
 
   useEffect(() => {
     if (!analyzing) return;
@@ -86,7 +122,15 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
                 window.start,
                 window.end + 1
               );
-              setSummaryAngles(medianAngles(holdAngles));
+              const median = medianAngles(holdAngles);
+              setSummaryAngles(median);
+
+              const criteriaScores = scoreAngles(median, progression);
+              setScores(criteriaScores);
+              saveScores(criteriaScores).catch((err) => {
+                console.error(err);
+                setSaveError((err as Error).message);
+              });
             }
           }
           return;
@@ -176,6 +220,34 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
           {summaryAngles.bodyLineAngleFromHorizontal.toFixed(0)}°
         </p>
       )}
+
+      {scores && (
+        <div className="rounded bg-gray-100 p-3">
+          <p className="mb-1 text-sm font-semibold text-gray-900">
+            Score global : {globalScore(scores).toFixed(1)}/10
+          </p>
+          <ul className="space-y-0.5 text-xs text-gray-700">
+            {scores.map((s) => (
+              <li key={s.critere}>
+                {CRITERE_LABELS[s.critere]} : {s.score.toFixed(1)}/10 (mesuré{" "}
+                {s.valeurMesuree.toFixed(0)}°, cible {s.valeurCible}°)
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {saveError && (
+        <p className="text-xs text-red-600">
+          Score calculé mais non sauvegardé : {saveError}
+        </p>
+      )}
     </div>
   );
 }
+
+const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
+  body_line: "Ligne du corps",
+  elbow_angle: "Coude",
+  hip_angle: "Hanche",
+};
