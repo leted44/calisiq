@@ -13,9 +13,19 @@ ne code pas.
 
 ## Scope MVP — limites strictes
 
-**Une seule figure : la planche**, sur ses 4 progressions (tuck planche,
-advanced tuck, straddle planche, full planche). Pas d'autre figure tant que
-le MVP n'est pas validé.
+**Figure fonctionnelle : la planche**, sur ses 4 progressions (tuck planche,
+advanced tuck, straddle planche, full planche). C'est la seule figure avec
+un scoring réellement calibré.
+
+**Handstand** apparaît comme option dans le sélecteur de figure (roadmap
+visible), mais reste marqué "bientôt disponible" tant que ses métriques
+(angles, seuils) n'ont pas été définies et calibrées — pas de scoring
+fantôme/approximatif en attendant.
+
+Vision à plus long terme (hors scope actuel, à traiter une figure à la fois) :
+tractions, muscle-up, et d'autres mouvements de calisthénie. Ne pas
+commencer le développement d'une nouvelle figure sans validation explicite,
+comme pour handstand.
 
 **NE PAS FAIRE dans le MVP, même si ça semble facile :**
 - Pas de temps réel / analyse caméra live. Upload de vidéo uniquement.

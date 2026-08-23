@@ -4,6 +4,13 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+type Figure = "planche" | "handstand";
+
+const FIGURES: { value: Figure; label: string; available: boolean }[] = [
+  { value: "planche", label: "Planche", available: true },
+  { value: "handstand", label: "Handstand", available: false },
+];
+
 const PROGRESSIONS = [
   { value: "tuck_planche", label: "Tuck planche" },
   { value: "advanced_tuck_planche", label: "Advanced tuck planche" },
@@ -34,6 +41,8 @@ export default function UploadForm() {
   const supabase = createClient();
   const formRef = useRef<HTMLFormElement>(null);
 
+  const [step, setStep] = useState<"figure" | "details">("figure");
+  const [figure, setFigure] = useState<Figure>("planche");
   const [progression, setProgression] = useState(PROGRESSIONS[0].value);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +115,54 @@ export default function UploadForm() {
     }
 
     formRef.current?.reset();
+    setStep("figure");
     router.refresh();
+  }
+
+  if (step === "figure") {
+    return (
+      <div className="w-full max-w-md space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <h2 className="text-lg font-semibold text-white">
+          Quelle figure veux-tu analyser ?
+        </h2>
+
+        <div className="grid grid-cols-2 gap-3">
+          {FIGURES.map((f) => {
+            const selected = figure === f.value;
+            return (
+              <button
+                key={f.value}
+                type="button"
+                disabled={!f.available}
+                onClick={() => setFigure(f.value)}
+                className={`relative rounded-lg border p-4 text-left transition-colors ${
+                  !f.available
+                    ? "cursor-not-allowed border-slate-800 bg-slate-800/40 text-slate-600"
+                    : selected
+                    ? "border-sky-500 bg-sky-500/10 text-white"
+                    : "border-slate-700 bg-slate-800 text-slate-200 hover:border-slate-600"
+                }`}
+              >
+                <span className="font-medium">{f.label}</span>
+                {!f.available && (
+                  <span className="mt-1 block text-xs text-slate-500">
+                    Bientôt disponible
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setStep("details")}
+          className="w-full rounded-lg bg-gradient-to-r from-sky-400 to-blue-600 py-2.5 font-medium text-white"
+        >
+          Continuer
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -115,7 +171,17 @@ export default function UploadForm() {
       onSubmit={handleSubmit}
       className="w-full max-w-md space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-6"
     >
-      <h2 className="text-lg font-semibold text-white">Uploader un hold</h2>
+      <button
+        type="button"
+        onClick={() => setStep("figure")}
+        className="text-xs text-slate-400 hover:text-slate-300"
+      >
+        ← Changer de figure
+      </button>
+
+      <h2 className="text-lg font-semibold text-white">
+        Uploader un hold — Planche
+      </h2>
 
       <select
         value={progression}
