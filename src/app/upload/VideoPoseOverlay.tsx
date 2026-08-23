@@ -15,6 +15,11 @@ import {
   type HoldWindow,
 } from "@/lib/pose/angles";
 import { scoreAngles, globalScore, type CriterionScore } from "@/lib/pose/scoring";
+import {
+  pickWeakestCriterion,
+  recommendationsFor,
+  type Recommendation,
+} from "@/lib/pose/recommendations";
 import type { Progression } from "@/lib/pose/grid";
 import { createClient } from "@/lib/supabase/client";
 
@@ -58,12 +63,17 @@ export default function VideoPoseOverlay({
   const [summaryAngles, setSummaryAngles] = useState<PoseAngles | null>(null);
   const [holdWindow, setHoldWindow] = useState<HoldWindow | null>(null);
   const [scores, setScores] = useState<CriterionScore[] | null>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  async function saveScores(criteriaScores: CriterionScore[]) {
+  async function saveScores(
+    criteriaScores: CriterionScore[],
+    exercises: Recommendation[]
+  ) {
     const supabase = createClient();
 
     await supabase.from("scores").delete().eq("session_id", sessionId);
+    await supabase.from("recommendations").delete().eq("session_id", sessionId);
 
     const { error: scoresError } = await supabase.from("scores").insert(
       criteriaScores.map((s) => ({
@@ -75,6 +85,19 @@ export default function VideoPoseOverlay({
       }))
     );
     if (scoresError) throw scoresError;
+
+    if (exercises.length > 0) {
+      const { error: recommendationsError } = await supabase
+        .from("recommendations")
+        .insert(
+          exercises.map((r) => ({
+            session_id: sessionId,
+            exercice: r.exercice,
+            raison: r.raison,
+          }))
+        );
+      if (recommendationsError) throw recommendationsError;
+    }
 
     const { error: sessionError } = await supabase
       .from("sessions")
@@ -105,6 +128,8 @@ export default function VideoPoseOverlay({
       anglesRef.current = [];
       setSummaryAngles(null);
       setHoldWindow(null);
+      setScores(null);
+      setRecommendations(null);
       video.currentTime = 0;
       await video.play();
 
@@ -127,7 +152,15 @@ export default function VideoPoseOverlay({
 
               const criteriaScores = scoreAngles(median, progression);
               setScores(criteriaScores);
-              saveScores(criteriaScores).catch((err) => {
+
+              const weakest = pickWeakestCriterion(criteriaScores);
+              const exercises = recommendationsFor(
+                weakest.critere,
+                median.pelvisSagSign
+              );
+              setRecommendations(exercises);
+
+              saveScores(criteriaScores, exercises).catch((err) => {
                 console.error(err);
                 setSaveError((err as Error).message);
               });
@@ -240,6 +273,21 @@ export default function VideoPoseOverlay({
                 </li>
               );
             })}
+          </ul>
+        </div>
+      )}
+
+      {recommendations && recommendations.length > 0 && (
+        <div className="rounded bg-blue-50 p-3">
+          <p className="mb-1 text-sm font-semibold text-gray-900">
+            À travailler en priorité
+          </p>
+          <ul className="space-y-1 text-xs text-gray-700">
+            {recommendations.map((r) => (
+              <li key={r.exercice}>
+                <span className="font-medium">{r.exercice}</span> — {r.raison}
+              </li>
+            ))}
           </ul>
         </div>
       )}

@@ -45,6 +45,9 @@ export type PoseAngles = {
   // Écart du bassin par rapport à la ligne épaule-cheville, normalisé par la longueur du corps
   // (0 = bassin parfaitement aligné, plus c'est grand plus il y a du sag ou du pike)
   pelvisDeviation: number;
+  // Signe de l'écart du bassin : positif = bassin plus bas que prévu (sag),
+  // négatif = bassin plus haut que prévu (pike). Sert à choisir l'exercice correctif.
+  pelvisSagSign: number;
 };
 
 // Moyenne des angles gauche/droite pour plus de robustesse à l'angle caméra
@@ -97,13 +100,20 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     midAnkle.x - midShoulder.x,
     midAnkle.y - midShoulder.y
   );
+  const crossProduct =
+    (midAnkle.x - midShoulder.x) * (midShoulder.y - midHip.y) -
+    (midShoulder.x - midHip.x) * (midAnkle.y - midShoulder.y);
   const pelvisDeviation =
-    bodyLength === 0
-      ? 0
-      : Math.abs(
-          (midAnkle.x - midShoulder.x) * (midShoulder.y - midHip.y) -
-            (midShoulder.x - midHip.x) * (midAnkle.y - midShoulder.y)
-        ) / bodyLength / bodyLength;
+    bodyLength === 0 ? 0 : Math.abs(crossProduct) / bodyLength / bodyLength;
+
+  // Position attendue du bassin par interpolation linéaire épaule->cheville,
+  // comparée à sa position réelle (y augmente vers le bas de l'image)
+  const t =
+    midAnkle.x === midShoulder.x
+      ? 0.5
+      : (midHip.x - midShoulder.x) / (midAnkle.x - midShoulder.x);
+  const expectedHipY = midShoulder.y + t * (midAnkle.y - midShoulder.y);
+  const pelvisSagSign = midHip.y - expectedHipY;
 
   return {
     elbowAngle: (leftElbowAngle + rightElbowAngle) / 2,
@@ -111,6 +121,7 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     bodyLineAngleFromHorizontal,
     shoulderProtraction,
     pelvisDeviation,
+    pelvisSagSign,
   };
 }
 
@@ -197,5 +208,6 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
     ),
     shoulderProtraction: median(frames.map((f) => f.shoulderProtraction)),
     pelvisDeviation: median(frames.map((f) => f.pelvisDeviation)),
+    pelvisSagSign: median(frames.map((f) => f.pelvisSagSign)),
   };
 }
