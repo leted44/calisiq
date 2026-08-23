@@ -42,6 +42,10 @@ function getFFmpeg(): Promise<FFmpeg> {
 
       const ffmpeg: FFmpeg = new FFmpeg();
       await ffmpeg.load({
+        classWorkerURL: await toBlobURL(
+          "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/worker.js",
+          "text/javascript"
+        ),
         coreURL: await toBlobURL(
           `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.js`,
           "text/javascript"
