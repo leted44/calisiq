@@ -1,5 +1,17 @@
 import type { FFmpeg } from "@ffmpeg/ffmpeg";
 
+// Chargés depuis un CDN via une URL complète (pas depuis node_modules) :
+// le code source de @ffmpeg/ffmpeg contient un `new Worker(new URL(variable, ...))`
+// dynamique que Turbopack ne sait pas analyser statiquement ("Cannot find module
+// as expression is too dynamic"), même si cette branche n'est jamais exécutée.
+// Passer par une URL CDN + magic comments évite complètement l'analyse du bundler.
+const FFMPEG_URL =
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js";
+const FFMPEG_UTIL_URL =
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js";
+const FFMPEG_CORE_BASE_URL =
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
+
 let ffmpegPromise: Promise<FFmpeg> | null = null;
 
 function toError(err: unknown): Error {
@@ -19,16 +31,27 @@ function toError(err: unknown): Error {
 function getFFmpeg(): Promise<FFmpeg> {
   if (!ffmpegPromise) {
     ffmpegPromise = (async () => {
-      // Import dynamique : ces packages assument un environnement navigateur
-      // (Worker) et cassent au rendu serveur/build s'ils sont importés en haut du fichier.
-      const { FFmpeg } = await import("@ffmpeg/ffmpeg");
-      const { toBlobURL } = await import("@ffmpeg/util");
+      const { FFmpeg } = await import(
+        /* webpackIgnore: true */
+        /* turbopackIgnore: true */
+        FFMPEG_URL
+      );
+      const { toBlobURL } = await import(
+        /* webpackIgnore: true */
+        /* turbopackIgnore: true */
+        FFMPEG_UTIL_URL
+      );
 
-      const ffmpeg = new FFmpeg();
-      const baseURL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
+      const ffmpeg: FFmpeg = new FFmpeg();
       await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+        coreURL: await toBlobURL(
+          `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.js`,
+          "text/javascript"
+        ),
+        wasmURL: await toBlobURL(
+          `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.wasm`,
+          "application/wasm"
+        ),
       });
       return ffmpeg;
     })().catch((err) => {
@@ -47,7 +70,11 @@ export async function trimVideoFile(
   start: number,
   end: number
 ): Promise<File> {
-  const { fetchFile } = await import("@ffmpeg/util");
+  const { fetchFile } = await import(
+    /* webpackIgnore: true */
+    /* turbopackIgnore: true */
+    FFMPEG_UTIL_URL
+  );
   const ffmpeg = await getFFmpeg();
 
   const logs: string[] = [];
