@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import UploadForm from "./UploadForm";
+import VideoPoseOverlay from "./VideoPoseOverlay";
 
 export default async function UploadPage() {
   const supabase = await createClient();
@@ -43,11 +44,7 @@ export default async function UploadPage() {
               {session.progression} — {session.status}
             </p>
             {session.signedUrl && (
-              <video
-                src={session.signedUrl}
-                controls
-                className="w-full rounded"
-              />
+              <VideoPoseOverlay videoUrl={session.signedUrl} />
             )}
           </div>
         ))}
