@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { trimVideoFile } from "@/lib/video/trim";
 
 type Figure = "planche" | "handstand";
 
@@ -59,7 +58,6 @@ export default function UploadForm() {
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
 
-  const [trimming, setTrimming] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -139,21 +137,6 @@ export default function UploadForm() {
       return;
     }
 
-    setTrimming(true);
-
-    let trimmedFile: File;
-    try {
-      trimmedFile = await trimVideoFile(file, trimStart, trimEnd);
-    } catch (err) {
-      console.error(err);
-      setError(
-        "Le découpage de la vidéo a échoué : " + (err as Error).message
-      );
-      setTrimming(false);
-      return;
-    }
-
-    setTrimming(false);
     setUploading(true);
 
     const {
@@ -166,11 +149,12 @@ export default function UploadForm() {
       return;
     }
 
-    const path = `${user.id}/${crypto.randomUUID()}.mp4`;
+    const extension = file.name.split(".").pop() ?? "mp4";
+    const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from("videos")
-      .upload(path, trimmedFile);
+      .upload(path, file);
 
     if (uploadError) {
       setError(uploadError.message);
@@ -183,6 +167,8 @@ export default function UploadForm() {
       video_url: path,
       progression,
       status: "processing",
+      trim_start: trimStart,
+      trim_end: trimEnd,
     });
 
     setUploading(false);
@@ -362,14 +348,10 @@ export default function UploadForm() {
 
       <button
         type="submit"
-        disabled={trimming || uploading || !file}
+        disabled={uploading || !file}
         className="w-full rounded-lg bg-gradient-to-r from-sky-400 to-blue-600 py-2.5 font-medium text-white disabled:opacity-50"
       >
-        {trimming
-          ? "Découpage de la vidéo..."
-          : uploading
-          ? "Envoi en cours..."
-          : "Envoyer"}
+        {uploading ? "Envoi en cours..." : "Envoyer"}
       </button>
     </form>
   );
