@@ -227,12 +227,19 @@ export default function VideoPoseOverlay({
             Score global : {globalScore(scores).toFixed(1)}/10
           </p>
           <ul className="space-y-0.5 text-xs text-gray-700">
-            {scores.map((s) => (
-              <li key={s.critere}>
-                {CRITERE_LABELS[s.critere]} : {s.score.toFixed(1)}/10 (mesuré{" "}
-                {s.valeurMesuree.toFixed(0)}°, cible {s.valeurCible}°)
-              </li>
-            ))}
+            {scores.map((s) => {
+              const isAngle = s.critere === "hip_angle" || s.critere === "elbow_angle";
+              const unit = isAngle ? "°" : "";
+              const decimals = isAngle ? 0 : 2;
+              return (
+                <li key={s.critere}>
+                  {CRITERE_LABELS[s.critere]} : {s.score.toFixed(1)}/10 (mesuré{" "}
+                  {s.valeurMesuree.toFixed(decimals)}
+                  {unit}, cible {s.valeurCible.toFixed(decimals)}
+                  {unit})
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -247,7 +254,8 @@ export default function VideoPoseOverlay({
 }
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
-  body_line: "Ligne du corps",
+  shoulder_protraction: "Protraction",
+  pelvis_deviation: "Bassin",
+  hip_angle: "Genou-hanche-épaule",
   elbow_angle: "Coude",
-  hip_angle: "Hanche",
 };

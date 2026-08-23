@@ -2,21 +2,22 @@ import type { PoseAngles } from "./angles";
 import { SCORING_GRID, type Progression } from "./grid";
 
 export type CriterionScore = {
-  critere: "body_line" | "elbow_angle" | "hip_angle";
+  critere: "shoulder_protraction" | "pelvis_deviation" | "hip_angle" | "elbow_angle";
   score: number;
   valeurMesuree: number;
   valeurCible: number;
 };
 
-// Score linéaire : 10 si pile sur la cible, 0 dès que l'écart atteint la tolérance
+// Décroissance progressive : 10 pile sur la cible, 5 à l'écart de la tolérance,
+// tend vers 0 sans jamais y couper net (contrairement à un simple clamp linéaire)
 function scoreFromThreshold(
   measured: number,
   target: number,
   tolerance: number
 ): number {
   const diff = Math.abs(measured - target);
-  const score = 10 * (1 - diff / tolerance);
-  return Math.max(0, Math.min(10, score));
+  const ratio = diff / tolerance;
+  return 10 / (1 + ratio * ratio);
 }
 
 export function scoreAngles(
@@ -27,24 +28,24 @@ export function scoreAngles(
 
   return [
     {
-      critere: "body_line",
+      critere: "shoulder_protraction",
       score: scoreFromThreshold(
-        angles.bodyLineAngleFromHorizontal,
-        grid.body_line_angle_from_horizontal.target,
-        grid.body_line_angle_from_horizontal.tolerance
+        angles.shoulderProtraction,
+        grid.shoulder_protraction.target,
+        grid.shoulder_protraction.tolerance
       ),
-      valeurMesuree: angles.bodyLineAngleFromHorizontal,
-      valeurCible: grid.body_line_angle_from_horizontal.target,
+      valeurMesuree: angles.shoulderProtraction,
+      valeurCible: grid.shoulder_protraction.target,
     },
     {
-      critere: "elbow_angle",
+      critere: "pelvis_deviation",
       score: scoreFromThreshold(
-        angles.elbowAngle,
-        grid.elbow_angle.target,
-        grid.elbow_angle.tolerance
+        angles.pelvisDeviation,
+        grid.pelvis_deviation.target,
+        grid.pelvis_deviation.tolerance
       ),
-      valeurMesuree: angles.elbowAngle,
-      valeurCible: grid.elbow_angle.target,
+      valeurMesuree: angles.pelvisDeviation,
+      valeurCible: grid.pelvis_deviation.target,
     },
     {
       critere: "hip_angle",
@@ -55,6 +56,16 @@ export function scoreAngles(
       ),
       valeurMesuree: angles.hipAngle,
       valeurCible: grid.hip_angle.target,
+    },
+    {
+      critere: "elbow_angle",
+      score: scoreFromThreshold(
+        angles.elbowAngle,
+        grid.elbow_angle.target,
+        grid.elbow_angle.tolerance
+      ),
+      valeurMesuree: angles.elbowAngle,
+      valeurCible: grid.elbow_angle.target,
     },
   ];
 }

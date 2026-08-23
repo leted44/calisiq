@@ -11,6 +11,8 @@ const LEFT_HIP = 23;
 const RIGHT_HIP = 24;
 const LEFT_KNEE = 25;
 const RIGHT_KNEE = 26;
+const LEFT_ANKLE = 27;
+const RIGHT_ANKLE = 28;
 
 type Point = { x: number; y: number };
 
@@ -37,6 +39,12 @@ export type PoseAngles = {
   elbowAngle: number;
   hipAngle: number;
   bodyLineAngleFromHorizontal: number;
+  // Écart horizontal épaules/poignets, normalisé par la longueur du tronc
+  // (0 = épaules au-dessus des poignets, plus c'est grand plus les épaules sont avancées)
+  shoulderProtraction: number;
+  // Écart du bassin par rapport à la ligne épaule-cheville, normalisé par la longueur du corps
+  // (0 = bassin parfaitement aligné, plus c'est grand plus il y a du sag ou du pike)
+  pelvisDeviation: number;
 };
 
 // Moyenne des angles gauche/droite pour plus de robustesse à l'angle caméra
@@ -65,6 +73,8 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
 
   const midShoulder = midpoint(landmarks[LEFT_SHOULDER], landmarks[RIGHT_SHOULDER]);
   const midHip = midpoint(landmarks[LEFT_HIP], landmarks[RIGHT_HIP]);
+  const midWrist = midpoint(landmarks[LEFT_WRIST], landmarks[RIGHT_WRIST]);
+  const midAnkle = midpoint(landmarks[LEFT_ANKLE], landmarks[RIGHT_ANKLE]);
 
   const dx = midHip.x - midShoulder.x;
   const dy = midHip.y - midShoulder.y;
@@ -72,10 +82,35 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     (Math.atan2(dy, dx) * 180) / Math.PI
   );
 
+  const torsoLength = Math.hypot(
+    midHip.x - midShoulder.x,
+    midHip.y - midShoulder.y
+  );
+  const shoulderProtraction =
+    torsoLength === 0
+      ? 0
+      : Math.abs(midShoulder.x - midWrist.x) / torsoLength;
+
+  // Distance du bassin à la droite épaule-cheville (mesure du sag/pike),
+  // normalisée par la longueur épaule-cheville
+  const bodyLength = Math.hypot(
+    midAnkle.x - midShoulder.x,
+    midAnkle.y - midShoulder.y
+  );
+  const pelvisDeviation =
+    bodyLength === 0
+      ? 0
+      : Math.abs(
+          (midAnkle.x - midShoulder.x) * (midShoulder.y - midHip.y) -
+            (midShoulder.x - midHip.x) * (midAnkle.y - midShoulder.y)
+        ) / bodyLength / bodyLength;
+
   return {
     elbowAngle: (leftElbowAngle + rightElbowAngle) / 2,
     hipAngle: (leftHipAngle + rightHipAngle) / 2,
     bodyLineAngleFromHorizontal,
+    shoulderProtraction,
+    pelvisDeviation,
   };
 }
 
@@ -160,5 +195,7 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
     bodyLineAngleFromHorizontal: median(
       frames.map((f) => f.bodyLineAngleFromHorizontal)
     ),
+    shoulderProtraction: median(frames.map((f) => f.shoulderProtraction)),
+    pelvisDeviation: median(frames.map((f) => f.pelvisDeviation)),
   };
 }
