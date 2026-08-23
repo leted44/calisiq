@@ -9,19 +9,47 @@ import type { Progression } from "@/lib/pose/grid";
 import CaptureTipsModal, { shouldSkipTips } from "./CaptureTipsModal";
 import ResultCard from "./ResultCard";
 import { UploadCloudIcon, CameraIcon, ChangeVideoIcon, TrashIcon } from "@/components/icons";
+import {
+  PlancheFigureIcon,
+  HandstandFigureIcon,
+  TuckPlancheIcon,
+  AdvancedTuckIcon,
+  StraddlePlancheIcon,
+  FullPlancheIcon,
+  HoldTypeIcon,
+  PressTypeIcon,
+  PushUpTypeIcon,
+} from "@/components/figureIcons";
 
 type Figure = "planche" | "handstand";
+type ExerciseType = "hold" | "press" | "push_up";
 
-const FIGURES: { value: Figure; label: string; available: boolean }[] = [
-  { value: "planche", label: "Planche", available: true },
-  { value: "handstand", label: "Handstand", available: false },
+const FIGURES: {
+  value: Figure;
+  label: string;
+  available: boolean;
+  Icon: typeof PlancheFigureIcon;
+}[] = [
+  { value: "planche", label: "Planche", available: true, Icon: PlancheFigureIcon },
+  { value: "handstand", label: "Handstand", available: false, Icon: HandstandFigureIcon },
 ];
 
-const PROGRESSIONS: { value: Progression; label: string }[] = [
-  { value: "tuck_planche", label: "Tuck" },
-  { value: "advanced_tuck_planche", label: "Advanced tuck" },
-  { value: "straddle_planche", label: "Straddle" },
-  { value: "full_planche", label: "Full" },
+const PROGRESSIONS: { value: Progression; label: string; Icon: typeof TuckPlancheIcon }[] = [
+  { value: "tuck_planche", label: "Tuck", Icon: TuckPlancheIcon },
+  { value: "advanced_tuck_planche", label: "Advanced tuck", Icon: AdvancedTuckIcon },
+  { value: "straddle_planche", label: "Straddle", Icon: StraddlePlancheIcon },
+  { value: "full_planche", label: "Full", Icon: FullPlancheIcon },
+];
+
+const EXERCISE_TYPES: {
+  value: ExerciseType;
+  label: string;
+  available: boolean;
+  Icon: typeof HoldTypeIcon;
+}[] = [
+  { value: "hold", label: "Hold", available: true, Icon: HoldTypeIcon },
+  { value: "press", label: "Press", available: false, Icon: PressTypeIcon },
+  { value: "push_up", label: "Push-up", available: false, Icon: PushUpTypeIcon },
 ];
 
 const MIN_TRIM_SECONDS = 2;
@@ -62,6 +90,9 @@ export default function AnalysisForm() {
 
   const [figure, setFigure] = useState<Figure>("planche");
   const [progression, setProgression] = useState(PROGRESSIONS[0].value);
+  const [exerciseType, setExerciseType] = useState<ExerciseType>(
+    EXERCISE_TYPES[0].value
+  );
 
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -320,6 +351,11 @@ export default function AnalysisForm() {
       return;
     }
 
+    if (exerciseType !== "hold") {
+      setError("Ce type d'exercice n'est pas encore disponible.");
+      return;
+    }
+
     setAnalyzing(true);
     setResult(null);
     setProgressPercent(0);
@@ -367,7 +403,7 @@ export default function AnalysisForm() {
                 type="button"
                 disabled={!f.available}
                 onClick={() => setFigure(f.value)}
-                className={`relative rounded-lg border p-3 text-left transition-colors ${
+                className={`relative flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-colors ${
                   !f.available
                     ? "cursor-not-allowed border-slate-800 bg-slate-800/40 text-slate-600"
                     : selected
@@ -375,9 +411,10 @@ export default function AnalysisForm() {
                     : "border-slate-700 bg-slate-800 text-slate-200 hover:border-slate-600"
                 }`}
               >
+                <f.Icon className={`h-9 w-9 ${selected ? "text-cyan-400" : ""}`} />
                 <span className="font-medium">{f.label}</span>
                 {!f.available && (
-                  <span className="mt-1 block text-xs text-slate-500">
+                  <span className="block text-xs text-slate-500">
                     Bientôt disponible
                   </span>
                 )}
@@ -389,23 +426,59 @@ export default function AnalysisForm() {
 
       <div className="space-y-3">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Progression
+          Variation
         </p>
         <div className="grid grid-cols-4 gap-2">
-          {PROGRESSIONS.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              onClick={() => setProgression(p.value)}
-              className={`rounded-lg border px-2 py-2 text-xs font-medium transition-colors ${
-                progression === p.value
-                  ? "border-cyan-500 bg-cyan-500/10 text-white"
-                  : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+          {PROGRESSIONS.map((p) => {
+            const selected = progression === p.value;
+            return (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => setProgression(p.value)}
+                className={`flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-center transition-colors ${
+                  selected
+                    ? "border-cyan-500 bg-cyan-500/10 text-white"
+                    : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600"
+                }`}
+              >
+                <p.Icon className={`h-8 w-8 ${selected ? "text-cyan-400" : ""}`} />
+                <span className="text-xs font-medium">{p.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          Type d&apos;exercice
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {EXERCISE_TYPES.map((t) => {
+            const selected = exerciseType === t.value;
+            return (
+              <button
+                key={t.value}
+                type="button"
+                disabled={!t.available}
+                onClick={() => setExerciseType(t.value)}
+                className={`relative flex flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-center transition-colors ${
+                  !t.available
+                    ? "cursor-not-allowed border-slate-800 bg-slate-800/40 text-slate-600"
+                    : selected
+                    ? "border-cyan-500 bg-cyan-500/10 text-white"
+                    : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600"
+                }`}
+              >
+                <t.Icon className={`h-5 w-5 ${selected ? "text-cyan-400" : ""}`} />
+                <span className="text-xs font-medium">{t.label}</span>
+                {!t.available && (
+                  <span className="block text-[10px] text-slate-500">Bientôt</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
