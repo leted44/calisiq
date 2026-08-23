@@ -46,6 +46,7 @@ export default function UploadForm() {
   const router = useRouter();
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   const [step, setStep] = useState<"figure" | "details">("figure");
   const [figure, setFigure] = useState<Figure>("planche");
@@ -101,12 +102,23 @@ export default function UploadForm() {
     fileInputRef.current?.click();
   }
 
+  function seekPreview(time: number) {
+    const video = previewVideoRef.current;
+    if (!video) return;
+    video.pause();
+    video.currentTime = time;
+  }
+
   function handleTrimStartChange(value: number) {
-    setTrimStart(Math.min(value, trimEnd - MIN_TRIM_SECONDS));
+    const next = Math.min(value, trimEnd - MIN_TRIM_SECONDS);
+    setTrimStart(next);
+    seekPreview(next);
   }
 
   function handleTrimEndChange(value: number) {
-    setTrimEnd(Math.max(value, trimStart + MIN_TRIM_SECONDS));
+    const next = Math.max(value, trimStart + MIN_TRIM_SECONDS);
+    setTrimEnd(next);
+    seekPreview(next);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -282,8 +294,10 @@ export default function UploadForm() {
       {videoUrl && duration !== null && (
         <div className="space-y-3">
           <video
+            ref={previewVideoRef}
             src={videoUrl}
             controls
+            playsInline
             className="w-full rounded-lg border border-slate-800"
           />
 

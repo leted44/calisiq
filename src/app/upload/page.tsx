@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Progression } from "@/lib/pose/grid";
 import UploadForm from "./UploadForm";
 import VideoPoseOverlay from "./VideoPoseOverlay";
+import DeleteSessionButton from "./DeleteSessionButton";
 
 const PROGRESSION_LABELS: Record<string, string> = {
   tuck_planche: "Tuck planche",
@@ -61,15 +62,21 @@ export default async function UploadPage() {
               <p className="font-medium text-white">
                 {PROGRESSION_LABELS[session.progression] ?? session.progression}
               </p>
-              <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  session.status === "done"
-                    ? "bg-green-500/15 text-green-400"
-                    : "bg-slate-700/50 text-slate-300"
-                }`}
-              >
-                {STATUS_LABELS[session.status] ?? session.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    session.status === "done"
+                      ? "bg-green-500/15 text-green-400"
+                      : "bg-slate-700/50 text-slate-300"
+                  }`}
+                >
+                  {STATUS_LABELS[session.status] ?? session.status}
+                </span>
+                <DeleteSessionButton
+                  sessionId={session.id}
+                  videoPath={session.video_url}
+                />
+              </div>
             </div>
             {session.signedUrl && (
               <VideoPoseOverlay
