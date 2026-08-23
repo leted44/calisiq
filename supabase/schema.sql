@@ -5,6 +5,22 @@ create table profiles (
   is_premium boolean default false
 );
 
+-- Crée automatiquement un profil à chaque inscription (auth.users est géré par Supabase, pas accessible en direct)
+create function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id) values (new.id);
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
 create table sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles(id) not null,
