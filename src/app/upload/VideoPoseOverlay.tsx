@@ -59,10 +59,14 @@ export default function VideoPoseOverlay({
   videoUrl,
   sessionId,
   progression,
+  trimStart,
+  trimEnd,
 }: {
   videoUrl: string;
   sessionId: string;
   progression: Progression;
+  trimStart?: number;
+  trimEnd?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -122,13 +126,18 @@ export default function VideoPoseOverlay({
     if (sessionError) throw sessionError;
   }
 
-  async function captureRepresentativeFrame(index: number) {
+  async function captureRepresentativeFrame(
+    index: number,
+    rangeStart: number,
+    rangeEnd: number
+  ) {
     const video = videoRef.current;
     const landmarks = framesRef.current[index];
     if (!video || !landmarks || framesRef.current.length === 0) return;
 
     const targetTime =
-      (index / framesRef.current.length) * (video.duration || 0);
+      rangeStart +
+      (index / framesRef.current.length) * (rangeEnd - rangeStart);
     await seekTo(video, targetTime);
 
     const offscreen = document.createElement("canvas");
@@ -173,11 +182,22 @@ export default function VideoPoseOverlay({
       setRepresentativeFrame(null);
       setProgressPercent(0);
       setAnalysisWarning(null);
-      video.currentTime = 0;
+
+      const rangeStart = trimStart ?? 0;
+      const rangeEnd = trimEnd ?? video.duration;
+
+      video.currentTime = rangeStart;
       await video.play();
 
       function loop() {
-        if (cancelled || !video || video.paused || video.ended) {
+        if (
+          cancelled ||
+          !video ||
+          video.paused ||
+          video.ended ||
+          video.currentTime >= rangeEnd
+        ) {
+          video?.pause();
           if (!cancelled) {
             setAnalyzing(false);
 
@@ -221,7 +241,9 @@ export default function VideoPoseOverlay({
               setRecommendations(exercises);
 
               const midIndex = Math.floor((window.start + window.end) / 2);
-              captureRepresentativeFrame(midIndex).catch(console.error);
+              captureRepresentativeFrame(midIndex, rangeStart, rangeEnd).catch(
+                console.error
+              );
 
               saveScores(criteriaScores, exercises).catch((err) => {
                 console.error(err);
@@ -233,9 +255,14 @@ export default function VideoPoseOverlay({
         }
 
         attemptedFramesRef.current += 1;
-        if (video.duration > 0) {
+        if (rangeEnd > rangeStart) {
           setProgressPercent(
-            Math.min(100, Math.round((video.currentTime / video.duration) * 100))
+            Math.min(
+              100,
+              Math.round(
+                ((video.currentTime - rangeStart) / (rangeEnd - rangeStart)) * 100
+              )
+            )
           );
         }
         const result = landmarker.detectForVideo(video, performance.now());

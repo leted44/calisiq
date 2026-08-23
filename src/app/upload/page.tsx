@@ -29,7 +29,7 @@ export default async function UploadPage() {
 
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, progression, status, video_url, created_at")
+    .select("id, progression, status, video_url, created_at, trim_start, trim_end")
     .order("created_at", { ascending: false });
 
   const sessionsWithUrls = await Promise.all(
@@ -76,6 +76,8 @@ export default async function UploadPage() {
                 videoUrl={session.signedUrl}
                 sessionId={session.id}
                 progression={session.progression as Progression}
+                trimStart={session.trim_start ?? undefined}
+                trimEnd={session.trim_end ?? undefined}
               />
             )}
           </div>

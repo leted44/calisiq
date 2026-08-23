@@ -27,7 +27,9 @@ create table sessions (
   created_at timestamptz default now(),
   video_url text not null,
   progression text not null, -- 'tuck_planche' | 'advanced_tuck_planche' | 'straddle_planche' | 'full_planche'
-  status text default 'processing' -- 'processing' | 'done' | 'error'
+  status text default 'processing', -- 'processing' | 'done' | 'error'
+  trim_start numeric, -- secondes, début du segment à analyser (choisi par l'utilisateur)
+  trim_end numeric -- secondes, fin du segment à analyser
 );
 
 create table scores (
