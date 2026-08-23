@@ -7,6 +7,7 @@ import {
   DrawingUtils,
   type NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
+import { computeAngles, medianAngles, type PoseAngles } from "@/lib/pose/angles";
 
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
@@ -33,8 +34,11 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const framesRef = useRef<NormalizedLandmark[][]>([]);
+  const anglesRef = useRef<PoseAngles[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [currentAngles, setCurrentAngles] = useState<PoseAngles | null>(null);
+  const [summaryAngles, setSummaryAngles] = useState<PoseAngles | null>(null);
 
   useEffect(() => {
     if (!analyzing) return;
@@ -55,6 +59,8 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
       const drawingUtils = new DrawingUtils(ctx);
 
       framesRef.current = [];
+      anglesRef.current = [];
+      setSummaryAngles(null);
       video.currentTime = 0;
       await video.play();
 
@@ -65,6 +71,9 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
             setStatus(
               `Analyse terminée : ${framesRef.current.length} frames traitées.`
             );
+            if (anglesRef.current.length > 0) {
+              setSummaryAngles(medianAngles(anglesRef.current));
+            }
           }
           return;
         }
@@ -74,6 +83,10 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
         ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
         for (const landmarks of result.landmarks) {
           framesRef.current.push(landmarks);
+          const angles = computeAngles(landmarks);
+          anglesRef.current.push(angles);
+          setCurrentAngles(angles);
+
           drawingUtils.drawLandmarks(landmarks, { radius: 3 });
           drawingUtils.drawConnectors(
             landmarks,
@@ -125,6 +138,22 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
       </button>
 
       {status && <p className="text-xs text-gray-500">{status}</p>}
+
+      {analyzing && currentAngles && (
+        <p className="font-mono text-xs text-gray-600">
+          coude: {currentAngles.elbowAngle.toFixed(0)}° · hanche:{" "}
+          {currentAngles.hipAngle.toFixed(0)}° · inclinaison corps:{" "}
+          {currentAngles.bodyLineAngleFromHorizontal.toFixed(0)}°
+        </p>
+      )}
+
+      {summaryAngles && (
+        <p className="font-mono text-xs text-gray-800">
+          Médiane sur le hold — coude: {summaryAngles.elbowAngle.toFixed(0)}° ·
+          hanche: {summaryAngles.hipAngle.toFixed(0)}° · inclinaison corps:{" "}
+          {summaryAngles.bodyLineAngleFromHorizontal.toFixed(0)}°
+        </p>
+      )}
     </div>
   );
 }
