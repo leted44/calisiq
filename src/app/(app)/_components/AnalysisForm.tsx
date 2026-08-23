@@ -56,14 +56,39 @@ type VariationOption = {
   label: string;
   Icon: typeof TuckPlancheIcon;
   available: boolean;
+  image?: string;
 };
 
 const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   planche: [
-    { value: "tuck_planche", label: "Tuck", Icon: TuckPlancheIcon, available: true },
-    { value: "advanced_tuck_planche", label: "Advanced tuck", Icon: AdvancedTuckIcon, available: true },
-    { value: "straddle_planche", label: "Straddle", Icon: StraddlePlancheIcon, available: true },
-    { value: "full_planche", label: "Full", Icon: FullPlancheIcon, available: true },
+    {
+      value: "tuck_planche",
+      label: "Tuck",
+      Icon: TuckPlancheIcon,
+      available: true,
+      image: "/figures/tuck-planche.png",
+    },
+    {
+      value: "advanced_tuck_planche",
+      label: "Advanced tuck",
+      Icon: AdvancedTuckIcon,
+      available: true,
+      image: "/figures/advanced-tuck-planche.png",
+    },
+    {
+      value: "straddle_planche",
+      label: "Straddle",
+      Icon: StraddlePlancheIcon,
+      available: true,
+      image: "/figures/straddle-planche.png",
+    },
+    {
+      value: "full_planche",
+      label: "Full",
+      Icon: FullPlancheIcon,
+      available: true,
+      image: "/figures/planche.png",
+    },
   ],
   handstand: [
     { value: "handstand", label: "Handstand", Icon: HandstandFigureIcon, available: false },
@@ -507,13 +532,26 @@ export default function AnalysisForm() {
                     : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600"
                 }`}
               >
-                <v.Icon
-                  className={`h-8 w-8 ${
-                    selected && v.available
-                      ? "text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]"
-                      : ""
-                  }`}
-                />
+                {v.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={v.image}
+                    alt={v.label}
+                    className={`h-12 w-full object-contain ${
+                      selected && v.available
+                        ? "drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
+                        : ""
+                    }`}
+                  />
+                ) : (
+                  <v.Icon
+                    className={`h-8 w-8 ${
+                      selected && v.available
+                        ? "text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]"
+                        : ""
+                    }`}
+                  />
+                )}
                 <span className="text-xs font-medium">{v.label}</span>
                 {!v.available && (
                   <span className="block text-[10px] text-slate-500">Bientôt</span>
