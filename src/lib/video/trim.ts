@@ -3,6 +3,20 @@ import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 let ffmpegPromise: Promise<FFmpeg> | null = null;
 
+function toError(err: unknown): Error {
+  if (err instanceof Error) return err;
+  if (typeof err === "string" && err.length > 0) return new Error(err);
+  try {
+    const json = JSON.stringify(err);
+    if (json && json !== "{}" && json !== "null") return new Error(json);
+  } catch {
+    // ignore
+  }
+  return new Error(
+    "Erreur inconnue (probablement un abort interne de ffmpeg.wasm, souvent lié à un environnement navigateur non supporté)"
+  );
+}
+
 function getFFmpeg(): Promise<FFmpeg> {
   if (!ffmpegPromise) {
     ffmpegPromise = (async () => {
@@ -13,7 +27,10 @@ function getFFmpeg(): Promise<FFmpeg> {
         wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
       });
       return ffmpeg;
-    })();
+    })().catch((err) => {
+      ffmpegPromise = null;
+      throw toError(err);
+    });
   }
   return ffmpegPromise;
 }
@@ -55,7 +72,7 @@ export async function trimVideoFile(
 
     if (exitCode !== 0) {
       throw new Error(
-        `ffmpeg a échoué (code ${exitCode}) : ${logs.slice(-5).join(" | ")}`
+        `ffmpeg a échoué (code ${exitCode}) : ${logs.slice(-5).join(" | ") || "aucun log"}`
       );
     }
 
@@ -68,13 +85,15 @@ export async function trimVideoFile(
 
     if (bytes.length === 0) {
       throw new Error(
-        `Fichier découpé vide. Logs : ${logs.slice(-5).join(" | ")}`
+        `Fichier découpé vide. Logs : ${logs.slice(-5).join(" | ") || "aucun log"}`
       );
     }
 
     return new File([new Uint8Array(bytes)], "trimmed.mp4", {
       type: "video/mp4",
     });
+  } catch (err) {
+    throw toError(err);
   } finally {
     ffmpeg.off("log", onLog);
   }
