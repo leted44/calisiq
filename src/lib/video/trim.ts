@@ -1,5 +1,4 @@
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import type { FFmpeg } from "@ffmpeg/ffmpeg";
 
 let ffmpegPromise: Promise<FFmpeg> | null = null;
 
@@ -20,6 +19,11 @@ function toError(err: unknown): Error {
 function getFFmpeg(): Promise<FFmpeg> {
   if (!ffmpegPromise) {
     ffmpegPromise = (async () => {
+      // Import dynamique : ces packages assument un environnement navigateur
+      // (Worker) et cassent au rendu serveur/build s'ils sont importés en haut du fichier.
+      const { FFmpeg } = await import("@ffmpeg/ffmpeg");
+      const { toBlobURL } = await import("@ffmpeg/util");
+
       const ffmpeg = new FFmpeg();
       const baseURL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
       await ffmpeg.load({
@@ -43,6 +47,7 @@ export async function trimVideoFile(
   start: number,
   end: number
 ): Promise<File> {
+  const { fetchFile } = await import("@ffmpeg/util");
   const ffmpeg = await getFFmpeg();
 
   const logs: string[] = [];
