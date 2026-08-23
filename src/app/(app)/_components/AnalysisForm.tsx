@@ -461,7 +461,7 @@ export default function AnalysisForm() {
                   <img
                     src={f.image}
                     alt={f.label}
-                    className={`h-16 w-full rounded-md object-cover ${
+                    className={`h-24 w-full object-contain ${
                       selected ? "drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]" : ""
                     }`}
                   />
