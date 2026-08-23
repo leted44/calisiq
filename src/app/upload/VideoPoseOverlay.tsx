@@ -7,7 +7,13 @@ import {
   DrawingUtils,
   type NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
-import { computeAngles, medianAngles, type PoseAngles } from "@/lib/pose/angles";
+import {
+  computeAngles,
+  medianAngles,
+  detectHoldWindow,
+  type PoseAngles,
+  type HoldWindow,
+} from "@/lib/pose/angles";
 
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
@@ -39,6 +45,7 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
   const [status, setStatus] = useState<string | null>(null);
   const [currentAngles, setCurrentAngles] = useState<PoseAngles | null>(null);
   const [summaryAngles, setSummaryAngles] = useState<PoseAngles | null>(null);
+  const [holdWindow, setHoldWindow] = useState<HoldWindow | null>(null);
 
   useEffect(() => {
     if (!analyzing) return;
@@ -61,6 +68,7 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
       framesRef.current = [];
       anglesRef.current = [];
       setSummaryAngles(null);
+      setHoldWindow(null);
       video.currentTime = 0;
       await video.play();
 
@@ -71,8 +79,14 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
             setStatus(
               `Analyse terminée : ${framesRef.current.length} frames traitées.`
             );
-            if (anglesRef.current.length > 0) {
-              setSummaryAngles(medianAngles(anglesRef.current));
+            if (framesRef.current.length > 0) {
+              const window = detectHoldWindow(framesRef.current);
+              setHoldWindow(window);
+              const holdAngles = anglesRef.current.slice(
+                window.start,
+                window.end + 1
+              );
+              setSummaryAngles(medianAngles(holdAngles));
             }
           }
           return;
@@ -144,6 +158,14 @@ export default function VideoPoseOverlay({ videoUrl }: { videoUrl: string }) {
           coude: {currentAngles.elbowAngle.toFixed(0)}° · hanche:{" "}
           {currentAngles.hipAngle.toFixed(0)}° · inclinaison corps:{" "}
           {currentAngles.bodyLineAngleFromHorizontal.toFixed(0)}°
+        </p>
+      )}
+
+      {holdWindow && (
+        <p className="text-xs text-gray-500">
+          {holdWindow.detected
+            ? `Hold détecté : frames ${holdWindow.start} à ${holdWindow.end} (sur ${framesRef.current.length} au total).`
+            : "Pas de segment immobile clairement détecté — médiane calculée sur toute la vidéo."}
         </p>
       )}
 

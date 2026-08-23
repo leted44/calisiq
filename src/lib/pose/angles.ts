@@ -79,6 +79,72 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
   };
 }
 
+// Points du tronc/des membres, hors visage (0-10), utilisés pour détecter l'immobilité
+const STABILITY_LANDMARK_INDICES = Array.from({ length: 22 }, (_, i) => i + 11);
+
+function frameCenter(landmarks: NormalizedLandmark[]): Point {
+  let sx = 0;
+  let sy = 0;
+  for (const i of STABILITY_LANDMARK_INDICES) {
+    sx += landmarks[i].x;
+    sy += landmarks[i].y;
+  }
+  const n = STABILITY_LANDMARK_INDICES.length;
+  return { x: sx / n, y: sy / n };
+}
+
+function smooth(values: number[], windowSize = 5): number[] {
+  return values.map((_, i) => {
+    const start = Math.max(0, i - Math.floor(windowSize / 2));
+    const end = Math.min(values.length, i + Math.ceil(windowSize / 2));
+    const slice = values.slice(start, end);
+    return slice.reduce((a, b) => a + b, 0) / slice.length;
+  });
+}
+
+export type HoldWindow = { start: number; end: number; detected: boolean };
+
+// Trouve le plus long segment où le corps reste quasi immobile (le hold),
+// en excluant la mise en place avant et la sortie de figure après.
+export function detectHoldWindow(
+  frames: NormalizedLandmark[][],
+  options?: { threshold?: number; minFrames?: number }
+): HoldWindow {
+  const threshold = options?.threshold ?? 0.004;
+  const minFrames = options?.minFrames ?? 15;
+
+  if (frames.length === 0) return { start: 0, end: 0, detected: false };
+
+  const centers = frames.map(frameCenter);
+  const rawMotion = [0];
+  for (let i = 1; i < centers.length; i++) {
+    rawMotion.push(Math.hypot(centers[i].x - centers[i - 1].x, centers[i].y - centers[i - 1].y));
+  }
+  const motion = smooth(rawMotion);
+
+  let bestStart = 0;
+  let bestLength = 0;
+  let currentStart = 0;
+
+  for (let i = 0; i < motion.length; i++) {
+    if (motion[i] > threshold) {
+      currentStart = i + 1;
+      continue;
+    }
+    const length = i - currentStart + 1;
+    if (length > bestLength) {
+      bestLength = length;
+      bestStart = currentStart;
+    }
+  }
+
+  if (bestLength < minFrames) {
+    return { start: 0, end: frames.length - 1, detected: false };
+  }
+
+  return { start: bestStart, end: bestStart + bestLength - 1, detected: true };
+}
+
 export function medianAngles(frames: PoseAngles[]): PoseAngles {
   function median(values: number[]): number {
     const sorted = [...values].sort((a, b) => a - b);
