@@ -5,10 +5,6 @@ import type { FFmpeg } from "@ffmpeg/ffmpeg";
 // dynamique que Turbopack ne sait pas analyser statiquement ("Cannot find module
 // as expression is too dynamic"), même si cette branche n'est jamais exécutée.
 // Passer par une URL CDN + magic comments évite complètement l'analyse du bundler.
-const FFMPEG_URL =
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js";
-const FFMPEG_UTIL_URL =
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js";
 const FFMPEG_CORE_BASE_URL =
   "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
 
@@ -34,12 +30,14 @@ function getFFmpeg(): Promise<FFmpeg> {
       const { FFmpeg } = await import(
         /* webpackIgnore: true */
         /* turbopackIgnore: true */
-        FFMPEG_URL
+        // @ts-expect-error import distant (CDN), pas résolu par TypeScript
+        "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js"
       );
       const { toBlobURL } = await import(
         /* webpackIgnore: true */
         /* turbopackIgnore: true */
-        FFMPEG_UTIL_URL
+        // @ts-expect-error import distant (CDN), pas résolu par TypeScript
+        "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js"
       );
 
       const ffmpeg: FFmpeg = new FFmpeg();
@@ -73,7 +71,8 @@ export async function trimVideoFile(
   const { fetchFile } = await import(
     /* webpackIgnore: true */
     /* turbopackIgnore: true */
-    FFMPEG_UTIL_URL
+    // @ts-expect-error import distant (CDN), pas résolu par TypeScript
+    "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js"
   );
   const ffmpeg = await getFFmpeg();
 
