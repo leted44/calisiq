@@ -113,16 +113,14 @@ export default function UploadForm() {
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="w-full max-w-md space-y-4 rounded-lg bg-white p-6 shadow"
+      className="w-full max-w-md space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-6"
     >
-      <h2 className="text-lg font-semibold text-gray-900">
-        Uploader un hold
-      </h2>
+      <h2 className="text-lg font-semibold text-white">Uploader un hold</h2>
 
       <select
         value={progression}
         onChange={(e) => setProgression(e.target.value)}
-        className="w-full rounded border border-gray-300 px-3 py-2"
+        className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white outline-none focus:border-sky-500"
       >
         {PROGRESSIONS.map((p) => (
           <option key={p.value} value={p.value}>
@@ -136,15 +134,15 @@ export default function UploadForm() {
         name="video"
         accept="video/*"
         required
-        className="w-full text-sm"
+        className="w-full text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-slate-200 hover:file:bg-slate-700"
       />
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
       <button
         type="submit"
         disabled={uploading}
-        className="w-full rounded bg-gray-900 py-2 text-white disabled:opacity-50"
+        className="w-full rounded-lg bg-gradient-to-r from-sky-400 to-blue-600 py-2.5 font-medium text-white disabled:opacity-50"
       >
         {uploading ? "Envoi en cours..." : "Envoyer"}
       </button>

@@ -91,13 +91,13 @@ export default function PosePocPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col items-center gap-4 bg-gray-50 p-8">
-      <h1 className="text-xl font-semibold text-gray-900">
+    <div className="flex min-h-screen flex-col items-center gap-4 bg-slate-950 p-8">
+      <h1 className="text-xl font-semibold text-white">
         POC MediaPipe — squelette en direct
       </h1>
-      <p className="text-sm text-gray-500">{status}</p>
+      <p className="text-sm text-slate-500">{status}</p>
 
-      <div className="relative">
+      <div className="relative overflow-hidden rounded-xl border border-slate-800">
         <video
           ref={videoRef}
           className="w-[640px] max-w-full -scale-x-100"

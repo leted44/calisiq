@@ -276,13 +276,13 @@ export default function VideoPoseOverlay({
 
   return (
     <div className="space-y-3">
-      <div className="relative">
+      <div className="relative overflow-hidden rounded-xl border border-slate-800">
         <video
           ref={videoRef}
           src={videoUrl}
           controls
           crossOrigin="anonymous"
-          className="w-full rounded"
+          className="w-full"
         />
         <canvas
           ref={canvasRef}
@@ -295,7 +295,7 @@ export default function VideoPoseOverlay({
           type="button"
           onClick={() => setAnalyzing(true)}
           disabled={analyzing}
-          className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+          className="whitespace-nowrap rounded-lg bg-gradient-to-r from-sky-400 to-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {analyzing
             ? "Analyse en cours..."
@@ -305,9 +305,9 @@ export default function VideoPoseOverlay({
         </button>
 
         {analyzing && (
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-800">
             <div
-              className="h-full rounded-full bg-gray-900 transition-all"
+              className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-600 transition-all"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -315,7 +315,7 @@ export default function VideoPoseOverlay({
       </div>
 
       {analyzing && currentAngles && (
-        <p className="font-mono text-xs text-gray-500">
+        <p className="font-mono text-xs text-slate-500">
           coude: {currentAngles.elbowAngle.toFixed(0)}° · hanche:{" "}
           {currentAngles.hipAngle.toFixed(0)}° · inclinaison corps:{" "}
           {currentAngles.bodyLineAngleFromHorizontal.toFixed(0)}°
@@ -323,7 +323,7 @@ export default function VideoPoseOverlay({
       )}
 
       {!analyzing && analysisWarning && (
-        <p className="rounded bg-orange-50 p-2 text-xs text-orange-700">
+        <p className="rounded-lg bg-orange-500/10 p-2 text-xs text-orange-400">
           {analysisWarning}
         </p>
       )}
@@ -338,7 +338,7 @@ export default function VideoPoseOverlay({
       )}
 
       {saveError && (
-        <p className="text-xs text-red-600">
+        <p className="text-xs text-red-400">
           Score calculé mais non sauvegardé : {saveError}
         </p>
       )}
@@ -347,14 +347,14 @@ export default function VideoPoseOverlay({
         <button
           type="button"
           onClick={() => setShowDetails((v) => !v)}
-          className="text-xs text-gray-400 underline"
+          className="text-xs text-slate-500 underline hover:text-slate-400"
         >
           {showDetails ? "Masquer les détails techniques" : "Voir les détails techniques"}
         </button>
       )}
 
       {showDetails && (
-        <div className="space-y-1 rounded bg-gray-50 p-2 text-xs text-gray-500">
+        <div className="space-y-1 rounded-lg bg-slate-900 p-2 text-xs text-slate-500">
           {status && <p>{status}</p>}
           {holdWindow && (
             <p>
@@ -384,15 +384,15 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
 };
 
 function scoreColor(score: number): string {
-  if (score >= 7) return "bg-green-500";
+  if (score >= 7) return "bg-green-400";
   if (score >= 4) return "bg-orange-400";
   return "bg-red-500";
 }
 
 function scoreTextColor(score: number): string {
-  if (score >= 7) return "text-green-600";
-  if (score >= 4) return "text-orange-500";
-  return "text-red-600";
+  if (score >= 7) return "text-green-400";
+  if (score >= 4) return "text-orange-400";
+  return "text-red-500";
 }
 
 function ResultCard({
@@ -407,23 +407,23 @@ function ResultCard({
   recommendations: Recommendation[] | null;
 }) {
   return (
-    <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-4">
       <div className="flex items-center gap-4">
         {representativeFrame && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={representativeFrame}
             alt="Frame représentative du hold"
-            className="h-24 w-24 rounded object-cover"
+            className="h-24 w-24 rounded-lg object-cover"
           />
         )}
         <div>
-          <p className="text-xs uppercase tracking-wide text-gray-500">
+          <p className="text-xs uppercase tracking-wide text-slate-500">
             Score global
           </p>
           <p className={`text-3xl font-bold ${scoreTextColor(globalScoreValue)}`}>
             {globalScoreValue.toFixed(1)}
-            <span className="text-base font-normal text-gray-400">/10</span>
+            <span className="text-base font-normal text-slate-600">/10</span>
           </p>
         </div>
       </div>
@@ -435,7 +435,7 @@ function ResultCard({
           const decimals = isAngle ? 0 : 2;
           return (
             <div key={s.critere}>
-              <div className="mb-0.5 flex justify-between text-xs text-gray-600">
+              <div className="mb-0.5 flex justify-between text-xs text-slate-400">
                 <span>{CRITERE_LABELS[s.critere]}</span>
                 <span>
                   {s.score.toFixed(1)}/10 (mesuré {s.valeurMesuree.toFixed(decimals)}
@@ -443,7 +443,7 @@ function ResultCard({
                   {unit})
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
                 <div
                   className={`h-full rounded-full ${scoreColor(s.score)}`}
                   style={{ width: `${Math.min(100, s.score * 10)}%` }}
@@ -455,14 +455,15 @@ function ResultCard({
       </div>
 
       {recommendations && recommendations.length > 0 && (
-        <div className="rounded bg-blue-50 p-3">
-          <p className="mb-1 text-sm font-semibold text-gray-900">
+        <div className="rounded-lg border border-sky-900/50 bg-sky-500/10 p-3">
+          <p className="mb-1 text-sm font-semibold text-sky-300">
             À travailler en priorité
           </p>
-          <ul className="space-y-1 text-xs text-gray-700">
+          <ul className="space-y-1 text-xs text-slate-300">
             {recommendations.map((r) => (
               <li key={r.exercice}>
-                <span className="font-medium">{r.exercice}</span> — {r.raison}
+                <span className="font-medium text-white">{r.exercice}</span> —{" "}
+                {r.raison}
               </li>
             ))}
           </ul>
