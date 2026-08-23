@@ -22,9 +22,37 @@ export default function DeleteSessionButton({
     setDeleting(true);
     setError(null);
 
-    await supabase.from("scores").delete().eq("session_id", sessionId);
-    await supabase.from("recommendations").delete().eq("session_id", sessionId);
-    await supabase.storage.from("videos").remove([videoPath]);
+    const { error: scoresError } = await supabase
+      .from("scores")
+      .delete()
+      .eq("session_id", sessionId);
+    if (scoresError) {
+      setError("Suppression des scores échouée : " + scoresError.message);
+      setDeleting(false);
+      return;
+    }
+
+    const { error: recommendationsError } = await supabase
+      .from("recommendations")
+      .delete()
+      .eq("session_id", sessionId);
+    if (recommendationsError) {
+      setError(
+        "Suppression des recommandations échouée : " +
+          recommendationsError.message
+      );
+      setDeleting(false);
+      return;
+    }
+
+    const { error: storageError } = await supabase.storage
+      .from("videos")
+      .remove([videoPath]);
+    if (storageError) {
+      setError("Suppression de la vidéo échouée : " + storageError.message);
+      setDeleting(false);
+      return;
+    }
 
     const { error: deleteError } = await supabase
       .from("sessions")
