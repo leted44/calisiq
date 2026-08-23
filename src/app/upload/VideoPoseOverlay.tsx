@@ -44,6 +44,17 @@ function getLandmarker() {
   return sharedLandmarkerPromise;
 }
 
+function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
+  return new Promise((resolve) => {
+    function onSeeked() {
+      video.removeEventListener("seeked", onSeeked);
+      resolve();
+    }
+    video.addEventListener("seeked", onSeeked);
+    video.currentTime = time;
+  });
+}
+
 export default function VideoPoseOverlay({
   videoUrl,
   sessionId,
@@ -65,6 +76,8 @@ export default function VideoPoseOverlay({
   const [scores, setScores] = useState<CriterionScore[] | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[] | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [representativeFrame, setRepresentativeFrame] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   async function saveScores(
     criteriaScores: CriterionScore[],
@@ -106,6 +119,29 @@ export default function VideoPoseOverlay({
     if (sessionError) throw sessionError;
   }
 
+  async function captureRepresentativeFrame(index: number) {
+    const video = videoRef.current;
+    const landmarks = framesRef.current[index];
+    if (!video || !landmarks || framesRef.current.length === 0) return;
+
+    const targetTime =
+      (index / framesRef.current.length) * (video.duration || 0);
+    await seekTo(video, targetTime);
+
+    const offscreen = document.createElement("canvas");
+    offscreen.width = video.videoWidth;
+    offscreen.height = video.videoHeight;
+    const ctx = offscreen.getContext("2d");
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0, offscreen.width, offscreen.height);
+    const drawingUtils = new DrawingUtils(ctx);
+    drawingUtils.drawLandmarks(landmarks, { radius: 3 });
+    drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS);
+
+    setRepresentativeFrame(offscreen.toDataURL("image/jpeg", 0.85));
+  }
+
   useEffect(() => {
     if (!analyzing) return;
 
@@ -130,6 +166,7 @@ export default function VideoPoseOverlay({
       setHoldWindow(null);
       setScores(null);
       setRecommendations(null);
+      setRepresentativeFrame(null);
       video.currentTime = 0;
       await video.play();
 
@@ -159,6 +196,9 @@ export default function VideoPoseOverlay({
                 median.pelvisSagSign
               );
               setRecommendations(exercises);
+
+              const midIndex = Math.floor((window.start + window.end) / 2);
+              captureRepresentativeFrame(midIndex).catch(console.error);
 
               saveScores(criteriaScores, exercises).catch((err) => {
                 console.error(err);
@@ -203,8 +243,10 @@ export default function VideoPoseOverlay({
     };
   }, [analyzing]);
 
+  const showResults = !analyzing && scores !== null;
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="relative">
         <video
           ref={videoRef}
@@ -225,57 +267,146 @@ export default function VideoPoseOverlay({
         disabled={analyzing}
         className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
       >
-        {analyzing ? "Analyse en cours..." : "Analyser la pose"}
+        {analyzing
+          ? "Analyse en cours..."
+          : showResults
+          ? "Ré-analyser la pose"
+          : "Analyser la pose"}
       </button>
 
-      {status && <p className="text-xs text-gray-500">{status}</p>}
-
       {analyzing && currentAngles && (
-        <p className="font-mono text-xs text-gray-600">
+        <p className="font-mono text-xs text-gray-500">
           coude: {currentAngles.elbowAngle.toFixed(0)}° · hanche:{" "}
           {currentAngles.hipAngle.toFixed(0)}° · inclinaison corps:{" "}
           {currentAngles.bodyLineAngleFromHorizontal.toFixed(0)}°
         </p>
       )}
 
-      {holdWindow && (
-        <p className="text-xs text-gray-500">
-          {holdWindow.detected
-            ? `Hold détecté : frames ${holdWindow.start} à ${holdWindow.end} (sur ${framesRef.current.length} au total).`
-            : "Pas de segment immobile clairement détecté — médiane calculée sur toute la vidéo."}
+      {showResults && scores && (
+        <ResultCard
+          globalScoreValue={globalScore(scores)}
+          representativeFrame={representativeFrame}
+          scores={scores}
+          recommendations={recommendations}
+        />
+      )}
+
+      {saveError && (
+        <p className="text-xs text-red-600">
+          Score calculé mais non sauvegardé : {saveError}
         </p>
       )}
 
-      {summaryAngles && (
-        <p className="font-mono text-xs text-gray-800">
-          Médiane sur le hold — coude: {summaryAngles.elbowAngle.toFixed(0)}° ·
-          hanche: {summaryAngles.hipAngle.toFixed(0)}° · inclinaison corps:{" "}
-          {summaryAngles.bodyLineAngleFromHorizontal.toFixed(0)}°
-        </p>
+      {showResults && (
+        <button
+          type="button"
+          onClick={() => setShowDetails((v) => !v)}
+          className="text-xs text-gray-400 underline"
+        >
+          {showDetails ? "Masquer les détails techniques" : "Voir les détails techniques"}
+        </button>
       )}
 
-      {scores && (
-        <div className="rounded bg-gray-100 p-3">
-          <p className="mb-1 text-sm font-semibold text-gray-900">
-            Score global : {globalScore(scores).toFixed(1)}/10
-          </p>
-          <ul className="space-y-0.5 text-xs text-gray-700">
-            {scores.map((s) => {
-              const isAngle = s.critere === "hip_angle" || s.critere === "elbow_angle";
-              const unit = isAngle ? "°" : "";
-              const decimals = isAngle ? 0 : 2;
-              return (
-                <li key={s.critere}>
-                  {CRITERE_LABELS[s.critere]} : {s.score.toFixed(1)}/10 (mesuré{" "}
-                  {s.valeurMesuree.toFixed(decimals)}
-                  {unit}, cible {s.valeurCible.toFixed(decimals)}
-                  {unit})
-                </li>
-              );
-            })}
-          </ul>
+      {showDetails && (
+        <div className="space-y-1 rounded bg-gray-50 p-2 text-xs text-gray-500">
+          {status && <p>{status}</p>}
+          {holdWindow && (
+            <p>
+              {holdWindow.detected
+                ? `Hold détecté : frames ${holdWindow.start} à ${holdWindow.end} (sur ${framesRef.current.length} au total).`
+                : "Pas de segment immobile clairement détecté — médiane calculée sur toute la vidéo."}
+            </p>
+          )}
+          {summaryAngles && (
+            <p className="font-mono">
+              Médiane sur le hold — coude: {summaryAngles.elbowAngle.toFixed(0)}° ·
+              hanche: {summaryAngles.hipAngle.toFixed(0)}° · inclinaison corps:{" "}
+              {summaryAngles.bodyLineAngleFromHorizontal.toFixed(0)}°
+            </p>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
+  shoulder_protraction: "Protraction",
+  pelvis_deviation: "Bassin",
+  hip_angle: "Genou-hanche-épaule",
+  elbow_angle: "Coude",
+};
+
+function scoreColor(score: number): string {
+  if (score >= 7) return "bg-green-500";
+  if (score >= 4) return "bg-orange-400";
+  return "bg-red-500";
+}
+
+function scoreTextColor(score: number): string {
+  if (score >= 7) return "text-green-600";
+  if (score >= 4) return "text-orange-500";
+  return "text-red-600";
+}
+
+function ResultCard({
+  globalScoreValue,
+  representativeFrame,
+  scores,
+  recommendations,
+}: {
+  globalScoreValue: number;
+  representativeFrame: string | null;
+  scores: CriterionScore[];
+  recommendations: Recommendation[] | null;
+}) {
+  return (
+    <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center gap-4">
+        {representativeFrame && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={representativeFrame}
+            alt="Frame représentative du hold"
+            className="h-24 w-24 rounded object-cover"
+          />
+        )}
+        <div>
+          <p className="text-xs uppercase tracking-wide text-gray-500">
+            Score global
+          </p>
+          <p className={`text-3xl font-bold ${scoreTextColor(globalScoreValue)}`}>
+            {globalScoreValue.toFixed(1)}
+            <span className="text-base font-normal text-gray-400">/10</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {scores.map((s) => {
+          const isAngle = s.critere === "hip_angle" || s.critere === "elbow_angle";
+          const unit = isAngle ? "°" : "";
+          const decimals = isAngle ? 0 : 2;
+          return (
+            <div key={s.critere}>
+              <div className="mb-0.5 flex justify-between text-xs text-gray-600">
+                <span>{CRITERE_LABELS[s.critere]}</span>
+                <span>
+                  {s.score.toFixed(1)}/10 (mesuré {s.valeurMesuree.toFixed(decimals)}
+                  {unit}, cible {s.valeurCible.toFixed(decimals)}
+                  {unit})
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className={`h-full rounded-full ${scoreColor(s.score)}`}
+                  style={{ width: `${Math.min(100, s.score * 10)}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {recommendations && recommendations.length > 0 && (
         <div className="rounded bg-blue-50 p-3">
@@ -291,19 +422,6 @@ export default function VideoPoseOverlay({
           </ul>
         </div>
       )}
-
-      {saveError && (
-        <p className="text-xs text-red-600">
-          Score calculé mais non sauvegardé : {saveError}
-        </p>
-      )}
     </div>
   );
 }
-
-const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
-  shoulder_protraction: "Protraction",
-  pelvis_deviation: "Bassin",
-  hip_angle: "Genou-hanche-épaule",
-  elbow_angle: "Coude",
-};
