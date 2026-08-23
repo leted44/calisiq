@@ -11,6 +11,24 @@ const PROGRESSIONS = [
   { value: "full_planche", label: "Full planche" },
 ];
 
+const MIN_DURATION_SECONDS = 2;
+
+function getVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(video.src);
+      resolve(video.duration);
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(video.src);
+      reject(new Error("Impossible de lire ce fichier vidéo."));
+    };
+    video.src = URL.createObjectURL(file);
+  });
+}
+
 export default function UploadForm() {
   const router = useRouter();
   const supabase = createClient();
@@ -30,6 +48,21 @@ export default function UploadForm() {
     const file = fileInput.files?.[0];
     if (!file) {
       setError("Choisis une vidéo.");
+      return;
+    }
+
+    let duration: number;
+    try {
+      duration = await getVideoDuration(file);
+    } catch {
+      setError("Impossible de lire ce fichier vidéo. Essaie un autre fichier.");
+      return;
+    }
+
+    if (duration < MIN_DURATION_SECONDS) {
+      setError(
+        `Vidéo trop courte (${duration.toFixed(1)}s) : il faut au moins ${MIN_DURATION_SECONDS}s pour capturer un hold stable.`
+      );
       return;
     }
 

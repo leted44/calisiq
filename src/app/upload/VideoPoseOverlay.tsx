@@ -68,6 +68,7 @@ export default function VideoPoseOverlay({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const framesRef = useRef<NormalizedLandmark[][]>([]);
   const anglesRef = useRef<PoseAngles[]>([]);
+  const attemptedFramesRef = useRef(0);
   const [analyzing, setAnalyzing] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [currentAngles, setCurrentAngles] = useState<PoseAngles | null>(null);
@@ -78,6 +79,8 @@ export default function VideoPoseOverlay({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [representativeFrame, setRepresentativeFrame] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [analysisWarning, setAnalysisWarning] = useState<string | null>(null);
 
   async function saveScores(
     criteriaScores: CriterionScore[],
@@ -162,11 +165,14 @@ export default function VideoPoseOverlay({
 
       framesRef.current = [];
       anglesRef.current = [];
+      attemptedFramesRef.current = 0;
       setSummaryAngles(null);
       setHoldWindow(null);
       setScores(null);
       setRecommendations(null);
       setRepresentativeFrame(null);
+      setProgressPercent(0);
+      setAnalysisWarning(null);
       video.currentTime = 0;
       await video.play();
 
@@ -174,9 +180,26 @@ export default function VideoPoseOverlay({
         if (cancelled || !video || video.paused || video.ended) {
           if (!cancelled) {
             setAnalyzing(false);
+
+            const detectionRate =
+              attemptedFramesRef.current > 0
+                ? framesRef.current.length / attemptedFramesRef.current
+                : 0;
+
             setStatus(
               `Analyse terminée : ${framesRef.current.length} frames traitées.`
             );
+
+            if (framesRef.current.length === 0) {
+              setAnalysisWarning(
+                "Aucun corps détecté dans cette vidéo. Vérifie que tu es entièrement visible dans le cadre, avec un bon éclairage."
+              );
+            } else if (detectionRate < 0.5) {
+              setAnalysisWarning(
+                `Corps détecté seulement sur ${Math.round(detectionRate * 100)}% des frames — vérifie le cadrage et l'angle de caméra pour un résultat fiable.`
+              );
+            }
+
             if (framesRef.current.length > 0) {
               const window = detectHoldWindow(framesRef.current);
               setHoldWindow(window);
@@ -209,6 +232,12 @@ export default function VideoPoseOverlay({
           return;
         }
 
+        attemptedFramesRef.current += 1;
+        if (video.duration > 0) {
+          setProgressPercent(
+            Math.min(100, Math.round((video.currentTime / video.duration) * 100))
+          );
+        }
         const result = landmarker.detectForVideo(video, performance.now());
 
         ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
@@ -261,24 +290,41 @@ export default function VideoPoseOverlay({
         />
       </div>
 
-      <button
-        type="button"
-        onClick={() => setAnalyzing(true)}
-        disabled={analyzing}
-        className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
-      >
-        {analyzing
-          ? "Analyse en cours..."
-          : showResults
-          ? "Ré-analyser la pose"
-          : "Analyser la pose"}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setAnalyzing(true)}
+          disabled={analyzing}
+          className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+        >
+          {analyzing
+            ? "Analyse en cours..."
+            : showResults
+            ? "Ré-analyser la pose"
+            : "Analyser la pose"}
+        </button>
+
+        {analyzing && (
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
+            <div
+              className="h-full rounded-full bg-gray-900 transition-all"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        )}
+      </div>
 
       {analyzing && currentAngles && (
         <p className="font-mono text-xs text-gray-500">
           coude: {currentAngles.elbowAngle.toFixed(0)}° · hanche:{" "}
           {currentAngles.hipAngle.toFixed(0)}° · inclinaison corps:{" "}
           {currentAngles.bodyLineAngleFromHorizontal.toFixed(0)}°
+        </p>
+      )}
+
+      {!analyzing && analysisWarning && (
+        <p className="rounded bg-orange-50 p-2 text-xs text-orange-700">
+          {analysisWarning}
         </p>
       )}
 
