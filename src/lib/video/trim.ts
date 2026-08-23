@@ -28,32 +28,54 @@ export async function trimVideoFile(
 ): Promise<File> {
   const ffmpeg = await getFFmpeg();
 
-  const extension = file.name.match(/\.\w+$/)?.[0] ?? ".mp4";
-  const inputName = `input${extension}`;
-  const outputName = "output.mp4";
+  const logs: string[] = [];
+  const onLog = ({ message }: { message: string }) => {
+    logs.push(message);
+  };
+  ffmpeg.on("log", onLog);
 
-  await ffmpeg.writeFile(inputName, await fetchFile(file));
+  try {
+    const extension = file.name.match(/\.\w+$/)?.[0] ?? ".mp4";
+    const inputName = `input${extension}`;
+    const outputName = "output.mp4";
 
-  await ffmpeg.exec([
-    "-ss",
-    start.toFixed(2),
-    "-i",
-    inputName,
-    "-t",
-    (end - start).toFixed(2),
-    "-c",
-    "copy",
-    outputName,
-  ]);
+    await ffmpeg.writeFile(inputName, await fetchFile(file));
 
-  const data = await ffmpeg.readFile(outputName);
-  await ffmpeg.deleteFile(inputName);
-  await ffmpeg.deleteFile(outputName);
+    const exitCode = await ffmpeg.exec([
+      "-ss",
+      start.toFixed(2),
+      "-i",
+      inputName,
+      "-t",
+      (end - start).toFixed(2),
+      "-c",
+      "copy",
+      outputName,
+    ]);
 
-  const bytes =
-    typeof data === "string" ? new TextEncoder().encode(data) : data;
+    if (exitCode !== 0) {
+      throw new Error(
+        `ffmpeg a échoué (code ${exitCode}) : ${logs.slice(-5).join(" | ")}`
+      );
+    }
 
-  return new File([new Uint8Array(bytes)], "trimmed.mp4", {
-    type: "video/mp4",
-  });
+    const data = await ffmpeg.readFile(outputName);
+    await ffmpeg.deleteFile(inputName);
+    await ffmpeg.deleteFile(outputName);
+
+    const bytes =
+      typeof data === "string" ? new TextEncoder().encode(data) : data;
+
+    if (bytes.length === 0) {
+      throw new Error(
+        `Fichier découpé vide. Logs : ${logs.slice(-5).join(" | ")}`
+      );
+    }
+
+    return new File([new Uint8Array(bytes)], "trimmed.mp4", {
+      type: "video/mp4",
+    });
+  } finally {
+    ffmpeg.off("log", onLog);
+  }
 }

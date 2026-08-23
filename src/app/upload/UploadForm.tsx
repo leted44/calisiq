@@ -146,7 +146,9 @@ export default function UploadForm() {
       trimmedFile = await trimVideoFile(file, trimStart, trimEnd);
     } catch (err) {
       console.error(err);
-      setError("Le découpage de la vidéo a échoué. Réessaie.");
+      setError(
+        "Le découpage de la vidéo a échoué : " + (err as Error).message
+      );
       setTrimming(false);
       return;
     }
