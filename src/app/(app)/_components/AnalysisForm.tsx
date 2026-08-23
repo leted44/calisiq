@@ -88,7 +88,7 @@ export default function AnalysisForm() {
   const chunksRef = useRef<Blob[]>([]);
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [figure, setFigure] = useState<Figure>("planche");
+  const [figure, setFigure] = useState<Figure | null>(null);
   const [progression, setProgression] = useState(PROGRESSIONS[0].value);
   const [exerciseType, setExerciseType] = useState<ExerciseType>(
     EXERCISE_TYPES[0].value
@@ -424,6 +424,8 @@ export default function AnalysisForm() {
         </div>
       </div>
 
+      {figure && (
+      <>
       <div className="space-y-3">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Variation
@@ -713,6 +715,8 @@ export default function AnalysisForm() {
             <p className="text-center text-xs text-slate-500">Enregistrement...</p>
           )}
         </form>
+      )}
+      </>
       )}
     </div>
   );
