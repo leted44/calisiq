@@ -24,6 +24,24 @@ function toError(err: unknown): Error {
   );
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Timeout (${label}) après ${ms / 1000}s`));
+    }, ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
 function getFFmpeg(): Promise<FFmpeg> {
   if (!ffmpegPromise) {
     ffmpegPromise = (async () => {
@@ -41,20 +59,28 @@ function getFFmpeg(): Promise<FFmpeg> {
       );
 
       const ffmpeg: FFmpeg = new FFmpeg();
-      await ffmpeg.load({
-        classWorkerURL: await toBlobURL(
-          "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/worker.js",
-          "text/javascript"
-        ),
-        coreURL: await toBlobURL(
-          `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.js`,
-          "text/javascript"
-        ),
-        wasmURL: await toBlobURL(
-          `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.wasm`,
-          "application/wasm"
-        ),
+      ffmpeg.on("log", ({ message }: { message: string }) => {
+        console.log("[ffmpeg]", message);
       });
+
+      await withTimeout(
+        ffmpeg.load({
+          classWorkerURL: await toBlobURL(
+            "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/worker.js",
+            "text/javascript"
+          ),
+          coreURL: await toBlobURL(
+            `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.js`,
+            "text/javascript"
+          ),
+          wasmURL: await toBlobURL(
+            `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.wasm`,
+            "application/wasm"
+          ),
+        }),
+        30000,
+        "chargement de ffmpeg"
+      );
       return ffmpeg;
     })().catch((err) => {
       ffmpegPromise = null;
@@ -83,6 +109,7 @@ export async function trimVideoFile(
   const logs: string[] = [];
   const onLog = ({ message }: { message: string }) => {
     logs.push(message);
+    console.log("[ffmpeg]", message);
   };
   ffmpeg.on("log", onLog);
 
@@ -91,19 +118,27 @@ export async function trimVideoFile(
     const inputName = `input${extension}`;
     const outputName = "output.mp4";
 
-    await ffmpeg.writeFile(inputName, await fetchFile(file));
+    await withTimeout(
+      ffmpeg.writeFile(inputName, await fetchFile(file)),
+      30000,
+      "écriture du fichier"
+    );
 
-    const exitCode = await ffmpeg.exec([
-      "-ss",
-      start.toFixed(2),
-      "-i",
-      inputName,
-      "-t",
-      (end - start).toFixed(2),
-      "-c",
-      "copy",
-      outputName,
-    ]);
+    const exitCode = await withTimeout(
+      ffmpeg.exec([
+        "-ss",
+        start.toFixed(2),
+        "-i",
+        inputName,
+        "-t",
+        (end - start).toFixed(2),
+        "-c",
+        "copy",
+        outputName,
+      ]),
+      30000,
+      "découpage (exec)"
+    );
 
     if (exitCode !== 0) {
       throw new Error(
@@ -128,7 +163,8 @@ export async function trimVideoFile(
       type: "video/mp4",
     });
   } catch (err) {
-    throw toError(err);
+    const message = toError(err).message;
+    throw new Error(`${message} — logs: ${logs.slice(-8).join(" | ") || "aucun log"}`);
   } finally {
     ffmpeg.off("log", onLog);
   }
