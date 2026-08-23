@@ -402,7 +402,7 @@ export default function AnalysisForm() {
                 key={f.value}
                 type="button"
                 disabled={!f.available}
-                onClick={() => setFigure(f.value)}
+                onClick={() => setFigure(figure === f.value ? null : f.value)}
                 className={`relative flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-colors ${
                   !f.available
                     ? "cursor-not-allowed border-slate-800 bg-slate-800/40 text-slate-600"
