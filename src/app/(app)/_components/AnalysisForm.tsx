@@ -527,6 +527,38 @@ export default function AnalysisForm() {
     }
   }
 
+  // Rejoue la mesure sur la même vidéo sans re-sauvegarder — contrairement à
+  // handleSubmit, n'appelle pas persist() pour éviter de dupliquer la
+  // session et l'upload vidéo dans l'historique. Sert juste à vérifier
+  // qu'il n'y a pas eu d'erreur ponctuelle sur la première analyse.
+  async function handleReanalyze() {
+    setError(null);
+    if (!previewVideoRef.current || !canvasRef.current) return;
+
+    setAnalyzing(true);
+    setResult(null);
+    setProgressPercent(0);
+
+    try {
+      const analysisResult = await runPoseAnalysis({
+        video: previewVideoRef.current,
+        canvas: canvasRef.current,
+        progression: progression as Progression,
+        rangeStart: trimStart,
+        rangeEnd: trimEnd,
+        onProgress: setProgressPercent,
+        onLiveAngles: setLiveAngles,
+      });
+
+      setAnalyzing(false);
+      setResult(analysisResult);
+    } catch (err) {
+      console.error(err);
+      setAnalyzing(false);
+      setError("L'analyse a échoué : " + (err as Error).message);
+    }
+  }
+
   const variationAvailable = figure
     ? VARIATIONS_BY_FIGURE[figure].some((v) => v.value === progression && v.available)
     : false;
@@ -943,13 +975,27 @@ export default function AnalysisForm() {
           )}
 
           {result && (
-            <button
-              type="button"
-              onClick={handleRemoveVideo}
-              className="w-full rounded-lg border border-slate-700 py-2.5 font-medium text-slate-200 hover:border-slate-600"
-            >
-              Nouvelle analyse
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleReanalyze}
+                className="w-full rounded-lg border border-slate-700 py-2.5 font-medium text-slate-200 hover:border-slate-600"
+              >
+                Réanalyser cette vidéo
+              </button>
+              <p className="text-center text-xs text-slate-500">
+                Vérifie la cohérence du résultat, sans re-sauvegarder. Le
+                score déjà enregistré dans l&apos;historique n&apos;est pas
+                modifié.
+              </p>
+              <button
+                type="button"
+                onClick={handleRemoveVideo}
+                className="w-full rounded-lg border border-slate-700 py-2.5 font-medium text-slate-200 hover:border-slate-600"
+              >
+                Nouvelle analyse
+              </button>
+            </div>
           )}
 
           {saving && (

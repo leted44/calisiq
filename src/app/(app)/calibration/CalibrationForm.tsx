@@ -122,6 +122,16 @@ export default function CalibrationForm() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  // Garde le même média et la même découpe, ne fait que rejouer la mesure —
+  // utile pour vérifier qu'il n'y a pas eu d'erreur ponctuelle avant de noter.
+  function handleRemeasure() {
+    setResult(null);
+    setRating("");
+    setNotes("");
+    setSaved(false);
+    setError(null);
+  }
+
   function seekPreview(time: number) {
     const video = previewVideoRef.current;
     if (!video) return;
@@ -509,6 +519,13 @@ export default function CalibrationForm() {
               >
                 {saving ? "Enregistrement..." : "Enregistrer l'échantillon"}
               </button>
+              <button
+                type="button"
+                onClick={handleRemeasure}
+                className="w-full rounded-lg border border-slate-700 py-2.5 text-sm font-medium text-slate-300 hover:border-slate-600"
+              >
+                Remesurer (même média)
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -528,9 +545,18 @@ export default function CalibrationForm() {
       )}
 
       {mediaUrl && result && !result.ok && (
-        <p className="rounded-lg bg-orange-500/10 p-3 text-sm text-orange-400">
-          {result.warning}
-        </p>
+        <div className="space-y-3">
+          <p className="rounded-lg bg-orange-500/10 p-3 text-sm text-orange-400">
+            {result.warning}
+          </p>
+          <button
+            type="button"
+            onClick={handleRemeasure}
+            className="w-full rounded-lg border border-slate-700 py-2.5 text-sm font-medium text-slate-300 hover:border-slate-600"
+          >
+            Remesurer (même média)
+          </button>
+        </div>
       )}
     </div>
   );
