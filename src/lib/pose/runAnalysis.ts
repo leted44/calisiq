@@ -218,6 +218,58 @@ export async function runPoseAnalysis({
   };
 }
 
+// Mesure une seule image fixe (photo) au lieu d'une vidéo — même modèle
+// partagé (mode VIDEO accepte aussi une source image unique), pas de
+// fenêtre de hold puisqu'il n'y a qu'une frame. Renvoie un objet au même
+// format que runPoseAnalysis pour réutiliser le même affichage.
+export async function measureImage(
+  image: HTMLImageElement
+): Promise<PoseAnalysisResult> {
+  const landmarker = await getLandmarker();
+
+  const result = landmarker.detectForVideo(image, performance.now());
+
+  if (result.landmarks.length === 0) {
+    return {
+      ok: false,
+      framesAnalyzed: 0,
+      detectionRate: 0,
+      warning:
+        "Aucun corps détecté sur cette image. Vérifie que la personne est entièrement visible.",
+    };
+  }
+
+  const landmarks = result.landmarks[0];
+  const angles = computeAngles(landmarks);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const ctx = canvas.getContext("2d");
+  let representativeFrameDataUrl: string | null = null;
+  if (ctx) {
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const drawingUtils = new DrawingUtils(ctx);
+    drawingUtils.drawLandmarks(landmarks, { radius: 4 });
+    drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS);
+    representativeFrameDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+  }
+
+  return {
+    ok: true,
+    framesAnalyzed: 1,
+    detectionRate: 1,
+    warning: null,
+    holdWindow: { start: 0, end: 0, detected: true },
+    holdDurationSeconds: 0,
+    summaryAngles: angles,
+    scores: [],
+    globalScoreValue: 0,
+    recommendations: [],
+    representativeFrameDataUrl,
+  };
+}
+
 async function captureFrame(
   video: HTMLVideoElement,
   landmarks: NormalizedLandmark[] | undefined,

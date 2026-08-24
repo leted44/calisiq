@@ -2,7 +2,11 @@
 
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis";
+import {
+  runPoseAnalysis,
+  measureImage,
+  type PoseAnalysisResult,
+} from "@/lib/pose/runAnalysis";
 
 const VARIATIONS = [
   { value: "tuck_planche", label: "Tuck Planche", figure: "planche" },
@@ -42,14 +46,17 @@ export default function CalibrationForm() {
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const previewImageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [variation, setVariation] = useState<(typeof VARIATIONS)[number]["value"]>(
     VARIATIONS[0].value
   );
   const figure = VARIATIONS.find((v) => v.value === variation)?.figure ?? "planche";
+
+  const [mediaKind, setMediaKind] = useState<"video" | "image" | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
@@ -71,26 +78,37 @@ export default function CalibrationForm() {
     setResult(null);
     setSaved(false);
 
+    if (mediaUrl) URL.revokeObjectURL(mediaUrl);
+
+    if (selected.type.startsWith("image/")) {
+      setFile(selected);
+      setMediaUrl(URL.createObjectURL(selected));
+      setMediaKind("image");
+      setDuration(null);
+      return;
+    }
+
     let videoDuration: number;
     try {
       videoDuration = await getVideoDuration(selected);
     } catch {
-      setError("Impossible de lire cette vidéo. Essaie un autre fichier.");
+      setError("Impossible de lire ce fichier. Essaie une autre vidéo ou photo.");
       return;
     }
 
-    if (videoUrl) URL.revokeObjectURL(videoUrl);
     setFile(selected);
-    setVideoUrl(URL.createObjectURL(selected));
+    setMediaUrl(URL.createObjectURL(selected));
+    setMediaKind("video");
     setDuration(videoDuration);
     setTrimStart(0);
     setTrimEnd(videoDuration);
   }
 
   function handleReset() {
-    if (videoUrl) URL.revokeObjectURL(videoUrl);
+    if (mediaUrl) URL.revokeObjectURL(mediaUrl);
     setFile(null);
-    setVideoUrl(null);
+    setMediaUrl(null);
+    setMediaKind(null);
     setDuration(null);
     setTrimStart(0);
     setTrimEnd(0);
@@ -122,6 +140,22 @@ export default function CalibrationForm() {
 
   async function handleMeasure() {
     setError(null);
+
+    if (mediaKind === "image") {
+      if (!previewImageRef.current) return;
+      setAnalyzing(true);
+      setResult(null);
+      try {
+        const analysisResult = await measureImage(previewImageRef.current);
+        setAnalyzing(false);
+        setResult(analysisResult);
+      } catch (err) {
+        setAnalyzing(false);
+        setError("La mesure a échoué : " + (err as Error).message);
+      }
+      return;
+    }
+
     if (!file || !duration || !previewVideoRef.current || !canvasRef.current) return;
 
     if (trimEnd - trimStart < MIN_TRIM_SECONDS) {
@@ -218,24 +252,62 @@ export default function CalibrationForm() {
         </select>
       </div>
 
-      {!videoUrl && (
+      {!mediaUrl && (
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="w-full rounded-xl border border-slate-700 bg-slate-800 py-6 text-sm font-medium text-slate-200 hover:border-cyan-700"
         >
-          Importer une vidéo
+          Importer une vidéo ou une photo
         </button>
       )}
       <input
         ref={fileInputRef}
         type="file"
-        accept="video/*"
+        accept="video/*,image/*"
         onChange={handleFileChange}
         className="hidden"
       />
 
-      {videoUrl && duration !== null && (
+      {mediaUrl && mediaKind === "image" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Photo
+            </p>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="text-xs text-red-400 hover:text-red-300"
+            >
+              Changer
+            </button>
+          </div>
+
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={previewImageRef}
+            src={mediaUrl}
+            alt="Aperçu"
+            className="w-full rounded-xl border border-slate-800"
+          />
+
+          {error && <p className="text-sm text-red-400">{error}</p>}
+
+          {!result && (
+            <button
+              type="button"
+              onClick={handleMeasure}
+              disabled={analyzing}
+              className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)] disabled:opacity-50"
+            >
+              {analyzing ? "Mesure..." : "Mesurer"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {mediaUrl && mediaKind === "video" && duration !== null && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -246,12 +318,12 @@ export default function CalibrationForm() {
               onClick={handleReset}
               className="text-xs text-red-400 hover:text-red-300"
             >
-              Changer de vidéo
+              Changer
             </button>
           </div>
 
           <div className="relative overflow-hidden rounded-xl border border-slate-800">
-            <video ref={previewVideoRef} src={videoUrl} controls playsInline className="w-full" />
+            <video ref={previewVideoRef} src={mediaUrl} controls playsInline className="w-full" />
             <canvas
               ref={canvasRef}
               className="pointer-events-none absolute left-0 top-0 h-full w-full"
@@ -319,142 +391,142 @@ export default function CalibrationForm() {
               Mesurer
             </button>
           )}
+        </div>
+      )}
 
-          {result && result.ok && (
-            <div className="space-y-4">
-              {result.warning && (
-                <p className="rounded-lg bg-orange-500/10 p-2 text-xs text-orange-400">
-                  {result.warning}
-                </p>
-              )}
-
-              <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900 p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Angles mesurés
-                </p>
-                <dl className="space-y-1.5 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Coude</dt>
-                    <dd className="font-mono text-white">
-                      {result.summaryAngles.elbowAngle.toFixed(1)}°
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Hanche</dt>
-                    <dd className="font-mono text-white">
-                      {result.summaryAngles.hipAngle.toFixed(1)}°
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Genou</dt>
-                    <dd className="font-mono text-white">
-                      {result.summaryAngles.kneeAngle.toFixed(1)}°
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Ligne de corps (vs horizontale)</dt>
-                    <dd className="font-mono text-white">
-                      {result.summaryAngles.bodyLineAngleFromHorizontal.toFixed(1)}°
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Ouverture épaule (hanche-épaule-poignet)</dt>
-                    <dd className="font-mono text-white">
-                      {result.summaryAngles.shoulderFlexionAngle.toFixed(1)}°
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Protraction épaules</dt>
-                    <dd className="font-mono text-white">
-                      {result.summaryAngles.shoulderProtraction.toFixed(3)}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Déviation bassin</dt>
-                    <dd className="font-mono text-white">
-                      {result.summaryAngles.pelvisDeviation.toFixed(3)}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Signe sag/pike bassin</dt>
-                    <dd className="font-mono text-white">
-                      {result.summaryAngles.pelvisSagSign.toFixed(3)}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-
-              {result.representativeFrameDataUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={result.representativeFrameDataUrl}
-                  alt="Frame représentative"
-                  className="w-full rounded-xl border border-slate-800"
-                />
-              )}
-
-              {!saved ? (
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                      Ta note (0-10)
-                    </label>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      max={10}
-                      step={0.5}
-                      value={rating}
-                      onChange={(e) => setRating(e.target.value)}
-                      placeholder="Ex. 8"
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                      Notes (facultatif)
-                    </label>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Ex. léger arch dans le dos, coudes tendus"
-                      rows={2}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSaveSample}
-                    disabled={saving}
-                    className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)] disabled:opacity-50"
-                  >
-                    {saving ? "Enregistrement..." : "Enregistrer l'échantillon"}
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="rounded-lg bg-green-500/10 p-3 text-sm text-green-400">
-                    Échantillon enregistré.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="w-full rounded-lg border border-slate-700 py-2.5 font-medium text-slate-200 hover:border-slate-600"
-                  >
-                    Mesurer un autre essai
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {result && !result.ok && (
-            <p className="rounded-lg bg-orange-500/10 p-3 text-sm text-orange-400">
+      {mediaUrl && result && result.ok && (
+        <div className="space-y-4">
+          {result.warning && (
+            <p className="rounded-lg bg-orange-500/10 p-2 text-xs text-orange-400">
               {result.warning}
             </p>
           )}
+
+          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Angles mesurés
+            </p>
+            <dl className="space-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-slate-400">Coude</dt>
+                <dd className="font-mono text-white">
+                  {result.summaryAngles.elbowAngle.toFixed(1)}°
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-400">Hanche</dt>
+                <dd className="font-mono text-white">
+                  {result.summaryAngles.hipAngle.toFixed(1)}°
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-400">Genou</dt>
+                <dd className="font-mono text-white">
+                  {result.summaryAngles.kneeAngle.toFixed(1)}°
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-400">Ligne de corps (vs horizontale)</dt>
+                <dd className="font-mono text-white">
+                  {result.summaryAngles.bodyLineAngleFromHorizontal.toFixed(1)}°
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-400">Ouverture épaule (hanche-épaule-poignet)</dt>
+                <dd className="font-mono text-white">
+                  {result.summaryAngles.shoulderFlexionAngle.toFixed(1)}°
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-400">Protraction épaules</dt>
+                <dd className="font-mono text-white">
+                  {result.summaryAngles.shoulderProtraction.toFixed(3)}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-400">Déviation bassin</dt>
+                <dd className="font-mono text-white">
+                  {result.summaryAngles.pelvisDeviation.toFixed(3)}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-slate-400">Signe sag/pike bassin</dt>
+                <dd className="font-mono text-white">
+                  {result.summaryAngles.pelvisSagSign.toFixed(3)}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          {result.representativeFrameDataUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={result.representativeFrameDataUrl}
+              alt="Frame représentative"
+              className="w-full rounded-xl border border-slate-800"
+            />
+          )}
+
+          {!saved ? (
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Ta note (0-10)
+                </label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={10}
+                  step={0.5}
+                  value={rating}
+                  onChange={(e) => setRating(e.target.value)}
+                  placeholder="Ex. 8"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Notes (facultatif)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Ex. léger arch dans le dos, coudes tendus"
+                  rows={2}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveSample}
+                disabled={saving}
+                className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)] disabled:opacity-50"
+              >
+                {saving ? "Enregistrement..." : "Enregistrer l'échantillon"}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="rounded-lg bg-green-500/10 p-3 text-sm text-green-400">
+                Échantillon enregistré.
+              </p>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="w-full rounded-lg border border-slate-700 py-2.5 font-medium text-slate-200 hover:border-slate-600"
+              >
+                Mesurer un autre essai
+              </button>
+            </div>
+          )}
         </div>
+      )}
+
+      {mediaUrl && result && !result.ok && (
+        <p className="rounded-lg bg-orange-500/10 p-3 text-sm text-orange-400">
+          {result.warning}
+        </p>
       )}
     </div>
   );
