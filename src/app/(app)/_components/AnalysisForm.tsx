@@ -31,7 +31,7 @@ import {
 
 type Figure = "planche" | "handstand";
 type ExerciseType = "hold" | "press" | "push_up";
-type HandstandVariation = "handstand" | "handstand_push_up" | "one_arm_handstand";
+type HandstandVariation = "handstand_push_up" | "one_arm_handstand";
 type Variation = Progression | HandstandVariation;
 
 const FIGURES: {
@@ -101,7 +101,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       value: "handstand",
       label: "Handstand",
       Icon: HandstandFigureIcon,
-      available: false,
+      available: true,
       image: "/figures/handstand.png",
     },
     { value: "handstand_push_up", label: "Handstand Push-up", Icon: HandstandPushUpIcon, available: false },
@@ -492,7 +492,7 @@ export default function AnalysisForm() {
       return;
     }
 
-    if (exerciseType !== "hold" || figure !== "planche") {
+    if (exerciseType !== "hold" || !variationAvailable) {
       setError("Cette combinaison figure/variation n'est pas encore disponible.");
       return;
     }

@@ -41,11 +41,18 @@ export function scoreAngles(
   return [
     {
       critere: "shoulder_protraction",
-      score: scoreFromMinimum(
-        angles.shoulderProtraction,
-        grid.shoulder_protraction.target,
-        grid.shoulder_protraction.tolerance
-      ),
+      score:
+        grid.shoulder_protraction.mode === "band"
+          ? scoreFromThreshold(
+              angles.shoulderProtraction,
+              grid.shoulder_protraction.target,
+              grid.shoulder_protraction.tolerance
+            )
+          : scoreFromMinimum(
+              angles.shoulderProtraction,
+              grid.shoulder_protraction.target,
+              grid.shoulder_protraction.tolerance
+            ),
       valeurMesuree: angles.shoulderProtraction,
       valeurCible: grid.shoulder_protraction.target,
     },

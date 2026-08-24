@@ -13,14 +13,17 @@ ne code pas.
 
 ## Scope MVP — limites strictes
 
-**Figure fonctionnelle : la planche**, sur ses 4 progressions (tuck planche,
-advanced tuck, straddle planche, full planche). C'est la seule figure avec
-un scoring réellement calibré.
+**Figures fonctionnelles : la planche** (tuck planche, advanced tuck,
+straddle planche, full planche) **et le handstand statique**. Scoring
+calibré pour les deux — planche à partir de standards de coaching affinés
+sur cas réels, handstand à partir d'échantillons réels mesurés via l'outil
+`/calibration` (hanche/bassin) complétés par raisonnement biomécanique
+(coude/épaules, à affiner si plus de données isolées deviennent
+disponibles — voir commentaires dans `src/lib/pose/grid.ts`).
 
-**Handstand** apparaît comme option dans le sélecteur de figure (roadmap
-visible), mais reste marqué "bientôt disponible" tant que ses métriques
-(angles, seuils) n'ont pas été définies et calibrées — pas de scoring
-fantôme/approximatif en attendant.
+**Handstand Push-up et One Arm Handstand** apparaissent comme options mais
+restent marqués "bientôt disponible" tant que leurs métriques n'ont pas été
+définies et calibrées — pas de scoring fantôme/approximatif en attendant.
 
 Vision à plus long terme (hors scope actuel, à traiter une figure à la fois) :
 tractions, muscle-up, et d'autres mouvements de calisthénie. Ne pas

@@ -8,6 +8,7 @@ const PROGRESSION_LABELS: Record<string, string> = {
   advanced_tuck_planche: "Advanced tuck planche",
   straddle_planche: "Straddle planche",
   full_planche: "Full planche",
+  handstand: "Handstand",
 };
 
 const STATUS_LABELS: Record<string, string> = {
