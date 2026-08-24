@@ -155,6 +155,7 @@ export default function AnalysisForm() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [figure, setFigure] = useState<Figure | null>(null);
   const [progression, setProgression] = useState<Variation>(
@@ -182,6 +183,7 @@ export default function AnalysisForm() {
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   const [pendingAction, setPendingAction] = useState<"import" | "camera" | null>(null);
 
@@ -270,12 +272,21 @@ export default function AnalysisForm() {
     if (action === "camera") openCamera();
   }
 
-  async function startStream(mode: "user" | "environment") {
+  async function startStream(mode: "user" | "environment", exact: boolean) {
+    // La caméra précédente doit être libérée avant d'en demander une
+    // nouvelle : sur mobile, deux flux caméra actifs en même temps
+    // font souvent planter ou bloquer la nouvelle requête.
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
+      video: {
+        facingMode: exact ? { exact: mode } : mode,
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
       audio: false,
     });
-    streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = stream;
     setFacingMode(mode);
     if (cameraVideoRef.current) {
@@ -287,7 +298,7 @@ export default function AnalysisForm() {
   async function openCamera() {
     setError(null);
     try {
-      await startStream(facingMode);
+      await startStream(facingMode, false);
       setCameraMode(true);
     } catch (err) {
       setError("Impossible d'accéder à la caméra : " + (err as Error).message);
@@ -296,10 +307,19 @@ export default function AnalysisForm() {
 
   async function flipCamera() {
     setError(null);
+    const nextMode = facingMode === "user" ? "environment" : "user";
     try {
-      await startStream(facingMode === "user" ? "environment" : "user");
-    } catch (err) {
-      setError("Impossible de changer de caméra : " + (err as Error).message);
+      // "exact" force un vrai changement de caméra ; sans ça certains
+      // navigateurs renvoient silencieusement la même caméra qu'avant.
+      await startStream(nextMode, true);
+    } catch {
+      setError("Aucune autre caméra disponible sur cet appareil.");
+      try {
+        await startStream(facingMode, false);
+      } catch {
+        // la caméra précédente ne peut pas être restaurée, l'utilisateur
+        // devra fermer et rouvrir "Se filmer"
+      }
     }
   }
 
@@ -308,7 +328,25 @@ export default function AnalysisForm() {
     streamRef.current = null;
     setCameraMode(false);
     setRecording(false);
+    setCountdown(null);
     if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+  }
+
+  function beginCountdown() {
+    let remaining = 5;
+    setCountdown(remaining);
+    countdownTimerRef.current = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+        setCountdown(null);
+        startRecording();
+      } else {
+        setCountdown(remaining);
+      }
+    }, 1000);
   }
 
   function startRecording() {
@@ -690,7 +728,7 @@ export default function AnalysisForm() {
                 {formatTime(recordSeconds)}
               </div>
             )}
-            {!recording && (
+            {!recording && countdown === null && (
               <button
                 type="button"
                 onClick={flipCamera}
@@ -699,6 +737,13 @@ export default function AnalysisForm() {
               >
                 <CameraFlipIcon className="h-5 w-5" />
               </button>
+            )}
+            {countdown !== null && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <span className="text-7xl font-bold text-white drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]">
+                  {countdown}
+                </span>
+              </div>
             )}
           </div>
 
@@ -718,10 +763,18 @@ export default function AnalysisForm() {
               >
                 Arrêter
               </button>
+            ) : countdown !== null ? (
+              <button
+                type="button"
+                disabled
+                className="flex-1 rounded-lg bg-slate-800 py-2.5 text-sm font-medium text-slate-400"
+              >
+                Décompte : {countdown}s
+              </button>
             ) : (
               <button
                 type="button"
-                onClick={startRecording}
+                onClick={beginCountdown}
                 className="flex-1 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 text-sm font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)]"
               >
                 Démarrer l&apos;enregistrement
