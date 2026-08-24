@@ -18,9 +18,15 @@
 // raisonnement biomécanique (~180°, alignement/verrouillage), à affiner si
 // des échantillons plus ciblés deviennent disponibles.
 //
-// knee_angle (genoux tendus, hanche-genou-cheville) et
-// body_line_angle_from_horizontal (axe global du corps) : critères ajoutés
-// le 2026-08, cibles raisonnées (pas encore de données réelles isolées).
+// knee_angle (genoux tendus, hanche-genou-cheville) : critère ajouté le
+// 2026-08, mais retiré de Tuck et Advanced Tuck le 2026-08-25 — dans ces
+// deux variations, les genoux fléchis font partie de la technique correcte
+// (le "tuck" vient de la flexion hanche ET genou pour ramener le corps en
+// boule), ce n'est qu'à partir du Straddle/Full que les jambes doivent être
+// tendues. Le noter à 180° partout pénalisait une position pourtant juste.
+//
+// body_line_angle_from_horizontal (axe global du corps) : critère ajouté
+// le 2026-08, cible raisonnée (pas encore de données réelles isolées).
 
 export type Progression =
   | "tuck_planche"
@@ -36,7 +42,7 @@ export type ProgressionThresholds = {
   body_line_angle_from_horizontal: Threshold;
   elbow_angle: Threshold;
   hip_angle: Threshold;
-  knee_angle: Threshold;
+  knee_angle?: Threshold;
   shoulder_protraction?: ShoulderProtractionThreshold;
   shoulder_flexion?: Threshold;
   pelvis_deviation: Threshold;
@@ -47,7 +53,6 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     body_line_angle_from_horizontal: { target: 25, tolerance: 10 },
     elbow_angle: { target: 175, tolerance: 10 },
     hip_angle: { target: 90, tolerance: 20 },
-    knee_angle: { target: 180, tolerance: 20 },
     shoulder_protraction: { target: 0.35, tolerance: 0.2, mode: "minimum" },
     pelvis_deviation: { target: 0, tolerance: 0.25 },
   },
@@ -55,7 +60,6 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     body_line_angle_from_horizontal: { target: 15, tolerance: 8 },
     elbow_angle: { target: 178, tolerance: 8 },
     hip_angle: { target: 110, tolerance: 15 },
-    knee_angle: { target: 180, tolerance: 15 },
     shoulder_protraction: { target: 0.5, tolerance: 0.2, mode: "minimum" },
     pelvis_deviation: { target: 0, tolerance: 0.25 },
   },

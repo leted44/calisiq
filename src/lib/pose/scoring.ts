@@ -73,6 +73,19 @@ export function scoreAngles(
     });
   }
 
+  if (grid.knee_angle) {
+    scores.push({
+      critere: "knee_angle",
+      score: scoreFromThreshold(
+        angles.kneeAngle,
+        grid.knee_angle.target,
+        grid.knee_angle.tolerance
+      ),
+      valeurMesuree: angles.kneeAngle,
+      valeurCible: grid.knee_angle.target,
+    });
+  }
+
   scores.push(
     {
       critere: "pelvis_deviation",
@@ -93,16 +106,6 @@ export function scoreAngles(
       ),
       valeurMesuree: angles.hipAngle,
       valeurCible: grid.hip_angle.target,
-    },
-    {
-      critere: "knee_angle",
-      score: scoreFromThreshold(
-        angles.kneeAngle,
-        grid.knee_angle.target,
-        grid.knee_angle.tolerance
-      ),
-      valeurMesuree: angles.kneeAngle,
-      valeurCible: grid.knee_angle.target,
     },
     {
       critere: "elbow_angle",
