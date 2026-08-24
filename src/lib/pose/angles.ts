@@ -105,8 +105,13 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
   const midWrist = midpoint(landmarks[LEFT_WRIST], landmarks[RIGHT_WRIST]);
   const midAnkle = midpoint(landmarks[LEFT_ANKLE], landmarks[RIGHT_ANKLE]);
 
-  const dx = midHip.x - midShoulder.x;
-  const dy = midHip.y - midShoulder.y;
+  // Épaule -> cheville (tout le corps), pas épaule -> hanche : une base plus
+  // longue est moins sensible au bruit de détection sur un seul point, et
+  // représente mieux l'axe global du corps. N'a de sens que jambes tendues
+  // (straddle, full planche, handstand) — pas utilisé en tuck où les
+  // chevilles sont repliées près du buste.
+  const dx = midAnkle.x - midShoulder.x;
+  const dy = midAnkle.y - midShoulder.y;
   const bodyLineAngleFromHorizontal = Math.abs(
     (Math.atan2(dy, dx) * 180) / Math.PI
   );

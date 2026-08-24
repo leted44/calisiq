@@ -28,12 +28,20 @@ export function getLandmarker() {
     ).then((vision) =>
       PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
+          // Modèle "heavy" (le plus précis des 3 tiers MediaPipe, plus lourd
+          // que "full") : les figures de calisthénie (inversées, membres
+          // repliés) s'éloignent beaucoup des poses "debout" habituelles,
+          // la précision supplémentaire compte plus que la vitesse de
+          // chargement ici.
           modelAssetPath:
-            "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+            "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task",
           delegate: "GPU",
         },
         runningMode: "VIDEO",
         numPoses: 1,
+        minPoseDetectionConfidence: 0.5,
+        minPosePresenceConfidence: 0.5,
+        minTrackingConfidence: 0.5,
       })
     );
   }

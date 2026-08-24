@@ -116,8 +116,11 @@ export function scoreAngles(
       ),
       valeurMesuree: angles.elbowAngle,
       valeurCible: grid.elbow_angle.target,
-    },
-    {
+    }
+  );
+
+  if (grid.body_line_angle_from_horizontal) {
+    scores.push({
       critere: "body_line_angle",
       score: scoreFromThreshold(
         angles.bodyLineAngleFromHorizontal,
@@ -126,8 +129,8 @@ export function scoreAngles(
       ),
       valeurMesuree: angles.bodyLineAngleFromHorizontal,
       valeurCible: grid.body_line_angle_from_horizontal.target,
-    }
-  );
+    });
+  }
 
   return scores;
 }

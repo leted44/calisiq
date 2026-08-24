@@ -25,8 +25,12 @@
 // boule), ce n'est qu'à partir du Straddle/Full que les jambes doivent être
 // tendues. Le noter à 180° partout pénalisait une position pourtant juste.
 //
-// body_line_angle_from_horizontal (axe global du corps) : critère ajouté
-// le 2026-08, cible raisonnée (pas encore de données réelles isolées).
+// body_line_angle_from_horizontal (axe global du corps, épaule -> cheville) :
+// critère ajouté le 2026-08. Retiré de Tuck et Advanced Tuck le 2026-08-25,
+// même raison que knee_angle : chevilles repliées près du buste en tuck,
+// la ligne épaule-cheville n'a pas de sens tant que les jambes ne sont pas
+// tendues (Straddle/Full/Handstand). Recalculé sur épaule->cheville plutôt
+// qu'épaule->hanche : base plus longue, moins bruitée.
 
 export type Progression =
   | "tuck_planche"
@@ -39,7 +43,7 @@ type Threshold = { target: number; tolerance: number };
 type ShoulderProtractionThreshold = Threshold & { mode: "minimum" | "band" };
 
 export type ProgressionThresholds = {
-  body_line_angle_from_horizontal: Threshold;
+  body_line_angle_from_horizontal?: Threshold;
   elbow_angle: Threshold;
   hip_angle: Threshold;
   knee_angle?: Threshold;
@@ -50,14 +54,12 @@ export type ProgressionThresholds = {
 
 export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   tuck_planche: {
-    body_line_angle_from_horizontal: { target: 25, tolerance: 10 },
     elbow_angle: { target: 175, tolerance: 10 },
     hip_angle: { target: 90, tolerance: 20 },
     shoulder_protraction: { target: 0.35, tolerance: 0.2, mode: "minimum" },
     pelvis_deviation: { target: 0, tolerance: 0.25 },
   },
   advanced_tuck_planche: {
-    body_line_angle_from_horizontal: { target: 15, tolerance: 8 },
     elbow_angle: { target: 178, tolerance: 8 },
     hip_angle: { target: 110, tolerance: 15 },
     shoulder_protraction: { target: 0.5, tolerance: 0.2, mode: "minimum" },
