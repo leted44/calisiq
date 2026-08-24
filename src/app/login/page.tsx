@@ -50,6 +50,10 @@ export default function LoginPage() {
         />
       </div>
 
+      <p className="relative -mt-3 mb-1 text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
+        Analyse Intelligente de la Forme
+      </p>
+
       <form
         onSubmit={handleSubmit}
         className="relative w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl shadow-black/40"

@@ -16,10 +16,13 @@ export default function AccueilPage() {
         className="relative h-32 w-32 drop-shadow-[0_0_22px_rgba(34,211,238,0.4)]"
       />
 
-      <div className="relative w-full max-w-md space-y-1">
-        <h1 className="text-2xl font-bold text-white">Nouvelle analyse</h1>
+      <p className="relative -mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
+        Analyse Intelligente de la Forme
+      </p>
+
+      <div className="relative w-full max-w-md">
         <p className="text-sm text-slate-400">
-          Importe une vidéo ou filme-toi directement pour analyser ta forme.
+          Importe une vidéo ou filme-toi directement pour analyser ta forme avec CalisIQ.
         </p>
       </div>
 
