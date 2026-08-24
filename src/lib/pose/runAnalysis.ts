@@ -82,7 +82,9 @@ export async function runPoseAnalysis({
 }: {
   video: HTMLVideoElement;
   canvas: HTMLCanvasElement;
-  progression: Progression;
+  // null = mode mesure : renvoie les angles réels sans les noter (figure
+  // pas encore calibrée, utilisé pour collecter des échantillons)
+  progression: Progression | null;
   rangeStart?: number;
   rangeEnd?: number;
   onProgress?: (percent: number) => void;
@@ -163,9 +165,6 @@ export async function runPoseAnalysis({
   const window = detectHoldWindow(frames);
   const holdAngles = angles.slice(window.start, window.end + 1);
   const median = medianAngles(holdAngles);
-  const scores = scoreAngles(median, progression);
-  const weakest = pickWeakestCriterion(scores);
-  const recommendations = recommendationsFor(weakest.critere, median.pelvisSagSign);
 
   const midIndex = Math.floor((window.start + window.end) / 2);
   const representativeFrameDataUrl = await captureFrame(
@@ -176,6 +175,25 @@ export async function runPoseAnalysis({
     frames.length,
     midIndex
   );
+
+  if (progression === null) {
+    return {
+      ok: true,
+      framesAnalyzed: frames.length,
+      detectionRate,
+      warning,
+      holdWindow: window,
+      summaryAngles: median,
+      scores: [],
+      globalScoreValue: 0,
+      recommendations: [],
+      representativeFrameDataUrl,
+    };
+  }
+
+  const scores = scoreAngles(median, progression);
+  const weakest = pickWeakestCriterion(scores);
+  const recommendations = recommendationsFor(weakest.critere, median.pelvisSagSign);
 
   return {
     ok: true,

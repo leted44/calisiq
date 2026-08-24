@@ -56,11 +56,31 @@ create table recommendations (
   raison text not null
 );
 
+-- Échantillons de calibration : angles mesurés réels + note subjective,
+-- pour dériver les seuils de scoring de nouvelles figures à partir de
+-- données réelles plutôt que de valeurs devinées.
+create table calibration_samples (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) not null,
+  created_at timestamptz default now(),
+  figure text not null,
+  variation text not null,
+  elbow_angle numeric,
+  hip_angle numeric,
+  body_line_angle_from_horizontal numeric,
+  shoulder_protraction numeric,
+  pelvis_deviation numeric,
+  pelvis_sag_sign numeric,
+  user_rating numeric not null,
+  notes text
+);
+
 -- RLS : chaque utilisateur ne voit que ses propres données
 alter table profiles enable row level security;
 alter table sessions enable row level security;
 alter table scores enable row level security;
 alter table recommendations enable row level security;
+alter table calibration_samples enable row level security;
 
 create policy "profiles: select own" on profiles for select using (auth.uid() = id);
 create policy "profiles: update own" on profiles for update using (auth.uid() = id);
@@ -88,6 +108,9 @@ create policy "scores: delete own" on scores for delete using (
 create policy "recommendations: delete own" on recommendations for delete using (
   exists (select 1 from sessions where sessions.id = recommendations.session_id and sessions.user_id = auth.uid())
 );
+
+create policy "calibration_samples: all own" on calibration_samples for all
+  using (auth.uid() = user_id);
 
 -- Storage bucket pour les vidéos (privé, accès via signed URL)
 insert into storage.buckets (id, name, public) values ('videos', 'videos', false)
