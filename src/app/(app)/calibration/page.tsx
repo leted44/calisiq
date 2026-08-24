@@ -1,6 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
-import { PROGRESSION_LABELS } from "@/lib/pose/report";
+import { PROGRESSION_LABELS, CALIBRATED_CRITERIA } from "@/lib/pose/report";
 import CalibrationForm from "./CalibrationForm";
+
+const CRITERE_LABELS: Record<string, string> = {
+  shoulder_protraction: "protraction",
+  shoulder_flexion: "ouverture épaule",
+  pelvis_deviation: "bassin",
+  hip_angle: "hanche",
+  knee_angle: "genou",
+  elbow_angle: "coude",
+  body_line_angle: "axe du corps",
+};
 
 const ALL_VARIATIONS = [
   "tuck_planche",
@@ -51,7 +61,8 @@ export default async function CalibrationPage() {
           {ALL_VARIATIONS.map((v) => {
             const ratings = byVariation.get(v) ?? [];
             const label = PROGRESSION_LABELS[v] ?? EXTRA_LABELS[v] ?? v;
-            const statusColor =
+            const calibrated = CALIBRATED_CRITERIA[v] ?? [];
+            const importedColor =
               ratings.length === 0
                 ? "bg-slate-800 text-slate-500"
                 : ratings.length < 5
@@ -59,27 +70,46 @@ export default async function CalibrationPage() {
                 : "bg-green-500/15 text-green-400";
 
             return (
-              <div key={v} className="flex items-center justify-between gap-3 p-3">
-                <div>
+              <div key={v} className="space-y-2 p-3">
+                <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-medium text-white">{label}</p>
-                  <p className="text-xs text-slate-500">
-                    {ratings.length === 0
-                      ? "Pas commencé"
-                      : `Notes : ${ratings.join(", ")}`}
-                  </p>
+                  <span
+                    className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${importedColor}`}
+                  >
+                    {ratings.length} importé{ratings.length > 1 ? "s" : ""}
+                  </span>
                 </div>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColor}`}
-                >
-                  {ratings.length} échantillon{ratings.length > 1 ? "s" : ""}
-                </span>
+                <p className="text-xs text-slate-500">
+                  {ratings.length === 0 ? "Pas commencé" : `Notes : ${ratings.join(", ")}`}
+                </p>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      calibrated.length > 0
+                        ? "bg-cyan-500/15 text-cyan-400"
+                        : "bg-slate-800 text-slate-500"
+                    }`}
+                  >
+                    {calibrated.length > 0
+                      ? `${calibrated.length} critère${calibrated.length > 1 ? "s" : ""} calibré${calibrated.length > 1 ? "s" : ""}`
+                      : "Aucun critère calibré"}
+                  </span>
+                  {calibrated.length > 0 && (
+                    <span className="text-[11px] text-slate-500">
+                      ({calibrated.map((c) => CRITERE_LABELS[c] ?? c).join(", ")})
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
         <p className="text-[11px] text-slate-600">
-          Moins de 5 échantillons : encore en cours. 5 et plus : probablement
-          assez pour recalibrer les seuils sur données réelles.
+          <span className="text-slate-400">Importé</span> = échantillons
+          soumis dans l&apos;outil. <span className="text-cyan-400">Calibré</span>{" "}
+          = seuils du critère effectivement mis à jour dans le code à partir
+          de données réelles — les deux ne sont pas automatiquement liés,
+          la recalibration reste une étape que je fais manuellement.
         </p>
       </div>
 

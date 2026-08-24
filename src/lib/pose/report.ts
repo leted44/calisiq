@@ -8,6 +8,21 @@ export const PROGRESSION_LABELS: Record<string, string> = {
   handstand: "Handstand",
 };
 
+// Critères effectivement recalibrés dans le code à partir de données
+// réelles (calibration_samples, ou cas externes jugés comme Cali League) —
+// à distinguer du nombre d'échantillons importés, qui ne veut pas dire
+// que le code a déjà été mis à jour avec. Tenu à jour manuellement à
+// chaque recalibration (voir aussi les commentaires dans grid.ts).
+export const CALIBRATED_CRITERIA: Record<string, string[]> = {
+  tuck_planche: [],
+  advanced_tuck_planche: ["shoulder_protraction"],
+  straddle_planche: [],
+  full_planche: [],
+  handstand: ["hip_angle", "pelvis_deviation"],
+  handstand_push_up: [],
+  one_arm_handstand: [],
+};
+
 export type ScoreTier = "optimal" | "bon" | "faible";
 
 export function tierFor(score: number): ScoreTier {
