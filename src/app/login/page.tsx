@@ -37,22 +37,23 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-slate-950 p-4">
-      <div className="relative -mb-2 w-full max-w-[300px]">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-full bg-cyan-500/25 blur-3xl"
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo-full.png"
-          alt="CalisIQ"
-          className="relative w-full drop-shadow-[0_0_25px_rgba(34,211,238,0.35)]"
-        />
+      <div className="relative flex w-full max-w-[300px] flex-col items-center gap-2">
+        <div className="relative w-full">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-full bg-cyan-500/25 blur-3xl"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-full.png"
+            alt="CalisIQ"
+            className="relative w-full drop-shadow-[0_0_25px_rgba(34,211,238,0.35)]"
+          />
+        </div>
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
+          Analyse Intelligente de la Forme
+        </p>
       </div>
-
-      <p className="relative -mt-3 mb-1 text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
-        Analyse Intelligente de la Forme
-      </p>
 
       <form
         onSubmit={handleSubmit}

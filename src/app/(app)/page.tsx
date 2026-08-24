@@ -9,16 +9,17 @@ export default function AccueilPage() {
         className="pointer-events-none absolute -top-16 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-cyan-500/20 blur-3xl"
       />
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/logo-emblem.png"
-        alt="CalisIQ"
-        className="relative h-32 w-32 drop-shadow-[0_0_22px_rgba(34,211,238,0.4)]"
-      />
-
-      <p className="relative -mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
-        Analyse Intelligente de la Forme
-      </p>
+      <div className="relative flex flex-col items-center gap-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-full.png"
+          alt="CalisIQ"
+          className="h-44 w-auto drop-shadow-[0_0_22px_rgba(34,211,238,0.4)]"
+        />
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
+          Analyse Intelligente de la Forme
+        </p>
+      </div>
 
       <div className="relative w-full max-w-md">
         <p className="text-sm text-slate-400">

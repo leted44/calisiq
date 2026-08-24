@@ -91,7 +91,13 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     },
   ],
   handstand: [
-    { value: "handstand", label: "Handstand", Icon: HandstandFigureIcon, available: false },
+    {
+      value: "handstand",
+      label: "Handstand",
+      Icon: HandstandFigureIcon,
+      available: false,
+      image: "/figures/handstand.png",
+    },
     { value: "handstand_push_up", label: "Handstand Push-up", Icon: HandstandPushUpIcon, available: false },
     { value: "one_arm_handstand", label: "One Arm Handstand", Icon: OneArmHandstandIcon, available: false },
   ],
@@ -462,7 +468,7 @@ export default function AnalysisForm() {
 
       <div className="space-y-3">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Figure
+          Figures
         </p>
         <div className="grid grid-cols-2 gap-3">
           {FIGURES.map((f) => {
@@ -513,7 +519,7 @@ export default function AnalysisForm() {
       <>
       <div className="space-y-3">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Variation
+          Variations
         </p>
         <div className={`grid gap-2 ${figure === "planche" ? "grid-cols-4" : "grid-cols-3"}`}>
           {VARIATIONS_BY_FIGURE[figure].map((v) => {
@@ -564,7 +570,7 @@ export default function AnalysisForm() {
 
       <div className="space-y-3">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Type d&apos;exercice
+          Types d&apos;exercice
         </p>
         <div className="grid grid-cols-3 gap-2">
           {EXERCISE_TYPES.map((t) => {
