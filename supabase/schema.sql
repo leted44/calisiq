@@ -115,6 +115,12 @@ create policy "recommendations: delete own" on recommendations for delete using 
 create policy "calibration_samples: all own" on calibration_samples for all
   using (auth.uid() = user_id);
 
+-- Outil interne mono-utilisateur : la lecture ne depend pas du compte
+-- connecte (l'utilisateur a plusieurs comptes de test). L'ecriture reste
+-- restreinte a ses propres lignes via la policy ci-dessus.
+create policy "calibration_samples: select all" on calibration_samples
+  for select using (true);
+
 -- Storage bucket pour les vidéos (privé, accès via signed URL)
 insert into storage.buckets (id, name, public) values ('videos', 'videos', false)
 on conflict (id) do nothing;
