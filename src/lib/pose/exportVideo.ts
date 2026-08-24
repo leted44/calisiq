@@ -2,11 +2,15 @@ import { PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
 import type { CriterionScore } from "./scoring";
 import { getLandmarker } from "./runAnalysis";
 
+// MP4 en priorité : format fiable pour republier sur Instagram/réseaux sociaux.
+// WebM en repli pour les navigateurs qui ne savent pas encoder de MP4.
 const CANDIDATE_MIME_TYPES = [
+  "video/mp4;codecs=avc1.42E01E",
+  "video/mp4;codecs=h264",
+  "video/mp4",
   "video/webm;codecs=vp9",
   "video/webm;codecs=vp8",
   "video/webm",
-  "video/mp4",
 ];
 
 function pickSupportedMimeType(): string {
@@ -31,6 +35,45 @@ function scoreColor(score: number): string {
   return "#fb923c";
 }
 
+function roundedRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  ctx.beginPath();
+  if (typeof ctx.roundRect === "function") {
+    ctx.roundRect(x, y, w, h, r);
+    return;
+  }
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function fillRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+  color: string
+) {
+  roundedRectPath(ctx, x, y, w, h, r);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+// Bandeaux compacts en coin, pas des bandes pleine largeur : sur une vidéo
+// portrait le corps occupe presque tout le cadre, un gros bandeau le
+// masquerait ("effet rogné"). Tailles proportionnelles à une largeur de
+// référence de 400px pour rester lisibles sur toutes les résolutions.
 function drawHud(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
@@ -48,74 +91,70 @@ function drawHud(
 ) {
   const w = canvas.width;
   const h = canvas.height;
-  const unit = w / 24;
+  const scale = w / 400;
+  const margin = 16 * scale;
+  const radius = 12 * scale;
 
-  // Bandeau haut : dégradé + nom de la figure
-  const topGradient = ctx.createLinearGradient(0, 0, 0, unit * 6);
-  topGradient.addColorStop(0, "rgba(2,6,23,0.85)");
-  topGradient.addColorStop(1, "rgba(2,6,23,0)");
-  ctx.fillStyle = topGradient;
-  ctx.fillRect(0, 0, w, unit * 6);
+  // Badge haut-gauche : figure + timer
+  const pillText = `${figureLabel} · ${elapsedSeconds.toFixed(1)}s`;
+  ctx.font = `600 ${14 * scale}px sans-serif`;
+  const pillPaddingX = 12 * scale;
+  const pillHeight = 30 * scale;
+  const textWidth = ctx.measureText(pillText).width;
+  const pillWidth = textWidth + pillPaddingX * 2;
 
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `bold ${unit * 1.15}px sans-serif`;
-  ctx.fillText(figureLabel, w / 2, unit * 1.6);
-
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = `${unit * 0.5}px sans-serif`;
-  ctx.fillText("TEMPS DE HOLD", w / 2, unit * 2.5);
-
+  fillRoundedRect(ctx, margin, margin, pillWidth, pillHeight, radius, "rgba(2,6,23,0.72)");
   ctx.fillStyle = "#22d3ee";
-  ctx.font = `bold ${unit * 1.8}px sans-serif`;
-  ctx.shadowColor = "rgba(34,211,238,0.7)";
-  ctx.shadowBlur = unit * 0.6;
-  ctx.fillText(`${elapsedSeconds.toFixed(1)}s`, w / 2, unit * 4.6);
-  ctx.shadowBlur = 0;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(pillText, margin + pillPaddingX, margin + pillHeight / 2);
 
-  // Bandeau bas : score + barres par critère
-  const panelHeight = unit * (3.6 + scores.length * 1.7);
-  const panelTop = h - panelHeight;
-  const bottomGradient = ctx.createLinearGradient(0, panelTop, 0, h);
-  bottomGradient.addColorStop(0, "rgba(2,6,23,0)");
-  bottomGradient.addColorStop(0.3, "rgba(2,6,23,0.88)");
-  bottomGradient.addColorStop(1, "rgba(2,6,23,0.88)");
-  ctx.fillStyle = bottomGradient;
-  ctx.fillRect(0, panelTop, w, panelHeight);
+  // Carte bas-gauche : score global + grille compacte des critères
+  const cols = scores.length > 2 ? 2 : 1;
+  const rows = Math.ceil(scores.length / cols);
+  const rowHeight = 20 * scale;
+  const headerHeight = 34 * scale;
+  const cardPadding = 12 * scale;
+  const cardWidth = Math.min(w - margin * 2, (cols === 2 ? 230 : 150) * scale);
+  const cardHeight = headerHeight + rows * rowHeight + cardPadding * 2;
+  const cardX = margin;
+  const cardY = h - margin - cardHeight;
 
+  fillRoundedRect(ctx, cardX, cardY, cardWidth, cardHeight, radius, "rgba(2,6,23,0.78)");
+
+  ctx.textBaseline = "alphabetic";
   ctx.textAlign = "left";
   ctx.fillStyle = "#94a3b8";
-  ctx.font = `${unit * 0.5}px sans-serif`;
-  ctx.fillText("SCORE GLOBAL", unit * 0.8, panelTop + unit * 1.3);
+  ctx.font = `${10 * scale}px sans-serif`;
+  ctx.fillText("SCORE GLOBAL", cardX + cardPadding, cardY + cardPadding + 9 * scale);
 
-  ctx.textAlign = "right";
   ctx.fillStyle = scoreColor(globalScoreValue);
-  ctx.font = `bold ${unit * 1.6}px sans-serif`;
-  ctx.fillText(`${globalScoreValue.toFixed(1)}/10`, w - unit * 0.8, panelTop + unit * 2.1);
+  ctx.font = `bold ${20 * scale}px sans-serif`;
+  ctx.fillText(
+    `${globalScoreValue.toFixed(1)}/10`,
+    cardX + cardPadding,
+    cardY + cardPadding + 30 * scale
+  );
 
-  let y = panelTop + unit * 3.1;
-  for (const s of scores) {
-    const barX = unit * 0.8;
-    const barW = w - unit * 1.6;
-    const barH = unit * 0.5;
+  const gridTop = cardY + headerHeight + cardPadding;
+  const colWidth = (cardWidth - cardPadding * 2) / cols;
+
+  scores.forEach((s, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = cardX + cardPadding + col * colWidth;
+    const y = gridTop + row * rowHeight + 12 * scale;
 
     ctx.textAlign = "left";
     ctx.fillStyle = "#cbd5e1";
-    ctx.font = `${unit * 0.55}px sans-serif`;
-    ctx.fillText(CRITERE_LABELS[s.critere], barX, y);
+    ctx.font = `${11 * scale}px sans-serif`;
+    ctx.fillText(CRITERE_LABELS[s.critere], x, y);
 
     ctx.textAlign = "right";
     ctx.fillStyle = scoreColor(s.score);
-    ctx.fillText(`${s.score.toFixed(1)}`, barX + barW, y);
-
-    const barY = y + unit * 0.25;
-    ctx.fillStyle = "rgba(148,163,184,0.25)";
-    ctx.fillRect(barX, barY, barW, barH);
-    ctx.fillStyle = scoreColor(s.score);
-    ctx.fillRect(barX, barY, barW * Math.min(1, s.score / 10), barH);
-
-    y += unit * 1.7;
-  }
+    ctx.font = `600 ${11 * scale}px sans-serif`;
+    ctx.fillText(s.score.toFixed(1), x + colWidth - 6 * scale, y);
+  });
 }
 
 export async function recordAnnotatedVideo({
@@ -147,8 +186,14 @@ export async function recordAnnotatedVideo({
   const drawingUtils = new DrawingUtils(ctx);
 
   const mimeType = pickSupportedMimeType();
+  // ~9 bits/pixel/frame à 30fps : nettement au-dessus du bitrate par défaut
+  // du navigateur, pour un rendu net et publiable plutôt que compressé.
+  const videoBitsPerSecond = Math.min(
+    25_000_000,
+    Math.max(6_000_000, Math.round(canvas.width * canvas.height * 9))
+  );
   const canvasStream = canvas.captureStream(30);
-  const recorder = new MediaRecorder(canvasStream, { mimeType });
+  const recorder = new MediaRecorder(canvasStream, { mimeType, videoBitsPerSecond });
   const chunks: Blob[] = [];
   recorder.ondataavailable = (e) => {
     if (e.data.size > 0) chunks.push(e.data);
