@@ -96,6 +96,25 @@ export default function CalibrationForm() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  function seekPreview(time: number) {
+    const video = previewVideoRef.current;
+    if (!video) return;
+    video.pause();
+    video.currentTime = time;
+  }
+
+  function handleTrimStartChange(value: number) {
+    const next = Math.min(value, trimEnd - MIN_TRIM_SECONDS);
+    setTrimStart(next);
+    seekPreview(next);
+  }
+
+  function handleTrimEndChange(value: number) {
+    const next = Math.max(value, trimStart + MIN_TRIM_SECONDS);
+    setTrimEnd(next);
+    seekPreview(next);
+  }
+
   async function handleMeasure() {
     setError(null);
     if (!file || !duration || !previewVideoRef.current || !canvasRef.current) return;
@@ -252,7 +271,7 @@ export default function CalibrationForm() {
                   max={duration}
                   step={0.1}
                   value={trimStart}
-                  onChange={(e) => setTrimStart(Math.min(Number(e.target.value), trimEnd - MIN_TRIM_SECONDS))}
+                  onChange={(e) => handleTrimStartChange(Number(e.target.value))}
                   className="dual-range"
                 />
                 <input
@@ -261,7 +280,7 @@ export default function CalibrationForm() {
                   max={duration}
                   step={0.1}
                   value={trimEnd}
-                  onChange={(e) => setTrimEnd(Math.max(Number(e.target.value), trimStart + MIN_TRIM_SECONDS))}
+                  onChange={(e) => handleTrimEndChange(Number(e.target.value))}
                   className="dual-range"
                 />
               </div>
