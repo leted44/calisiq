@@ -9,6 +9,13 @@ export default function AccueilPage() {
         className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-500/20 blur-3xl"
       />
 
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo.png"
+        alt="CalisIQ"
+        className="relative h-16 w-auto drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+      />
+
       <div className="relative w-full max-w-md space-y-1">
         <h1 className="text-2xl font-bold text-white">Nouvelle analyse</h1>
         <p className="text-sm text-slate-400">

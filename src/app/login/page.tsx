@@ -36,15 +36,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-slate-950 p-4">
+      <div className="relative -mb-4 w-full max-w-[280px]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-full bg-cyan-500/25 blur-3xl"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt="CalisIQ"
+          className="relative w-full drop-shadow-[0_0_25px_rgba(34,211,238,0.35)]"
+        />
+      </div>
+
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl shadow-black/40"
+        className="relative w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl shadow-black/40"
       >
         <div className="space-y-1 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 shadow-[0_0_20px_rgba(34,211,238,0.35)] text-lg font-bold text-white">
-            CQ
-          </div>
           <h1 className="text-xl font-semibold text-white">
             {mode === "signin" ? "Connexion" : "Créer un compte"}
           </h1>
