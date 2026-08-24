@@ -8,6 +8,8 @@ import type { PoseAngles } from "@/lib/pose/angles";
 import type { Progression } from "@/lib/pose/grid";
 import CaptureTipsModal, { shouldSkipTips } from "./CaptureTipsModal";
 import ResultCard from "./ResultCard";
+import ExportVideoButton from "./ExportVideoButton";
+import { PROGRESSION_LABELS } from "@/lib/pose/report";
 import {
   UploadCloudIcon,
   CameraIcon,
@@ -903,6 +905,14 @@ export default function AnalysisForm() {
                 recommendations={result.recommendations}
                 holdDurationSeconds={result.holdDurationSeconds}
                 figure={figure ?? "planche"}
+              />
+              <ExportVideoButton
+                videoRef={previewVideoRef}
+                figureLabel={PROGRESSION_LABELS[progression] ?? progression}
+                globalScoreValue={result.globalScoreValue}
+                scores={result.scores}
+                rangeStart={trimStart}
+                rangeEnd={trimEnd}
               />
             </>
           )}

@@ -21,7 +21,7 @@ import type { Progression } from "./grid";
 
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
-function getLandmarker() {
+export function getLandmarker() {
   if (!sharedLandmarkerPromise) {
     sharedLandmarkerPromise = FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"

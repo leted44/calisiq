@@ -1,5 +1,13 @@
 import type { CriterionScore } from "./scoring";
 
+export const PROGRESSION_LABELS: Record<string, string> = {
+  tuck_planche: "Tuck planche",
+  advanced_tuck_planche: "Advanced tuck planche",
+  straddle_planche: "Straddle planche",
+  full_planche: "Full planche",
+  handstand: "Handstand",
+};
+
 export type ScoreTier = "optimal" | "bon" | "faible";
 
 export function tierFor(score: number): ScoreTier {

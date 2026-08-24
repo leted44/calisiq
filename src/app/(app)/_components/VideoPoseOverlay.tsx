@@ -5,9 +5,10 @@ import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis
 import type { Progression } from "@/lib/pose/grid";
 import type { CriterionScore } from "@/lib/pose/scoring";
 import type { Recommendation } from "@/lib/pose/recommendations";
-import { figureFromProgression } from "@/lib/pose/report";
+import { figureFromProgression, PROGRESSION_LABELS } from "@/lib/pose/report";
 import { createClient } from "@/lib/supabase/client";
 import ResultCard from "./ResultCard";
+import ExportVideoButton from "./ExportVideoButton";
 
 type PersistedReport = {
   globalScoreValue: number;
@@ -177,14 +178,24 @@ export default function VideoPoseOverlay({
       )}
 
       {!analyzing && report && (
-        <ResultCard
-          globalScoreValue={report.globalScoreValue}
-          representativeFrame={freshResult?.representativeFrameDataUrl ?? null}
-          scores={report.scores}
-          recommendations={report.recommendations}
-          holdDurationSeconds={report.holdDurationSeconds}
-          figure={figure}
-        />
+        <>
+          <ResultCard
+            globalScoreValue={report.globalScoreValue}
+            representativeFrame={freshResult?.representativeFrameDataUrl ?? null}
+            scores={report.scores}
+            recommendations={report.recommendations}
+            holdDurationSeconds={report.holdDurationSeconds}
+            figure={figure}
+          />
+          <ExportVideoButton
+            videoRef={videoRef}
+            figureLabel={PROGRESSION_LABELS[progression] ?? progression}
+            globalScoreValue={report.globalScoreValue}
+            scores={report.scores}
+            rangeStart={trimStart}
+            rangeEnd={trimEnd}
+          />
+        </>
       )}
 
       {saveError && (

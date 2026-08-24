@@ -1,14 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatHoldDuration } from "@/lib/pose/report";
-
-const PROGRESSION_LABELS: Record<string, string> = {
-  tuck_planche: "Tuck planche",
-  advanced_tuck_planche: "Advanced tuck planche",
-  straddle_planche: "Straddle planche",
-  full_planche: "Full planche",
-  handstand: "Handstand",
-};
+import { formatHoldDuration, PROGRESSION_LABELS } from "@/lib/pose/report";
 
 const STATUS_LABELS: Record<string, string> = {
   processing: "En attente d'analyse",

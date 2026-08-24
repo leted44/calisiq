@@ -2,17 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Progression } from "@/lib/pose/grid";
+import { PROGRESSION_LABELS } from "@/lib/pose/report";
 import VideoPoseOverlay from "../../_components/VideoPoseOverlay";
 import DeleteSessionButton from "../../_components/DeleteSessionButton";
 import { ChangeVideoIcon } from "@/components/icons";
-
-const PROGRESSION_LABELS: Record<string, string> = {
-  tuck_planche: "Tuck planche",
-  advanced_tuck_planche: "Advanced tuck planche",
-  straddle_planche: "Straddle planche",
-  full_planche: "Full planche",
-  handstand: "Handstand",
-};
 
 export default async function SessionDetailPage({
   params,
