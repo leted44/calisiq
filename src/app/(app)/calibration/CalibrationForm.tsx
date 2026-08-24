@@ -18,7 +18,10 @@ const VARIATIONS = [
   { value: "one_arm_handstand", label: "One Arm Handstand", figure: "handstand" },
 ] as const;
 
-const MIN_TRIM_SECONDS = 2;
+// Plus bas que le formulaire principal (2s) : ici on ne mesure qu'une
+// position à un instant donné, pas un hold tenu — même le mode photo
+// (0 seconde) fonctionne, ce minimum n'est qu'une garde-fou technique.
+const MIN_TRIM_SECONDS = 0.5;
 
 function getVideoDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
