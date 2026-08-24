@@ -115,6 +115,7 @@ const EXERCISE_TYPES: {
 ];
 
 const MIN_TRIM_SECONDS = 2;
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
 function getVideoDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -206,6 +207,13 @@ export default function AnalysisForm() {
     setResult(null);
     setSaveError(null);
 
+    if (selected.size > MAX_FILE_SIZE_BYTES) {
+      setError(
+        `Cette vidéo est trop lourde (${(selected.size / (1024 * 1024)).toFixed(1)} Mo, maximum 50 Mo). Choisis une vidéo plus courte ou moins lourde.`
+      );
+      return;
+    }
+
     let videoDuration: number;
     try {
       videoDuration = await getVideoDuration(selected);
@@ -267,7 +275,7 @@ export default function AnalysisForm() {
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
       streamRef.current = stream;

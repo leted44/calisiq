@@ -51,9 +51,20 @@ export default async function HistoriquePage() {
             className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-4"
           >
             <div className="flex items-center justify-between">
-              <p className="font-medium text-white">
-                {PROGRESSION_LABELS[session.progression] ?? session.progression}
-              </p>
+              <div>
+                <p className="font-medium text-white">
+                  {PROGRESSION_LABELS[session.progression] ?? session.progression}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {new Date(session.created_at).toLocaleString("fr-FR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
