@@ -8,9 +8,11 @@ import { TrashIcon } from "@/components/icons";
 export default function DeleteSessionButton({
   sessionId,
   videoPath,
+  redirectTo,
 }: {
   sessionId: string;
   videoPath: string;
+  redirectTo?: string;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -66,6 +68,9 @@ export default function DeleteSessionButton({
       return;
     }
 
+    if (redirectTo) {
+      router.push(redirectTo);
+    }
     router.refresh();
   }
 

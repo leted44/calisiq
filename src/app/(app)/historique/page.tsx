@@ -1,7 +1,6 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Progression } from "@/lib/pose/grid";
-import VideoPoseOverlay from "../_components/VideoPoseOverlay";
-import DeleteSessionButton from "../_components/DeleteSessionButton";
+import { formatHoldDuration } from "@/lib/pose/report";
 
 const PROGRESSION_LABELS: Record<string, string> = {
   tuck_planche: "Tuck planche",
@@ -17,22 +16,30 @@ const STATUS_LABELS: Record<string, string> = {
   error: "Erreur",
 };
 
+function scoreColor(score: number): string {
+  if (score >= 8) return "text-green-400";
+  if (score >= 6) return "text-cyan-400";
+  return "text-orange-400";
+}
+
 export default async function HistoriquePage() {
   const supabase = await createClient();
 
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, progression, status, video_url, created_at, trim_start, trim_end")
+    .select(
+      "id, progression, status, created_at, hold_duration_seconds, scores(score)"
+    )
     .order("created_at", { ascending: false });
 
-  const sessionsWithUrls = await Promise.all(
-    (sessions ?? []).map(async (session) => {
-      const { data } = await supabase.storage
-        .from("videos")
-        .createSignedUrl(session.video_url, 3600);
-      return { ...session, signedUrl: data?.signedUrl ?? null };
-    })
-  );
+  const rows = (sessions ?? []).map((session) => {
+    const scoreValues = (session.scores ?? []).map((s: { score: number }) => s.score);
+    const globalScore =
+      scoreValues.length > 0
+        ? scoreValues.reduce((a: number, b: number) => a + b, 0) / scoreValues.length
+        : null;
+    return { ...session, globalScore };
+  });
 
   return (
     <div className="flex flex-col items-center gap-4 px-4 pt-10">
@@ -41,15 +48,16 @@ export default async function HistoriquePage() {
         <p className="text-sm text-slate-400">Tes figures analysées.</p>
       </div>
 
-      <div className="w-full max-w-md space-y-4">
-        {sessionsWithUrls.length === 0 && (
+      <div className="w-full max-w-md space-y-3">
+        {rows.length === 0 && (
           <p className="text-sm text-slate-500">Aucune analyse pour l&apos;instant.</p>
         )}
 
-        {sessionsWithUrls.map((session) => (
-          <div
+        {rows.map((session) => (
+          <Link
             key={session.id}
-            className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-4"
+            href={`/historique/${session.id}`}
+            className="block space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-4 transition-colors hover:border-cyan-800"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -66,32 +74,38 @@ export default async function HistoriquePage() {
                   })}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    session.status === "done"
-                      ? "bg-green-500/15 text-green-400"
-                      : "bg-slate-700/50 text-slate-300"
-                  }`}
-                >
-                  {STATUS_LABELS[session.status] ?? session.status}
-                </span>
-                <DeleteSessionButton
-                  sessionId={session.id}
-                  videoPath={session.video_url}
-                />
-              </div>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  session.status === "done"
+                    ? "bg-green-500/15 text-green-400"
+                    : "bg-slate-700/50 text-slate-300"
+                }`}
+              >
+                {STATUS_LABELS[session.status] ?? session.status}
+              </span>
             </div>
-            {session.signedUrl && (
-              <VideoPoseOverlay
-                videoUrl={session.signedUrl}
-                sessionId={session.id}
-                progression={session.progression as Progression}
-                trimStart={session.trim_start ?? undefined}
-                trimEnd={session.trim_end ?? undefined}
-              />
+
+            {(session.globalScore !== null || session.hold_duration_seconds !== null) && (
+              <div className="flex flex-wrap gap-2">
+                {session.globalScore !== null && (
+                  <span className="rounded-full border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
+                    Score{" "}
+                    <span className={`font-semibold ${scoreColor(session.globalScore)}`}>
+                      {session.globalScore.toFixed(1)}/10
+                    </span>
+                  </span>
+                )}
+                {session.hold_duration_seconds !== null && (
+                  <span className="rounded-full border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
+                    Hold{" "}
+                    <span className="font-semibold text-white">
+                      {formatHoldDuration(session.hold_duration_seconds)}
+                    </span>
+                  </span>
+                )}
+              </div>
             )}
-          </div>
+          </Link>
         ))}
       </div>
     </div>

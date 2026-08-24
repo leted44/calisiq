@@ -1,23 +1,25 @@
 import type { CriterionScore } from "@/lib/pose/scoring";
 import type { Recommendation } from "@/lib/pose/recommendations";
+import {
+  tierFor,
+  TIER_LABELS,
+  TIER_COLORS,
+  describeCriterion,
+  formatHoldDuration,
+} from "@/lib/pose/report";
+import ScoreRing from "@/components/ScoreRing";
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
-  shoulder_protraction: "Protraction",
+  shoulder_protraction: "Épaules",
   pelvis_deviation: "Bassin",
-  hip_angle: "Genou-hanche-épaule",
-  elbow_angle: "Coude",
+  hip_angle: "Hanches",
+  elbow_angle: "Coudes",
 };
 
-function scoreColor(score: number): string {
-  if (score >= 7) return "bg-green-400";
-  if (score >= 4) return "bg-orange-400";
-  return "bg-red-500";
-}
-
 function scoreTextColor(score: number): string {
-  if (score >= 7) return "text-green-400";
-  if (score >= 4) return "text-orange-400";
-  return "text-red-500";
+  if (score >= 8) return "text-green-400";
+  if (score >= 6) return "text-cyan-400";
+  return "text-orange-400";
 }
 
 export default function ResultCard({
@@ -25,14 +27,18 @@ export default function ResultCard({
   representativeFrame,
   scores,
   recommendations,
+  holdDurationSeconds,
+  figure = "planche",
 }: {
   globalScoreValue: number;
   representativeFrame: string | null;
   scores: CriterionScore[];
   recommendations: Recommendation[] | null;
+  holdDurationSeconds?: number | null;
+  figure?: "planche" | "handstand";
 }) {
   return (
-    <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-4">
+    <div className="space-y-5 rounded-xl border border-slate-800 bg-slate-900 p-4">
       <div className="flex items-center gap-4">
         {representativeFrame && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -53,30 +59,59 @@ export default function ResultCard({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+        {scores.map((s) => (
+          <ScoreRing key={s.critere} value={s.score} label={CRITERE_LABELS[s.critere]} />
+        ))}
+        {holdDurationSeconds !== undefined && (
+          <ScoreRing
+            value={Number(holdDurationSeconds?.toFixed(1) ?? 0)}
+            label="Hold"
+            suffix="s"
+          />
+        )}
+      </div>
+
+      <div className="space-y-3">
         {scores.map((s) => {
+          const tier = tierFor(s.score);
           const isAngle = s.critere === "hip_angle" || s.critere === "elbow_angle";
           const unit = isAngle ? "°" : "";
           const decimals = isAngle ? 0 : 2;
           return (
-            <div key={s.critere}>
-              <div className="mb-0.5 flex justify-between text-xs text-slate-400">
-                <span>{CRITERE_LABELS[s.critere]}</span>
-                <span>
-                  {s.score.toFixed(1)}/10 (mesuré {s.valeurMesuree.toFixed(decimals)}
-                  {unit}, cible {s.valeurCible.toFixed(decimals)}
-                  {unit})
+            <div key={s.critere} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-sm font-medium text-white">
+                  {CRITERE_LABELS[s.critere]}
+                </span>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${TIER_COLORS[tier]}`}
+                >
+                  {TIER_LABELS[tier]}
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                <div
-                  className={`h-full rounded-full ${scoreColor(s.score)}`}
-                  style={{ width: `${Math.min(100, s.score * 10)}%` }}
-                />
-              </div>
+              <p className="text-xs text-slate-400">
+                {describeCriterion(s.critere, s.score, figure)}
+              </p>
+              <p className="mt-1 font-mono text-[10px] text-slate-600">
+                mesuré {s.valeurMesuree.toFixed(decimals)}
+                {unit} · cible {s.valeurCible.toFixed(decimals)}
+                {unit}
+              </p>
             </div>
           );
         })}
+        {holdDurationSeconds !== undefined && holdDurationSeconds !== null && (
+          <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-sm font-medium text-white">Durée du hold</span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Temps réellement maintenu en position stable :{" "}
+              {formatHoldDuration(holdDurationSeconds)}
+            </p>
+          </div>
+        )}
       </div>
 
       {recommendations && recommendations.length > 0 && (

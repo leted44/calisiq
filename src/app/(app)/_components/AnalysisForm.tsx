@@ -440,6 +440,9 @@ export default function AnalysisForm() {
         status: analysisResult.ok ? "done" : "error",
         trim_start: trimStart,
         trim_end: trimEnd,
+        hold_duration_seconds: analysisResult.ok
+          ? analysisResult.holdDurationSeconds
+          : null,
       })
       .select("id")
       .single();
@@ -898,6 +901,8 @@ export default function AnalysisForm() {
                 representativeFrame={result.representativeFrameDataUrl}
                 scores={result.scores}
                 recommendations={result.recommendations}
+                holdDurationSeconds={result.holdDurationSeconds}
+                figure={figure ?? "planche"}
               />
             </>
           )}

@@ -36,7 +36,8 @@ create table sessions (
   progression text not null, -- 'tuck_planche' | 'advanced_tuck_planche' | 'straddle_planche' | 'full_planche'
   status text default 'processing', -- 'processing' | 'done' | 'error'
   trim_start numeric, -- secondes, début du segment à analyser (choisi par l'utilisateur)
-  trim_end numeric -- secondes, fin du segment à analyser
+  trim_end numeric, -- secondes, fin du segment à analyser
+  hold_duration_seconds numeric -- durée du hold détecté (fenêtre stable), en secondes
 );
 
 create table scores (

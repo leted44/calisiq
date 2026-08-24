@@ -58,6 +58,7 @@ export type PoseAnalysisResult =
       detectionRate: number;
       warning: string | null;
       holdWindow: HoldWindow;
+      holdDurationSeconds: number;
       summaryAngles: PoseAngles;
       scores: CriterionScore[];
       globalScoreValue: number;
@@ -165,6 +166,8 @@ export async function runPoseAnalysis({
   const window = detectHoldWindow(frames);
   const holdAngles = angles.slice(window.start, window.end + 1);
   const median = medianAngles(holdAngles);
+  const holdDurationSeconds =
+    ((window.end - window.start + 1) / frames.length) * (end - start);
 
   const midIndex = Math.floor((window.start + window.end) / 2);
   const representativeFrameDataUrl = await captureFrame(
@@ -183,6 +186,7 @@ export async function runPoseAnalysis({
       detectionRate,
       warning,
       holdWindow: window,
+      holdDurationSeconds,
       summaryAngles: median,
       scores: [],
       globalScoreValue: 0,
@@ -205,6 +209,7 @@ export async function runPoseAnalysis({
     detectionRate,
     warning,
     holdWindow: window,
+    holdDurationSeconds,
     summaryAngles: median,
     scores,
     globalScoreValue: globalScore(scores),

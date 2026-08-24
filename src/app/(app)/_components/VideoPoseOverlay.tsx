@@ -3,8 +3,18 @@
 import { useRef, useState } from "react";
 import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis";
 import type { Progression } from "@/lib/pose/grid";
+import type { CriterionScore } from "@/lib/pose/scoring";
+import type { Recommendation } from "@/lib/pose/recommendations";
+import { figureFromProgression } from "@/lib/pose/report";
 import { createClient } from "@/lib/supabase/client";
 import ResultCard from "./ResultCard";
+
+type PersistedReport = {
+  globalScoreValue: number;
+  scores: CriterionScore[];
+  recommendations: Recommendation[];
+  holdDurationSeconds: number | null;
+};
 
 export default function VideoPoseOverlay({
   videoUrl,
@@ -12,12 +22,14 @@ export default function VideoPoseOverlay({
   progression,
   trimStart,
   trimEnd,
+  initialReport,
 }: {
   videoUrl: string;
   sessionId: string;
   progression: Progression;
   trimStart?: number;
   trimEnd?: number;
+  initialReport?: PersistedReport | null;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -27,6 +39,8 @@ export default function VideoPoseOverlay({
   const [result, setResult] = useState<PoseAnalysisResult | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const figure = figureFromProgression(progression);
 
   async function saveResult(analysisResult: Extract<PoseAnalysisResult, { ok: true }>) {
     const supabase = createClient();
@@ -60,7 +74,10 @@ export default function VideoPoseOverlay({
 
     const { error: sessionError } = await supabase
       .from("sessions")
-      .update({ status: "done" })
+      .update({
+        status: "done",
+        hold_duration_seconds: analysisResult.holdDurationSeconds,
+      })
       .eq("id", sessionId);
     if (sessionError) throw sessionError;
   }
@@ -102,7 +119,8 @@ export default function VideoPoseOverlay({
     }
   }
 
-  const showResults = !analyzing && result?.ok;
+  const freshResult = !analyzing && result?.ok ? result : null;
+  const report = freshResult ?? (initialReport ? { ...initialReport, ok: true as const } : null);
 
   return (
     <div className="space-y-3">
@@ -125,11 +143,11 @@ export default function VideoPoseOverlay({
           type="button"
           onClick={handleAnalyze}
           disabled={analyzing}
-          className="whitespace-nowrap rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2 text-sm font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.25)] disabled:opacity-50"
+          className="whitespace-nowrap rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:border-cyan-700 disabled:opacity-50"
         >
           {analyzing
             ? "Analyse en cours..."
-            : result
+            : report
             ? "Ré-analyser la pose"
             : "Analyser la pose"}
         </button>
@@ -152,20 +170,21 @@ export default function VideoPoseOverlay({
         </p>
       )}
 
-      {showResults && result?.ok && (
-        <>
-          {result.warning && (
-            <p className="rounded-lg bg-orange-500/10 p-2 text-xs text-orange-400">
-              {result.warning}
-            </p>
-          )}
-          <ResultCard
-            globalScoreValue={result.globalScoreValue}
-            representativeFrame={result.representativeFrameDataUrl}
-            scores={result.scores}
-            recommendations={result.recommendations}
-          />
-        </>
+      {!analyzing && freshResult?.warning && (
+        <p className="rounded-lg bg-orange-500/10 p-2 text-xs text-orange-400">
+          {freshResult.warning}
+        </p>
+      )}
+
+      {!analyzing && report && (
+        <ResultCard
+          globalScoreValue={report.globalScoreValue}
+          representativeFrame={freshResult?.representativeFrameDataUrl ?? null}
+          scores={report.scores}
+          recommendations={report.recommendations}
+          holdDurationSeconds={report.holdDurationSeconds}
+          figure={figure}
+        />
       )}
 
       {saveError && (
