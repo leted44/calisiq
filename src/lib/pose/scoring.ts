@@ -2,7 +2,13 @@ import type { PoseAngles } from "./angles";
 import { SCORING_GRID, type Progression } from "./grid";
 
 export type CriterionScore = {
-  critere: "shoulder_protraction" | "pelvis_deviation" | "hip_angle" | "elbow_angle";
+  critere:
+    | "shoulder_protraction"
+    | "pelvis_deviation"
+    | "hip_angle"
+    | "knee_angle"
+    | "elbow_angle"
+    | "body_line_angle";
   score: number;
   valeurMesuree: number;
   valeurCible: number;
@@ -77,6 +83,16 @@ export function scoreAngles(
       valeurCible: grid.hip_angle.target,
     },
     {
+      critere: "knee_angle",
+      score: scoreFromThreshold(
+        angles.kneeAngle,
+        grid.knee_angle.target,
+        grid.knee_angle.tolerance
+      ),
+      valeurMesuree: angles.kneeAngle,
+      valeurCible: grid.knee_angle.target,
+    },
+    {
       critere: "elbow_angle",
       score: scoreFromThreshold(
         angles.elbowAngle,
@@ -85,6 +101,16 @@ export function scoreAngles(
       ),
       valeurMesuree: angles.elbowAngle,
       valeurCible: grid.elbow_angle.target,
+    },
+    {
+      critere: "body_line_angle",
+      score: scoreFromThreshold(
+        angles.bodyLineAngleFromHorizontal,
+        grid.body_line_angle_from_horizontal.target,
+        grid.body_line_angle_from_horizontal.tolerance
+      ),
+      valeurMesuree: angles.bodyLineAngleFromHorizontal,
+      valeurCible: grid.body_line_angle_from_horizontal.target,
     },
   ];
 }

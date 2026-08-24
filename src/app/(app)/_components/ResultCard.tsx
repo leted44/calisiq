@@ -13,7 +13,9 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   shoulder_protraction: "Épaules",
   pelvis_deviation: "Bassin",
   hip_angle: "Hanches",
+  knee_angle: "Genoux",
   elbow_angle: "Coudes",
+  body_line_angle: "Axe du corps",
 };
 
 function scoreTextColor(score: number): string {
@@ -59,7 +61,7 @@ export default function ResultCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-3 gap-3">
         {scores.map((s) => (
           <ScoreRing key={s.critere} value={s.score} label={CRITERE_LABELS[s.critere]} />
         ))}
@@ -75,7 +77,11 @@ export default function ResultCard({
       <div className="space-y-3">
         {scores.map((s) => {
           const tier = tierFor(s.score);
-          const isAngle = s.critere === "hip_angle" || s.critere === "elbow_angle";
+          const isAngle =
+            s.critere === "hip_angle" ||
+            s.critere === "elbow_angle" ||
+            s.critere === "knee_angle" ||
+            s.critere === "body_line_angle";
           const unit = isAngle ? "°" : "";
           const decimals = isAngle ? 0 : 2;
           return (

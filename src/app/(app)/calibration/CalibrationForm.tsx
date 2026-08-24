@@ -339,6 +339,12 @@ export default function CalibrationForm() {
                     </dd>
                   </div>
                   <div className="flex justify-between">
+                    <dt className="text-slate-400">Genou</dt>
+                    <dd className="font-mono text-white">
+                      {result.summaryAngles.kneeAngle.toFixed(1)}°
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
                     <dt className="text-slate-400">Ligne de corps (vs horizontale)</dt>
                     <dd className="font-mono text-white">
                       {result.summaryAngles.bodyLineAngleFromHorizontal.toFixed(1)}°

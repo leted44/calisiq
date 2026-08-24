@@ -49,6 +49,16 @@ const PLANCHE_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
     bon: "Bras presque tendus, léger fléchissement.",
     faible: "Coudes fléchis — la figure est compensée par les bras plutôt que par la position.",
   },
+  knee_angle: {
+    optimal: "Genoux bien tendus.",
+    bon: "Genoux presque tendus, léger fléchissement.",
+    faible: "Genoux fléchis — les jambes doivent rester tendues même en position tuck.",
+  },
+  body_line_angle: {
+    optimal: "Corps bien parallèle au sol pour cette progression.",
+    bon: "Corps globalement parallèle au sol, léger écart.",
+    faible: "Le corps n'est pas assez parallèle au sol pour cette progression.",
+  },
 };
 
 const HANDSTAND_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
@@ -71,6 +81,16 @@ const HANDSTAND_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
     optimal: "Bras bien tendus, verrouillage correct.",
     bon: "Bras presque tendus, léger fléchissement.",
     faible: "Coudes fléchis — la position est compensée par les bras plutôt que par l'équilibre.",
+  },
+  knee_angle: {
+    optimal: "Genoux bien tendus, ligne verticale nette.",
+    bon: "Genoux presque tendus, léger fléchissement.",
+    faible: "Genoux fléchis — casse la ligne verticale du corps.",
+  },
+  body_line_angle: {
+    optimal: "Corps bien vertical.",
+    bon: "Corps globalement vertical, léger écart.",
+    faible: "Le corps n'est pas assez vertical.",
   },
 };
 

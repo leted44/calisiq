@@ -18,6 +18,10 @@
 // ces échantillons (dominés par le critère hanche/bassin) — cibles fixées
 // par raisonnement biomécanique (bras tendus ~180°, épaules alignées),
 // à affiner si des échantillons plus ciblés deviennent disponibles.
+//
+// knee_angle (genoux tendus, hanche-genou-cheville) et
+// body_line_angle_from_horizontal (axe global du corps) : critères ajoutés
+// le 2026-08, cibles raisonnées (pas encore de données réelles isolées).
 
 export type Progression =
   | "tuck_planche"
@@ -33,6 +37,7 @@ export type ProgressionThresholds = {
   body_line_angle_from_horizontal: Threshold;
   elbow_angle: Threshold;
   hip_angle: Threshold;
+  knee_angle: Threshold;
   shoulder_protraction: ShoulderProtractionThreshold;
   pelvis_deviation: Threshold;
 };
@@ -42,6 +47,7 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     body_line_angle_from_horizontal: { target: 25, tolerance: 10 },
     elbow_angle: { target: 175, tolerance: 10 },
     hip_angle: { target: 90, tolerance: 20 },
+    knee_angle: { target: 180, tolerance: 20 },
     shoulder_protraction: { target: 0.35, tolerance: 0.2, mode: "minimum" },
     pelvis_deviation: { target: 0, tolerance: 0.25 },
   },
@@ -49,6 +55,7 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     body_line_angle_from_horizontal: { target: 15, tolerance: 8 },
     elbow_angle: { target: 178, tolerance: 8 },
     hip_angle: { target: 110, tolerance: 15 },
+    knee_angle: { target: 180, tolerance: 15 },
     shoulder_protraction: { target: 0.5, tolerance: 0.2, mode: "minimum" },
     pelvis_deviation: { target: 0, tolerance: 0.25 },
   },
@@ -56,6 +63,7 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     body_line_angle_from_horizontal: { target: 8, tolerance: 6 },
     elbow_angle: { target: 180, tolerance: 6 },
     hip_angle: { target: 170, tolerance: 10 },
+    knee_angle: { target: 180, tolerance: 10 },
     shoulder_protraction: { target: 0.6, tolerance: 0.2, mode: "minimum" },
     pelvis_deviation: { target: 0, tolerance: 0.18 },
   },
@@ -63,6 +71,7 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     body_line_angle_from_horizontal: { target: 0, tolerance: 5 },
     elbow_angle: { target: 180, tolerance: 5 },
     hip_angle: { target: 180, tolerance: 8 },
+    knee_angle: { target: 180, tolerance: 8 },
     shoulder_protraction: { target: 0.7, tolerance: 0.2, mode: "minimum" },
     pelvis_deviation: { target: 0, tolerance: 0.12 },
   },
@@ -70,6 +79,7 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     body_line_angle_from_horizontal: { target: 90, tolerance: 15 },
     elbow_angle: { target: 178, tolerance: 22 },
     hip_angle: { target: 172, tolerance: 18 },
+    knee_angle: { target: 180, tolerance: 20 },
     shoulder_protraction: { target: 0, tolerance: 0.18, mode: "band" },
     pelvis_deviation: { target: 0, tolerance: 0.12 },
   },

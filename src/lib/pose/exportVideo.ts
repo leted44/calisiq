@@ -26,7 +26,9 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   shoulder_protraction: "Épaules",
   pelvis_deviation: "Bassin",
   hip_angle: "Hanches",
+  knee_angle: "Genoux",
   elbow_angle: "Coudes",
+  body_line_angle: "Axe",
 };
 
 function scoreColor(score: number): string {

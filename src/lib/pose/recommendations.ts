@@ -62,6 +62,24 @@ const PLANCHE_EXERCISE_MAP: Record<string, Recommendation[]> = {
         "Mieux vaut un hold court avec les bras tendus qu'un hold long en compensant avec les coudes.",
     },
   ],
+  knee_angle: [
+    {
+      exercice: "Étirements ischio-jambiers + gainage jambes tendues",
+      raison:
+        "Genoux fléchis — les jambes doivent rester tendues même en position tuck, sinon la figure suivante (straddle, full) sera plus dure à transférer.",
+    },
+    {
+      exercice: "Straddle-L progressif, jambes verrouillées",
+      raison: "Renforce l'habitude de garder les genoux tendus sous tension.",
+    },
+  ],
+  body_line_angle: [
+    {
+      exercice: "Hold isométrique dans la position cible avec cue « pousser vers le sol »",
+      raison:
+        "Le corps n'est pas assez parallèle au sol pour cette progression — souvent un manque de force d'épaules plus que de technique.",
+    },
+  ],
 };
 
 const HANDSTAND_EXERCISE_MAP: Record<string, Recommendation[]> = {
@@ -114,6 +132,18 @@ const HANDSTAND_EXERCISE_MAP: Record<string, Recommendation[]> = {
       exercice: "Réduire la durée du hold, prioriser bras tendus sur le temps",
       raison:
         "Mieux vaut un hold court avec les bras verrouillés qu'un hold long en compensant avec les coudes.",
+    },
+  ],
+  knee_angle: [
+    {
+      exercice: "Handstand dos au mur, jambes actives et tendues",
+      raison: "Genoux fléchis — casse la ligne verticale du corps et complique l'équilibre.",
+    },
+  ],
+  body_line_angle: [
+    {
+      exercice: "Handstand dos au mur pour sentir la ligne verticale",
+      raison: "Le corps n'est pas assez vertical — repère physique utile pour corriger l'axe global.",
     },
   ],
 };
