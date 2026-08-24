@@ -6,14 +6,14 @@ export default function AccueilPage() {
     <div className="relative flex flex-col items-center gap-8 overflow-hidden px-4 pt-10">
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-500/20 blur-3xl"
+        className="pointer-events-none absolute -top-16 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-cyan-500/20 blur-3xl"
       />
 
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/logo.png"
+        src="/logo-emblem.png"
         alt="CalisIQ"
-        className="relative h-16 w-auto drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+        className="relative h-32 w-32 drop-shadow-[0_0_22px_rgba(34,211,238,0.4)]"
       />
 
       <div className="relative w-full max-w-md space-y-1">

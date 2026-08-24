@@ -37,14 +37,14 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-slate-950 p-4">
-      <div className="relative -mb-4 w-full max-w-[280px]">
+      <div className="relative -mb-2 w-full max-w-[300px]">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 rounded-full bg-cyan-500/25 blur-3xl"
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logo.png"
+          src="/logo-full.png"
           alt="CalisIQ"
           className="relative w-full drop-shadow-[0_0_25px_rgba(34,211,238,0.35)]"
         />
@@ -54,11 +54,10 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="relative w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl shadow-black/40"
       >
-        <div className="space-y-1 text-center">
+        <div className="text-center">
           <h1 className="text-xl font-semibold text-white">
             {mode === "signin" ? "Connexion" : "Créer un compte"}
           </h1>
-          <p className="text-sm text-slate-400">CalisIQ</p>
         </div>
 
         <div className="space-y-3">
