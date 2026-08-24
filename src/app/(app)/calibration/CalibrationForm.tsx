@@ -221,6 +221,7 @@ export default function CalibrationForm() {
       pelvis_sag_sign: result.summaryAngles.pelvisSagSign,
       user_rating: ratingValue,
       notes: notes || null,
+      media_type: mediaKind ?? "video",
     });
 
     setSaving(false);

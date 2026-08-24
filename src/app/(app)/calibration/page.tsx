@@ -32,14 +32,15 @@ export default async function CalibrationPage() {
 
   const { data: samples } = await supabase
     .from("calibration_samples")
-    .select("variation, user_rating")
+    .select("variation, user_rating, media_type")
     .order("created_at");
 
-  const byVariation = new Map<string, number[]>();
+  type Sample = { rating: number; mediaType: string };
+  const byVariation = new Map<string, Sample[]>();
   for (const v of ALL_VARIATIONS) byVariation.set(v, []);
   for (const s of samples ?? []) {
     const list = byVariation.get(s.variation) ?? [];
-    list.push(s.user_rating);
+    list.push({ rating: s.user_rating, mediaType: s.media_type ?? "video" });
     byVariation.set(s.variation, list);
   }
 
@@ -59,13 +60,15 @@ export default async function CalibrationPage() {
         </p>
         <div className="divide-y divide-slate-800 rounded-xl border border-slate-800 bg-slate-900">
           {ALL_VARIATIONS.map((v) => {
-            const ratings = byVariation.get(v) ?? [];
+            const items = byVariation.get(v) ?? [];
+            const videoCount = items.filter((s) => s.mediaType === "video").length;
+            const photoCount = items.filter((s) => s.mediaType === "photo").length;
             const label = PROGRESSION_LABELS[v] ?? EXTRA_LABELS[v] ?? v;
             const calibrated = CALIBRATED_CRITERIA[v] ?? [];
             const importedColor =
-              ratings.length === 0
+              items.length === 0
                 ? "bg-slate-800 text-slate-500"
-                : ratings.length < 5
+                : items.length < 5
                 ? "bg-orange-500/15 text-orange-400"
                 : "bg-green-500/15 text-green-400";
 
@@ -76,12 +79,19 @@ export default async function CalibrationPage() {
                   <span
                     className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${importedColor}`}
                   >
-                    {ratings.length} importé{ratings.length > 1 ? "s" : ""}
+                    {items.length} importé{items.length > 1 ? "s" : ""}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500">
-                  {ratings.length === 0 ? "Pas commencé" : `Notes : ${ratings.join(", ")}`}
+                  {items.length === 0
+                    ? "Pas commencé"
+                    : `${videoCount} vidéo${videoCount > 1 ? "s" : ""} · ${photoCount} photo${photoCount > 1 ? "s" : ""}`}
                 </p>
+                {items.length > 0 && (
+                  <p className="text-xs text-slate-500">
+                    Notes : {items.map((s) => s.rating).join(", ")}
+                  </p>
+                )}
                 <div className="flex items-center gap-2">
                   <span
                     className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${

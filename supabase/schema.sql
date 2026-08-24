@@ -75,7 +75,8 @@ create table calibration_samples (
   pelvis_deviation numeric,
   pelvis_sag_sign numeric,
   user_rating numeric not null,
-  notes text
+  notes text,
+  media_type text not null default 'video' check (media_type in ('video', 'photo'))
 );
 
 -- RLS : chaque utilisateur ne voit que ses propres données
