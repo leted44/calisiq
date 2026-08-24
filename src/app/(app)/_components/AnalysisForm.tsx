@@ -8,7 +8,13 @@ import type { PoseAngles } from "@/lib/pose/angles";
 import type { Progression } from "@/lib/pose/grid";
 import CaptureTipsModal, { shouldSkipTips } from "./CaptureTipsModal";
 import ResultCard from "./ResultCard";
-import { UploadCloudIcon, CameraIcon, ChangeVideoIcon, TrashIcon } from "@/components/icons";
+import {
+  UploadCloudIcon,
+  CameraIcon,
+  CameraFlipIcon,
+  ChangeVideoIcon,
+  TrashIcon,
+} from "@/components/icons";
 import {
   PlancheFigureIcon,
   HandstandFigureIcon,
@@ -173,6 +179,7 @@ export default function AnalysisForm() {
   const [trimEnd, setTrimEnd] = useState(0);
 
   const [cameraMode, setCameraMode] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
 
@@ -263,17 +270,36 @@ export default function AnalysisForm() {
     if (action === "camera") openCamera();
   }
 
+  async function startStream(mode: "user" | "environment") {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false,
+    });
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = stream;
+    setFacingMode(mode);
+    if (cameraVideoRef.current) {
+      cameraVideoRef.current.srcObject = stream;
+      await cameraVideoRef.current.play().catch(() => {});
+    }
+  }
+
   async function openCamera() {
     setError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      streamRef.current = stream;
+      await startStream(facingMode);
       setCameraMode(true);
     } catch (err) {
       setError("Impossible d'accéder à la caméra : " + (err as Error).message);
+    }
+  }
+
+  async function flipCamera() {
+    setError(null);
+    try {
+      await startStream(facingMode === "user" ? "environment" : "user");
+    } catch (err) {
+      setError("Impossible de changer de caméra : " + (err as Error).message);
     }
   }
 
@@ -617,6 +643,10 @@ export default function AnalysisForm() {
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Vidéo
           </p>
+          <p className="text-xs text-slate-500">
+            MP4, MOV, WebM · vidéo sauvegardée dans l&apos;historique si elle
+            fait moins de 50 Mo
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -648,12 +678,27 @@ export default function AnalysisForm() {
       {cameraMode && (
         <div className="space-y-3">
           <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-black">
-            <video ref={cameraVideoRef} muted playsInline className="w-full -scale-x-100" />
+            <video
+              ref={cameraVideoRef}
+              muted
+              playsInline
+              className={`w-full ${facingMode === "user" ? "-scale-x-100" : ""}`}
+            />
             {recording && (
               <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
                 {formatTime(recordSeconds)}
               </div>
+            )}
+            {!recording && (
+              <button
+                type="button"
+                onClick={flipCamera}
+                aria-label="Changer de caméra"
+                className="absolute right-3 top-3 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+              >
+                <CameraFlipIcon className="h-5 w-5" />
+              </button>
             )}
           </div>
 

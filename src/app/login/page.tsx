@@ -59,10 +59,14 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="relative w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl shadow-black/40"
       >
-        <div className="text-center">
+        <div className="space-y-1 text-center">
           <h1 className="text-xl font-semibold text-white">
             {mode === "signin" ? "Connexion" : "Créer un compte"}
           </h1>
+          <p className="text-sm text-slate-400">
+            Filme ta figure, obtiens ton score et ton plan de progression en
+            quelques secondes grâce à l&apos;IA.
+          </p>
         </div>
 
         <div className="space-y-3">
