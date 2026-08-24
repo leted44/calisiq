@@ -4,6 +4,7 @@ import { SCORING_GRID, type Progression } from "./grid";
 export type CriterionScore = {
   critere:
     | "shoulder_protraction"
+    | "shoulder_flexion"
     | "pelvis_deviation"
     | "hip_angle"
     | "knee_angle"
@@ -44,24 +45,35 @@ export function scoreAngles(
 ): CriterionScore[] {
   const grid = SCORING_GRID[progression];
 
-  return [
-    {
+  const scores: CriterionScore[] = [];
+
+  if (grid.shoulder_protraction) {
+    const t = grid.shoulder_protraction;
+    scores.push({
       critere: "shoulder_protraction",
       score:
-        grid.shoulder_protraction.mode === "band"
-          ? scoreFromThreshold(
-              angles.shoulderProtraction,
-              grid.shoulder_protraction.target,
-              grid.shoulder_protraction.tolerance
-            )
-          : scoreFromMinimum(
-              angles.shoulderProtraction,
-              grid.shoulder_protraction.target,
-              grid.shoulder_protraction.tolerance
-            ),
+        t.mode === "band"
+          ? scoreFromThreshold(angles.shoulderProtraction, t.target, t.tolerance)
+          : scoreFromMinimum(angles.shoulderProtraction, t.target, t.tolerance),
       valeurMesuree: angles.shoulderProtraction,
-      valeurCible: grid.shoulder_protraction.target,
-    },
+      valeurCible: t.target,
+    });
+  }
+
+  if (grid.shoulder_flexion) {
+    scores.push({
+      critere: "shoulder_flexion",
+      score: scoreFromThreshold(
+        angles.shoulderFlexionAngle,
+        grid.shoulder_flexion.target,
+        grid.shoulder_flexion.tolerance
+      ),
+      valeurMesuree: angles.shoulderFlexionAngle,
+      valeurCible: grid.shoulder_flexion.target,
+    });
+  }
+
+  scores.push(
     {
       critere: "pelvis_deviation",
       score: scoreFromThreshold(
@@ -111,8 +123,10 @@ export function scoreAngles(
       ),
       valeurMesuree: angles.bodyLineAngleFromHorizontal,
       valeurCible: grid.body_line_angle_from_horizontal.target,
-    },
-  ];
+    }
+  );
+
+  return scores;
 }
 
 export function globalScore(scores: CriterionScore[]): number {

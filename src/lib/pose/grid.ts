@@ -1,12 +1,12 @@
 // Grille de scoring — DRAFT, confiance modérée (voir CLAUDE.md)
 // shoulder_protraction et pelvis_deviation sont des ratios normalisés par la
 // longueur du corps (indépendants de la distance/zoom caméra), pas des degrés.
-//
-// shoulder_protraction a deux modes :
-// - "minimum" (planche) : target = seuil à atteindre, pas de pénalité pour un
-//   dépassement (plus de protraction n'est jamais un défaut en planche).
-// - "band" (handstand) : target = valeur idéale, pénalité dans les deux sens
-//   (épaules doivent être alignées au-dessus des poignets, ni devant ni derrière).
+// shoulder_protraction ne s'applique qu'à la planche (levier épaules/poignets,
+// "seuil minimum" — plus de protraction n'est jamais un défaut). Pour le
+// handstand, remplacé par shoulder_flexion (angle hanche-épaule-poignet,
+// ouverture d'épaule) : plus pertinent pour une figure overhead, et
+// shoulder_protraction n'avait justement montré aucun signal exploitable
+// dans les échantillons réels (calibration_samples).
 //
 // Planche : seuils issus de standards de coaching, recalibrés le 2026-08 à
 // partir de 2 cas réels jugés 10/10 par Cali League (mesurés chez nous à
@@ -14,10 +14,9 @@
 //
 // Handstand : hip_angle et pelvis_deviation calibrés le 2026-08 à partir de
 // 8 échantillons réels notés par l'utilisateur (calibration_samples).
-// elbow_angle et shoulder_protraction n'avaient pas de signal isolable dans
-// ces échantillons (dominés par le critère hanche/bassin) — cibles fixées
-// par raisonnement biomécanique (bras tendus ~180°, épaules alignées),
-// à affiner si des échantillons plus ciblés deviennent disponibles.
+// elbow_angle, knee_angle et shoulder_flexion : cibles fixées par
+// raisonnement biomécanique (~180°, alignement/verrouillage), à affiner si
+// des échantillons plus ciblés deviennent disponibles.
 //
 // knee_angle (genoux tendus, hanche-genou-cheville) et
 // body_line_angle_from_horizontal (axe global du corps) : critères ajoutés
@@ -38,7 +37,8 @@ export type ProgressionThresholds = {
   elbow_angle: Threshold;
   hip_angle: Threshold;
   knee_angle: Threshold;
-  shoulder_protraction: ShoulderProtractionThreshold;
+  shoulder_protraction?: ShoulderProtractionThreshold;
+  shoulder_flexion?: Threshold;
   pelvis_deviation: Threshold;
 };
 
@@ -80,7 +80,7 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     elbow_angle: { target: 178, tolerance: 22 },
     hip_angle: { target: 172, tolerance: 18 },
     knee_angle: { target: 180, tolerance: 20 },
-    shoulder_protraction: { target: 0, tolerance: 0.18, mode: "band" },
+    shoulder_flexion: { target: 180, tolerance: 20 },
     pelvis_deviation: { target: 0, tolerance: 0.12 },
   },
 };

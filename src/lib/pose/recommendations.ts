@@ -83,15 +83,15 @@ const PLANCHE_EXERCISE_MAP: Record<string, Recommendation[]> = {
 };
 
 const HANDSTAND_EXERCISE_MAP: Record<string, Recommendation[]> = {
-  shoulder_protraction: [
+  shoulder_flexion: [
     {
       exercice: "Handstand dos au mur (chest-to-wall)",
       raison:
-        "Épaules pas alignées au-dessus des poignets — ce hold apprend à empiler poignet-épaule-hanche à la verticale.",
+        "Manque d'ouverture d'épaule — pousse fort dans le sol et cherche à cacher tes oreilles avec tes épaules pour éviter de cambrer le dos.",
     },
     {
       exercice: "Pike push-up",
-      raison: "Renforce les épaules dans l'amplitude overhead nécessaire à l'alignement.",
+      raison: "Renforce les épaules dans l'amplitude overhead nécessaire à l'ouverture complète.",
     },
   ],
   pelvis_deviation_sag: [

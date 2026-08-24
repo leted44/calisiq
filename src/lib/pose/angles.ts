@@ -39,6 +39,9 @@ export type PoseAngles = {
   elbowAngle: number;
   hipAngle: number;
   kneeAngle: number;
+  // Angle hanche-épaule-poignet : ouverture d'épaule (utilisé pour le
+  // handstand — bras bien overhead, "oreilles cachées par les épaules")
+  shoulderFlexionAngle: number;
   bodyLineAngleFromHorizontal: number;
   // Écart horizontal épaules/poignets, normalisé par la longueur du tronc
   // (0 = épaules au-dessus des poignets, plus c'est grand plus les épaules sont avancées)
@@ -86,6 +89,17 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     landmarks[RIGHT_ANKLE]
   );
 
+  const leftShoulderFlexion = angleAt(
+    landmarks[LEFT_HIP],
+    landmarks[LEFT_SHOULDER],
+    landmarks[LEFT_WRIST]
+  );
+  const rightShoulderFlexion = angleAt(
+    landmarks[RIGHT_HIP],
+    landmarks[RIGHT_SHOULDER],
+    landmarks[RIGHT_WRIST]
+  );
+
   const midShoulder = midpoint(landmarks[LEFT_SHOULDER], landmarks[RIGHT_SHOULDER]);
   const midHip = midpoint(landmarks[LEFT_HIP], landmarks[RIGHT_HIP]);
   const midWrist = midpoint(landmarks[LEFT_WRIST], landmarks[RIGHT_WRIST]);
@@ -131,6 +145,7 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     elbowAngle: (leftElbowAngle + rightElbowAngle) / 2,
     hipAngle: (leftHipAngle + rightHipAngle) / 2,
     kneeAngle: (leftKneeAngle + rightKneeAngle) / 2,
+    shoulderFlexionAngle: (leftShoulderFlexion + rightShoulderFlexion) / 2,
     bodyLineAngleFromHorizontal,
     shoulderProtraction,
     pelvisDeviation,
@@ -217,6 +232,7 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
     elbowAngle: median(frames.map((f) => f.elbowAngle)),
     hipAngle: median(frames.map((f) => f.hipAngle)),
     kneeAngle: median(frames.map((f) => f.kneeAngle)),
+    shoulderFlexionAngle: median(frames.map((f) => f.shoulderFlexionAngle)),
     bodyLineAngleFromHorizontal: median(
       frames.map((f) => f.bodyLineAngleFromHorizontal)
     ),

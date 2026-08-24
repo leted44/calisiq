@@ -11,6 +11,7 @@ import ScoreRing from "@/components/ScoreRing";
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   shoulder_protraction: "Épaules",
+  shoulder_flexion: "Épaules",
   pelvis_deviation: "Bassin",
   hip_angle: "Hanches",
   knee_angle: "Genoux",
@@ -81,7 +82,8 @@ export default function ResultCard({
             s.critere === "hip_angle" ||
             s.critere === "elbow_angle" ||
             s.critere === "knee_angle" ||
-            s.critere === "body_line_angle";
+            s.critere === "body_line_angle" ||
+            s.critere === "shoulder_flexion";
           const unit = isAngle ? "°" : "";
           const decimals = isAngle ? 0 : 2;
           return (

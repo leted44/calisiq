@@ -24,6 +24,7 @@ function pickSupportedMimeType(): string {
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   shoulder_protraction: "Épaules",
+  shoulder_flexion: "Épaules",
   pelvis_deviation: "Bassin",
   hip_angle: "Hanches",
   knee_angle: "Genoux",

@@ -62,10 +62,10 @@ const PLANCHE_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
 };
 
 const HANDSTAND_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
-  shoulder_protraction: {
-    optimal: "Épaules bien alignées au-dessus des poignets.",
-    bon: "Épaules globalement alignées, léger décalage par rapport aux poignets.",
-    faible: "Épaules décalées par rapport aux poignets, l'équilibre est plus difficile à tenir.",
+  shoulder_flexion: {
+    optimal: "Épaules bien ouvertes, bras overhead, oreilles cachées par les épaules.",
+    bon: "Ouverture d'épaule correcte, encore un peu de marge pour pousser dans le sol.",
+    faible: "Manque d'ouverture d'épaule — risque de cambrer le dos pour compenser.",
   },
   pelvis_deviation: {
     optimal: "Ligne de corps parfaitement droite, aucune arche.",
