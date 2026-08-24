@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { GoogleIcon } from "@/components/icons";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,6 +35,23 @@ export default function LoginPage() {
 
     router.push("/");
     router.refresh();
+  }
+
+  async function handleGoogleSignIn() {
+    setError(null);
+    setGoogleLoading(true);
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setGoogleLoading(false);
+    }
   }
 
   return (
@@ -67,6 +86,22 @@ export default function LoginPage() {
             Filme ta figure, obtiens ton score et ton plan de progression en
             quelques secondes grâce à l&apos;IA.
           </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={googleLoading}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-white hover:border-slate-600 disabled:opacity-50"
+        >
+          <GoogleIcon className="h-4 w-4" />
+          {googleLoading ? "Redirection..." : "Continuer avec Google"}
+        </button>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-800" />
+          <p className="text-xs uppercase tracking-wide text-slate-500">Ou e-mail</p>
+          <div className="h-px flex-1 bg-slate-800" />
         </div>
 
         <div className="space-y-3">

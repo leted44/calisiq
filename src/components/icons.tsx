@@ -248,6 +248,135 @@ export function LogoutIcon({ className = base }: IconProps) {
   );
 }
 
+export function GoogleIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path
+        d="M22.5 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.9a5.05 5.05 0 0 1-2.19 3.32v2.76h3.55c2.08-1.92 3.24-4.74 3.24-8.09Z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.55-2.76c-.98.66-2.24 1.05-3.73 1.05-2.87 0-5.3-1.94-6.17-4.53H2.16v2.85A11 11 0 0 0 12 23Z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.83 14.1a6.6 6.6 0 0 1 0-4.2V7.05H2.16a11 11 0 0 0 0 9.9l3.67-2.85Z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 0 0-9.84 6.05l3.67 2.85C6.7 7.32 9.13 5.38 12 5.38Z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
+
+export function RulerIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect
+        x="3"
+        y="8"
+        width="18"
+        height="8"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6.5 8v2.5M10 8v3.5M13.5 8v2.5M17 8v3.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function ScaleIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect
+        x="3.5"
+        y="3.5"
+        width="17"
+        height="17"
+        rx="4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M8.5 14.5a3.5 3.5 0 0 1 7 0"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="14.5" r="0.9" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function CalendarIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect
+        x="3.5"
+        y="5"
+        width="17"
+        height="15.5"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M3.5 9.5h17M8 3v3.5M16 3v3.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function CrownIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M4 17h16l-1.4-8.5-4.1 3.5L12 6.5 9.5 12 5.4 8.5 4 17Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 20h14"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function EditIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M4 20h4l10.5-10.5a2 2 0 0 0-2.8-2.8L5 17v3Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M13.5 5.5l3 3"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function CameraFlipIcon({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>

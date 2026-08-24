@@ -16,6 +16,16 @@ export default async function AppLayout({
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_completed")
+    .eq("id", user.id)
+    .single();
+
+  if (profile && !profile.onboarding_completed) {
+    redirect("/onboarding");
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 pb-20">
       {children}

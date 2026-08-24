@@ -2,7 +2,14 @@
 create table profiles (
   id uuid references auth.users primary key,
   created_at timestamptz default now(),
-  is_premium boolean default false
+  is_premium boolean default false,
+  height_cm numeric,
+  weight_kg numeric,
+  birth_date date,
+  gender text check (gender in ('homme', 'femme', 'autre')),
+  avatar_url text,
+  onboarding_completed boolean not null default false,
+  subscription_tier text not null default 'free'
 );
 
 -- Crée automatiquement un profil à chaque inscription (auth.users est géré par Supabase, pas accessible en direct)
@@ -94,3 +101,16 @@ create policy "videos: delete own" on storage.objects for delete
 
 create policy "videos: select own" on storage.objects for select
   using (bucket_id = 'videos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Storage bucket pour les photos de profil (public en lecture)
+insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+create policy "avatars: insert own" on storage.objects for insert
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "avatars: update own" on storage.objects for update
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "avatars: delete own" on storage.objects for delete
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
