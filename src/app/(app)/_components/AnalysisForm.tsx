@@ -115,7 +115,6 @@ const EXERCISE_TYPES: {
 ];
 
 const MIN_TRIM_SECONDS = 2;
-const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
 function getVideoDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -206,13 +205,6 @@ export default function AnalysisForm() {
     setError(null);
     setResult(null);
     setSaveError(null);
-
-    if (selected.size > MAX_FILE_SIZE_BYTES) {
-      setError(
-        `Cette vidéo est trop lourde (${(selected.size / (1024 * 1024)).toFixed(1)} Mo, maximum 50 Mo). Choisis une vidéo plus courte ou moins lourde.`
-      );
-      return;
-    }
 
     let videoDuration: number;
     try {
@@ -365,7 +357,12 @@ export default function AnalysisForm() {
 
     const { error: uploadError } = await supabase.storage.from("videos").upload(path, file);
     if (uploadError) {
-      setSaveError(uploadError.message);
+      const isSizeError = /maximum allowed size/i.test(uploadError.message);
+      setSaveError(
+        isSizeError
+          ? "Vidéo non sauvegardée : elle dépasse la limite de stockage actuelle (50 Mo)."
+          : uploadError.message
+      );
       setSaving(false);
       return;
     }
