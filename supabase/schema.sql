@@ -68,6 +68,8 @@ create table calibration_samples (
   variation text not null,
   elbow_angle numeric,
   hip_angle numeric,
+  knee_angle numeric,
+  shoulder_flexion_angle numeric,
   body_line_angle_from_horizontal numeric,
   shoulder_protraction numeric,
   pelvis_deviation numeric,

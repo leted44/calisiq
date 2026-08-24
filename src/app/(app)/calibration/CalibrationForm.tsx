@@ -5,9 +5,13 @@ import { createClient } from "@/lib/supabase/client";
 import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis";
 
 const VARIATIONS = [
-  { value: "handstand", label: "Handstand (statique)" },
-  { value: "handstand_push_up", label: "Handstand Push-up" },
-  { value: "one_arm_handstand", label: "One Arm Handstand" },
+  { value: "tuck_planche", label: "Tuck Planche", figure: "planche" },
+  { value: "advanced_tuck_planche", label: "Advanced Tuck Planche", figure: "planche" },
+  { value: "straddle_planche", label: "Straddle Planche", figure: "planche" },
+  { value: "full_planche", label: "Full Planche", figure: "planche" },
+  { value: "handstand", label: "Handstand (statique)", figure: "handstand" },
+  { value: "handstand_push_up", label: "Handstand Push-up", figure: "handstand" },
+  { value: "one_arm_handstand", label: "One Arm Handstand", figure: "handstand" },
 ] as const;
 
 const MIN_TRIM_SECONDS = 2;
@@ -43,6 +47,7 @@ export default function CalibrationForm() {
   const [variation, setVariation] = useState<(typeof VARIATIONS)[number]["value"]>(
     VARIATIONS[0].value
   );
+  const figure = VARIATIONS.find((v) => v.value === variation)?.figure ?? "planche";
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
@@ -170,10 +175,12 @@ export default function CalibrationForm() {
 
     const { error: insertError } = await supabase.from("calibration_samples").insert({
       user_id: user.id,
-      figure: "handstand",
+      figure,
       variation,
       elbow_angle: result.summaryAngles.elbowAngle,
       hip_angle: result.summaryAngles.hipAngle,
+      knee_angle: result.summaryAngles.kneeAngle,
+      shoulder_flexion_angle: result.summaryAngles.shoulderFlexionAngle,
       body_line_angle_from_horizontal: result.summaryAngles.bodyLineAngleFromHorizontal,
       shoulder_protraction: result.summaryAngles.shoulderProtraction,
       pelvis_deviation: result.summaryAngles.pelvisDeviation,
@@ -348,6 +355,12 @@ export default function CalibrationForm() {
                     <dt className="text-slate-400">Ligne de corps (vs horizontale)</dt>
                     <dd className="font-mono text-white">
                       {result.summaryAngles.bodyLineAngleFromHorizontal.toFixed(1)}°
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-slate-400">Ouverture épaule (hanche-épaule-poignet)</dt>
+                    <dd className="font-mono text-white">
+                      {result.summaryAngles.shoulderFlexionAngle.toFixed(1)}°
                     </dd>
                   </div>
                   <div className="flex justify-between">
