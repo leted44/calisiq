@@ -31,6 +31,18 @@
 // la ligne épaule-cheville n'a pas de sens tant que les jambes ne sont pas
 // tendues (Straddle/Full/Handstand). Recalculé sur épaule->cheville plutôt
 // qu'épaule->hanche : base plus longue, moins bruitée.
+//
+// Full Planche, tolérances coude/hanche/axe élargies le 2026-08-26 : les
+// valeurs d'origine (±5/±8/±5°) étaient bien plus strictes que celles
+// validées sur données réelles pour le Handstand (±18-22°) pour un concept
+// similaire (verrouillage/alignement mesuré en 2D). Un cas réel jugé
+// 9-10/10 par l'utilisateur mesurait coude et hanche à 165° — la mesure
+// n'était pas en cause (léger fléchissement et inclinaison réellement
+// visibles sur la vidéo), mais la tolérance ne laissait aucune marge pour
+// le bruit de mesure caméra + variation humaine naturelle sous effort
+// maximal. Reste une estimation raisonnée (un seul cas réel), pas une
+// calibration complète — à affiner si plusieurs échantillons deviennent
+// disponibles via /calibration.
 
 export type Progression =
   | "tuck_planche"
@@ -74,9 +86,9 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     pelvis_deviation: { target: 0, tolerance: 0.18 },
   },
   full_planche: {
-    body_line_angle_from_horizontal: { target: 0, tolerance: 5 },
-    elbow_angle: { target: 180, tolerance: 5 },
-    hip_angle: { target: 180, tolerance: 8 },
+    body_line_angle_from_horizontal: { target: 0, tolerance: 10 },
+    elbow_angle: { target: 180, tolerance: 15 },
+    hip_angle: { target: 180, tolerance: 15 },
     knee_angle: { target: 180, tolerance: 8 },
     shoulder_protraction: { target: 0.7, tolerance: 0.2, mode: "minimum" },
     pelvis_deviation: { target: 0, tolerance: 0.12 },
