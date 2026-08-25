@@ -17,7 +17,7 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   tuck_planche: [],
   advanced_tuck_planche: ["shoulder_protraction"],
   straddle_planche: [],
-  full_planche: [],
+  full_planche: ["elbow_angle", "hip_angle", "body_line_angle"],
   handstand: ["hip_angle", "pelvis_deviation"],
   handstand_push_up: [],
   one_arm_handstand: [],

@@ -32,17 +32,17 @@
 // tendues (Straddle/Full/Handstand). Recalculé sur épaule->cheville plutôt
 // qu'épaule->hanche : base plus longue, moins bruitée.
 //
-// Full Planche, tolérances coude/hanche/axe élargies le 2026-08-26 : les
-// valeurs d'origine (±5/±8/±5°) étaient bien plus strictes que celles
-// validées sur données réelles pour le Handstand (±18-22°) pour un concept
-// similaire (verrouillage/alignement mesuré en 2D). Un cas réel jugé
-// 9-10/10 par l'utilisateur mesurait coude et hanche à 165° — la mesure
-// n'était pas en cause (léger fléchissement et inclinaison réellement
-// visibles sur la vidéo), mais la tolérance ne laissait aucune marge pour
-// le bruit de mesure caméra + variation humaine naturelle sous effort
-// maximal. Reste une estimation raisonnée (un seul cas réel), pas une
-// calibration complète — à affiner si plusieurs échantillons deviennent
-// disponibles via /calibration.
+// Full Planche : elbow_angle, hip_angle et body_line_angle_from_horizontal
+// recalibrés le 2026-08-26 à partir de 6 échantillons réels notés par
+// l'utilisateur (calibration_samples), après correction d'un bug sur
+// body_line_angle_from_horizontal (voir angles.ts — l'angle dépendait du
+// sens de la caméra). Les 6 échantillons, tous notés 7 à 10/10, mesuraient
+// coude 165-176°, hanche 158-178° et axe (corrigé) 1-10° — aucun ne
+// descendait sous 7, ce qui indique que cette plage entière correspond à
+// une "bonne" exécution pour l'utilisateur, pas à un défaut. hip_angle
+// recentré à 170° (au lieu de 180) : même constat que pour le Handstand,
+// une exécution jugée excellente n'atteint quasiment jamais 180° pile en
+// mesure caméra 2D.
 
 export type Progression =
   | "tuck_planche"
@@ -86,9 +86,9 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     pelvis_deviation: { target: 0, tolerance: 0.18 },
   },
   full_planche: {
-    body_line_angle_from_horizontal: { target: 0, tolerance: 10 },
-    elbow_angle: { target: 180, tolerance: 15 },
-    hip_angle: { target: 180, tolerance: 15 },
+    body_line_angle_from_horizontal: { target: 0, tolerance: 12 },
+    elbow_angle: { target: 180, tolerance: 22 },
+    hip_angle: { target: 170, tolerance: 22 },
     knee_angle: { target: 180, tolerance: 8 },
     shoulder_protraction: { target: 0.7, tolerance: 0.2, mode: "minimum" },
     pelvis_deviation: { target: 0, tolerance: 0.12 },

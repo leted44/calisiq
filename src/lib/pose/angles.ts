@@ -112,9 +112,12 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
   // chevilles sont repliées près du buste.
   const dx = midAnkle.x - midShoulder.x;
   const dy = midAnkle.y - midShoulder.y;
-  const bodyLineAngleFromHorizontal = Math.abs(
-    (Math.atan2(dy, dx) * 180) / Math.PI
-  );
+  const rawAngle = Math.abs((Math.atan2(dy, dx) * 180) / Math.PI); // 0-180
+  // Replie sur [0, 90] : sans ça, un corps parfaitement horizontal donne 0°
+  // s'il pointe vers la droite de l'image mais 180° s'il pointe vers la
+  // gauche — un artefact du sens de la caméra, pas de la posture. 0 = plat,
+  // 90 = vertical, peu importe le sens dans lequel la figure est orientée.
+  const bodyLineAngleFromHorizontal = Math.min(rawAngle, 180 - rawAngle);
 
   const torsoLength = Math.hypot(
     midHip.x - midShoulder.x,
