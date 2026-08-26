@@ -219,6 +219,7 @@ export async function runPoseAnalysis({
   const weakest = pickWeakestCriterion(scores);
   const recommendations = recommendationsFor(
     weakest.critere,
+    weakest.score,
     median.pelvisSagSign,
     progression
   );

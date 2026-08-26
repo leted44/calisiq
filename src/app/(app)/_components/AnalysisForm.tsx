@@ -418,7 +418,17 @@ export default function AnalysisForm() {
     const stream = streamRef.current;
     if (!stream) return;
 
-    const mimeCandidates = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+    // MP4 en priorité : format lisible partout (galerie photo du téléphone,
+    // partage direct) sans passer par une conversion. WebM en repli pour
+    // les navigateurs qui ne savent pas encoder de MP4 (ex. Firefox desktop).
+    const mimeCandidates = [
+      "video/mp4;codecs=avc1.42E01E",
+      "video/mp4;codecs=h264",
+      "video/mp4",
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm",
+    ];
     const mimeType = mimeCandidates.find((t) => MediaRecorder.isTypeSupported(t)) ?? "video/webm";
 
     chunksRef.current = [];
@@ -430,10 +440,10 @@ export default function AnalysisForm() {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
     recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, {
-        type: recorder.mimeType || "video/webm",
-      });
-      const recordedFile = new File([blob], `enregistrement-${Date.now()}.webm`, {
+      const finalType = recorder.mimeType || "video/webm";
+      const blob = new Blob(chunksRef.current, { type: finalType });
+      const extension = finalType.includes("mp4") ? "mp4" : "webm";
+      const recordedFile = new File([blob], `enregistrement-${Date.now()}.${extension}`, {
         type: blob.type,
       });
       closeCamera();
