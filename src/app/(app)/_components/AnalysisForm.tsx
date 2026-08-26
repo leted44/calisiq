@@ -22,18 +22,23 @@ import {
 import {
   PlancheFigureIcon,
   HandstandFigureIcon,
+  FrontLeverFigureIcon,
   TuckPlancheIcon,
   AdvancedTuckIcon,
   StraddlePlancheIcon,
   FullPlancheIcon,
   HandstandPushUpIcon,
   OneArmHandstandIcon,
+  TuckFrontLeverIcon,
+  AdvancedTuckFrontLeverIcon,
+  StraddleFrontLeverIcon,
+  FullFrontLeverIcon,
   HoldTypeIcon,
   PressTypeIcon,
   PushUpTypeIcon,
 } from "@/components/figureIcons";
 
-type Figure = "planche" | "handstand";
+type Figure = "planche" | "handstand" | "front_lever";
 type ExerciseType = "hold" | "press" | "push_up";
 type HandstandVariation = "handstand_push_up" | "one_arm_handstand";
 type Variation = Progression | HandstandVariation;
@@ -58,6 +63,12 @@ const FIGURES: {
     available: true,
     Icon: HandstandFigureIcon,
     image: "/figures/handstand.png",
+  },
+  {
+    value: "front_lever",
+    label: "Front Lever",
+    available: true,
+    Icon: FrontLeverFigureIcon,
   },
 ];
 
@@ -110,6 +121,32 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     },
     { value: "handstand_push_up", label: "Handstand Push-up", Icon: HandstandPushUpIcon, available: false },
     { value: "one_arm_handstand", label: "One Arm Handstand", Icon: OneArmHandstandIcon, available: false },
+  ],
+  front_lever: [
+    {
+      value: "tuck_front_lever",
+      label: "Tuck",
+      Icon: TuckFrontLeverIcon,
+      available: true,
+    },
+    {
+      value: "advanced_tuck_front_lever",
+      label: "Advanced tuck",
+      Icon: AdvancedTuckFrontLeverIcon,
+      available: true,
+    },
+    {
+      value: "straddle_front_lever",
+      label: "Straddle",
+      Icon: StraddleFrontLeverIcon,
+      available: true,
+    },
+    {
+      value: "full_front_lever",
+      label: "Full",
+      Icon: FullFrontLeverIcon,
+      available: true,
+    },
   ],
 };
 
@@ -668,7 +705,7 @@ export default function AnalysisForm() {
         <CaptureTipsModal
           onContinue={confirmTips}
           onClose={() => setPendingAction(null)}
-          isStraddle={progression === "straddle_planche"}
+          isStraddle={progression === "straddle_planche" || progression === "straddle_front_lever"}
         />
       )}
 
@@ -737,7 +774,11 @@ export default function AnalysisForm() {
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Variations
         </p>
-        <div className={`grid gap-2 ${figure === "planche" ? "grid-cols-4" : "grid-cols-3"}`}>
+        <div
+          className={`grid gap-2 ${
+            figure === "planche" || figure === "front_lever" ? "grid-cols-4" : "grid-cols-3"
+          }`}
+        >
           {VARIATIONS_BY_FIGURE[figure].map((v) => {
             const selected = progression === v.value;
             return (

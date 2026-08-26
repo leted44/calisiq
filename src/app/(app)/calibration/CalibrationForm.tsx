@@ -16,6 +16,10 @@ const VARIATIONS = [
   { value: "handstand", label: "Handstand (statique)", figure: "handstand" },
   { value: "handstand_push_up", label: "Handstand Push-up", figure: "handstand" },
   { value: "one_arm_handstand", label: "One Arm Handstand", figure: "handstand" },
+  { value: "tuck_front_lever", label: "Tuck Front Lever", figure: "front_lever" },
+  { value: "advanced_tuck_front_lever", label: "Advanced Tuck Front Lever", figure: "front_lever" },
+  { value: "straddle_front_lever", label: "Straddle Front Lever", figure: "front_lever" },
+  { value: "full_front_lever", label: "Full Front Lever", figure: "front_lever" },
 ] as const;
 
 // Plus bas que le formulaire principal (2s) : ici on ne mesure qu'une

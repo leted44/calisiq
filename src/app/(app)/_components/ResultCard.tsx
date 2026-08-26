@@ -39,7 +39,7 @@ export default function ResultCard({
   scores: CriterionScore[];
   recommendations: Recommendation[] | null;
   holdDurationSeconds?: number | null;
-  figure?: "planche" | "handstand";
+  figure?: "planche" | "handstand" | "front_lever";
 }) {
   return (
     <div className="space-y-5 rounded-xl border border-slate-800 bg-slate-900 p-4">

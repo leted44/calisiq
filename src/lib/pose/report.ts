@@ -6,6 +6,10 @@ export const PROGRESSION_LABELS: Record<string, string> = {
   straddle_planche: "Straddle planche",
   full_planche: "Full planche",
   handstand: "Handstand",
+  tuck_front_lever: "Tuck front lever",
+  advanced_tuck_front_lever: "Advanced tuck front lever",
+  straddle_front_lever: "Straddle front lever",
+  full_front_lever: "Full front lever",
 };
 
 // Critères effectivement recalibrés dans le code à partir de données
@@ -21,6 +25,10 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   handstand: ["hip_angle", "pelvis_deviation"],
   handstand_push_up: [],
   one_arm_handstand: [],
+  tuck_front_lever: [],
+  advanced_tuck_front_lever: [],
+  straddle_front_lever: [],
+  full_front_lever: [],
 };
 
 // Définition générique de ce que mesure chaque critère (indépendante du
@@ -129,17 +137,49 @@ const HANDSTAND_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   },
 };
 
+const FRONT_LEVER_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
+  hip_angle: {
+    optimal: "Angle hanche-genou très proche de la cible pour cette variation.",
+    bon: "Angle hanche-genou raisonnablement proche de la cible.",
+    faible: "L'angle hanche-genou s'écarte de la cible attendue pour cette variation.",
+  },
+  elbow_angle: {
+    optimal: "Bras bien tendus, verrouillage correct.",
+    bon: "Bras presque tendus, léger fléchissement.",
+    faible: "Coudes fléchis — la position est compensée par les bras plutôt que par la force du dos.",
+  },
+  knee_angle: {
+    optimal: "Genoux bien tendus.",
+    bon: "Genoux presque tendus, léger fléchissement.",
+    faible: "Genoux fléchis — les jambes doivent rester tendues pour cette variation.",
+  },
+  body_line_angle: {
+    optimal: "Corps bien parallèle au sol pour cette progression.",
+    bon: "Corps globalement parallèle au sol, léger écart.",
+    faible: "Le corps n'est pas assez parallèle au sol pour cette progression.",
+  },
+};
+
 export function describeCriterion(
   critere: CriterionScore["critere"],
   score: number,
-  figure: "planche" | "handstand"
+  figure: "planche" | "handstand" | "front_lever"
 ): string {
-  const map = figure === "handstand" ? HANDSTAND_DESCRIPTIONS : PLANCHE_DESCRIPTIONS;
+  const map =
+    figure === "handstand"
+      ? HANDSTAND_DESCRIPTIONS
+      : figure === "front_lever"
+      ? FRONT_LEVER_DESCRIPTIONS
+      : PLANCHE_DESCRIPTIONS;
   return map[critere]?.[tierFor(score)] ?? "";
 }
 
-export function figureFromProgression(progression: string): "planche" | "handstand" {
-  return progression === "handstand" ? "handstand" : "planche";
+export function figureFromProgression(
+  progression: string
+): "planche" | "handstand" | "front_lever" {
+  if (progression === "handstand") return "handstand";
+  if (progression.includes("front_lever")) return "front_lever";
+  return "planche";
 }
 
 export function formatHoldDuration(seconds: number | null | undefined): string {

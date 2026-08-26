@@ -1,6 +1,6 @@
 import type { CriterionScore } from "./scoring";
 import type { Progression } from "./grid";
-import { tierFor, type ScoreTier } from "./report";
+import { tierFor, figureFromProgression, type ScoreTier } from "./report";
 
 export type Recommendation = { exercice: string; raison: string };
 
@@ -339,6 +339,103 @@ const HANDSTAND_EXERCISE_MAP: Record<string, TieredRecommendations> = {
   },
 };
 
+const FRONT_LEVER_EXERCISE_MAP: Record<string, TieredRecommendations> = {
+  hip_angle: {
+    faible: [
+      {
+        exercice: "Tuck front lever hold (genoux à la poitrine, suspendu à la barre)",
+        raison: "Renforce le contrôle de l'angle hanche-genou spécifique à ta progression actuelle.",
+      },
+      {
+        exercice: "Ice cream makers (rowing excentrique vers la position tuck)",
+        raison: "Développe la force de traction nécessaire pour tenir l'angle cible sans se dégrader.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Même position, réduis légèrement l'angle de hanche de quelques degrés à chaque série",
+        raison: "L'angle est proche de la cible — un ajustement progressif plutôt qu'un nouvel exercice.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Angle de hanche déjà maîtrisé — travaille plutôt la durée du hold à cet angle",
+        raison: "Rien à corriger ici, la priorité passe à l'endurance plutôt qu'à la technique.",
+      },
+    ],
+  },
+  elbow_angle: {
+    faible: [
+      {
+        exercice: "Straight-arm pulldown (poulie ou élastique, bras tendus)",
+        raison:
+          "Renforce le grand dorsal en bras tendu — la force qui manque pour garder les coudes verrouillés au lieu de tirer avec les bras.",
+      },
+      {
+        exercice: "Réduire la durée du hold, prioriser la forme sur le temps",
+        raison: "Mieux vaut un hold court avec les bras tendus qu'un hold long en compensant avec les coudes.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue « verrouiller activement les coudes » dès la sortie de traction",
+        raison: "Le fléchissement est léger — un cue de verrouillage actif corrige le reste.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Verrouillage déjà excellent — rien à ajouter sur ce point",
+        raison: "Les bras restent tendus sur toute la durée du hold.",
+      },
+    ],
+  },
+  knee_angle: {
+    faible: [
+      {
+        exercice: "Étirements ischio-jambiers + gainage jambes tendues en suspension",
+        raison: "Genoux fléchis — les jambes doivent rester tendues pour cette variation.",
+      },
+      {
+        exercice: "Straddle-L progressif, jambes verrouillées",
+        raison: "Renforce l'habitude de garder les genoux tendus sous tension.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue « pointes de pieds actives » pour finir de tendre les jambes",
+        raison: "Le fléchissement résiduel est faible — un cue actif suffit à corriger le reste.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Jambes déjà bien verrouillées — rien à ajouter sur ce point",
+        raison: "La ligne des jambes est nette sur tout le hold.",
+      },
+    ],
+  },
+  body_line_angle: {
+    faible: [
+      {
+        exercice: "Skin the cat + hold isométrique dans la position cible",
+        raison:
+          "Le corps n'est pas assez parallèle au sol pour cette progression — souvent un manque de gainage et de force de traction plus que de technique.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Même position, cherche à relever légèrement les pieds pour repasser à l'horizontale",
+        raison: "L'axe est proche de l'horizontale — un ajustement fin plutôt qu'un retour à un exercice plus facile.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Axe déjà excellent — travaille plutôt la durée du hold dans cette position",
+        raison: "Rien à corriger sur l'alignement du corps.",
+      },
+    ],
+  },
+};
+
 export function pickWeakestCriterion(scores: CriterionScore[]): CriterionScore {
   return scores.reduce((worst, s) => (s.score < worst.score ? s : worst));
 }
@@ -349,8 +446,13 @@ export function recommendationsFor(
   pelvisSagSign: number,
   progression: Progression
 ): Recommendation[] {
+  const figure = figureFromProgression(progression);
   const exerciseMap =
-    progression === "handstand" ? HANDSTAND_EXERCISE_MAP : PLANCHE_EXERCISE_MAP;
+    figure === "handstand"
+      ? HANDSTAND_EXERCISE_MAP
+      : figure === "front_lever"
+      ? FRONT_LEVER_EXERCISE_MAP
+      : PLANCHE_EXERCISE_MAP;
   const tier = tierFor(score);
 
   const key =

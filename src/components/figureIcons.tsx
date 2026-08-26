@@ -107,6 +107,71 @@ export function OneArmHandstandIcon({ className = base }: IconProps) {
   );
 }
 
+// Front lever : même langage visuel que la planche (tête + ligne de corps
+// horizontale + jambes selon la variation), mais suspendu sous une barre en
+// haut plutôt qu'appuyé sur les mains en bas.
+export function FrontLeverFigureIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M4 3h13" {...stroke} />
+      <path d="M6.5 3v6.5" {...stroke} />
+      <path d="M15.5 3v6.5" {...stroke} />
+      <circle cx="5" cy="11" r="1.6" {...stroke} />
+      <path d="M6.4 12 9 12.5h6.5" {...stroke} />
+    </svg>
+  );
+}
+
+export function TuckFrontLeverIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M2 3h6" {...stroke} />
+      <path d="M5 3v4" {...stroke} />
+      <circle cx="5" cy="9" r="1.6" {...stroke} />
+      <path d="M6.4 10 9 10.5h4" {...stroke} />
+      <path d="M13 10.5c1 1.2 1 2.8 0 4" {...stroke} />
+      <path d="M13 14.5c-1 .6-1.5 1.3-1.5 2.5" {...stroke} />
+    </svg>
+  );
+}
+
+export function AdvancedTuckFrontLeverIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M2 3h6" {...stroke} />
+      <path d="M5 3v4" {...stroke} />
+      <circle cx="5" cy="9" r="1.6" {...stroke} />
+      <path d="M6.4 10 9 10.5h5.5" {...stroke} />
+      <path d="M14.5 10.5c1.5.8 2 2.2 1.5 3.6" {...stroke} />
+      <path d="M16 14.1c-.8.8-1.2 1.5-1 2.7" {...stroke} />
+    </svg>
+  );
+}
+
+export function StraddleFrontLeverIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M2 3h6" {...stroke} />
+      <path d="M5 3v4" {...stroke} />
+      <circle cx="5" cy="9" r="1.6" {...stroke} />
+      <path d="M6.4 10 9 10.5h5" {...stroke} />
+      <path d="M14 10.5 20 7.5" {...stroke} />
+      <path d="M14 10.5 20 13.5" {...stroke} />
+    </svg>
+  );
+}
+
+export function FullFrontLeverIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M2 3h6" {...stroke} />
+      <path d="M5 3v4" {...stroke} />
+      <circle cx="5" cy="9" r="1.6" {...stroke} />
+      <path d="M6.4 10 9 10.5h12" {...stroke} />
+    </svg>
+  );
+}
+
 const smallStroke = { ...stroke, strokeWidth: 1.7 };
 
 export function HoldTypeIcon({ className = "h-5 w-5" }: IconProps) {

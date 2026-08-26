@@ -64,7 +64,11 @@ export type Progression =
   | "advanced_tuck_planche"
   | "straddle_planche"
   | "full_planche"
-  | "handstand";
+  | "handstand"
+  | "tuck_front_lever"
+  | "advanced_tuck_front_lever"
+  | "straddle_front_lever"
+  | "full_front_lever";
 
 type Threshold = { target: number; tolerance: number };
 type ShoulderProtractionThreshold = Threshold & { mode: "minimum" | "band" };
@@ -113,5 +117,44 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     knee_angle: { target: 180, tolerance: 20 },
     shoulder_flexion: { target: 180, tolerance: 20 },
     pelvis_deviation: { target: 0, tolerance: 0.12 },
+  },
+
+  // Front Lever : ajouté le 2026-08-26, seuils entièrement raisonnés (DRAFT,
+  // confiance faible), aucun calibration_samples encore collecté pour cette
+  // famille de figures — à recalibrer dès que des échantillons réels sont
+  // disponibles, en suivant le même processus que pour la planche.
+  //
+  // Pas de critère d'épaule (protraction ou flexion) pour le front lever :
+  // contrairement à la planche (poussée) ou au handstand (overhead), le
+  // signal technique clé du front lever est surtout la rétraction/dépression
+  // scapulaire, une position d'omoplate plutôt qu'un angle articulaire
+  // propre — mal capturée par une projection 2D d'un seul point. Plutôt que
+  // d'inventer un critère non fiable, on s'en tient à coude/hanche (+
+  // genou/axe du corps dès que les jambes sont tendues), comme pour la
+  // planche.
+  //
+  // hip_angle (épaule-hanche-genou) : tolérance volontairement large en
+  // tuck/advanced tuck, la vraie cible ne sera connue qu'après calibration —
+  // l'expérience de la Tuck Planche (cible réelle 47°, très loin d'une
+  // estimation a priori) incite à la prudence ici.
+  tuck_front_lever: {
+    elbow_angle: { target: 176, tolerance: 20 },
+    hip_angle: { target: 70, tolerance: 45 },
+  },
+  advanced_tuck_front_lever: {
+    elbow_angle: { target: 176, tolerance: 20 },
+    hip_angle: { target: 120, tolerance: 35 },
+  },
+  straddle_front_lever: {
+    body_line_angle_from_horizontal: { target: 6, tolerance: 8 },
+    elbow_angle: { target: 180, tolerance: 15 },
+    hip_angle: { target: 170, tolerance: 15 },
+    knee_angle: { target: 180, tolerance: 12 },
+  },
+  full_front_lever: {
+    body_line_angle_from_horizontal: { target: 0, tolerance: 12 },
+    elbow_angle: { target: 180, tolerance: 18 },
+    hip_angle: { target: 172, tolerance: 18 },
+    knee_angle: { target: 180, tolerance: 10 },
   },
 };

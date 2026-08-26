@@ -20,6 +20,10 @@ const ALL_VARIATIONS = [
   "handstand",
   "handstand_push_up",
   "one_arm_handstand",
+  "tuck_front_lever",
+  "advanced_tuck_front_lever",
+  "straddle_front_lever",
+  "full_front_lever",
 ];
 
 const EXTRA_LABELS: Record<string, string> = {

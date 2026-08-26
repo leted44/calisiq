@@ -195,7 +195,9 @@ export async function runPoseAnalysis({
   // elles se superposent à l'écran et les angles genou/axe du corps
   // deviennent peu fiables — on prévient plutôt que d'afficher un score
   // silencieusement faussé.
-  if (progression === "straddle_planche" && median.legOcclusionRisk) {
+  const isStraddleVariant =
+    progression === "straddle_planche" || progression === "straddle_front_lever";
+  if (isStraddleVariant && median.legOcclusionRisk) {
     warningParts.push(
       "Une jambe peut être mal détectée ou superposée à l'autre sur cette vidéo — pour un straddle, filme légèrement de biais (pas totalement de face ni de profil) pour bien distinguer les deux jambes, sinon les angles genou et axe du corps peuvent être faussés."
     );
