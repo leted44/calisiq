@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis";
+import { downloadBlob } from "@/lib/pose/exportVideo";
 import type { PoseAngles } from "@/lib/pose/angles";
 import type { Progression } from "@/lib/pose/grid";
 import CaptureTipsModal, { shouldSkipTips } from "./CaptureTipsModal";
@@ -16,6 +17,7 @@ import {
   CameraFlipIcon,
   ChangeVideoIcon,
   TrashIcon,
+  DownloadIcon,
 } from "@/components/icons";
 import {
   PlancheFigureIcon,
@@ -146,6 +148,23 @@ function formatTime(seconds: number): string {
   return `${m}:${s}`;
 }
 
+type RecordingQuality = "720p" | "1080p" | "4k";
+
+const QUALITY_PRESETS: Record<RecordingQuality, { width: number; height: number; bitrate: number }> = {
+  "720p": { width: 1280, height: 720, bitrate: 4_000_000 },
+  "1080p": { width: 1920, height: 1080, bitrate: 8_000_000 },
+  "4k": { width: 3840, height: 2160, bitrate: 25_000_000 },
+};
+
+// L'API de zoom caméra (MediaTrackCapabilities.zoom) est non-standard et
+// absente des types TS du DOM — présente sur Chrome Android, pas partout.
+// Le retour de getCapabilities() est casté directement (plutôt que de
+// retyper la méthode par intersection) car TS fusionne sinon les deux
+// signatures de getCapabilities et perd le champ zoom ajouté.
+type ZoomCapabilities = MediaTrackCapabilities & {
+  zoom?: { min: number; max: number; step: number };
+};
+
 export default function AnalysisForm() {
   const router = useRouter();
   const supabase = createClient();
@@ -158,6 +177,7 @@ export default function AnalysisForm() {
   const chunksRef = useRef<Blob[]>([]);
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const analysisAbortRef = useRef<AbortController | null>(null);
 
   const [figure, setFigure] = useState<Figure | null>(null);
   const [progression, setProgression] = useState<Variation>(
@@ -186,6 +206,11 @@ export default function AnalysisForm() {
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [quality, setQuality] = useState<RecordingQuality>("1080p");
+  const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number } | null>(
+    null
+  );
+  const [zoom, setZoom] = useState(1);
 
   const [pendingAction, setPendingAction] = useState<"import" | "camera" | null>(null);
 
@@ -274,23 +299,36 @@ export default function AnalysisForm() {
     if (action === "camera") openCamera();
   }
 
-  async function startStream(mode: "user" | "environment", exact: boolean) {
+  async function startStream(mode: "user" | "environment", exact: boolean, q: RecordingQuality) {
     // La caméra précédente doit être libérée avant d'en demander une
     // nouvelle : sur mobile, deux flux caméra actifs en même temps
     // font souvent planter ou bloquer la nouvelle requête.
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
 
+    const preset = QUALITY_PRESETS[q];
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: exact ? { exact: mode } : mode,
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
+        width: { ideal: preset.width },
+        height: { ideal: preset.height },
       },
       audio: false,
     });
     streamRef.current = stream;
     setFacingMode(mode);
+    setQuality(q);
+
+    const track = stream.getVideoTracks()[0] as MediaStreamTrack | undefined;
+    const capabilities = track?.getCapabilities?.() as ZoomCapabilities | undefined;
+    if (capabilities?.zoom) {
+      setZoomRange(capabilities.zoom);
+      setZoom(capabilities.zoom.min);
+    } else {
+      setZoomRange(null);
+      setZoom(1);
+    }
+
     if (cameraVideoRef.current) {
       cameraVideoRef.current.srcObject = stream;
       await cameraVideoRef.current.play().catch(() => {});
@@ -300,7 +338,7 @@ export default function AnalysisForm() {
   async function openCamera() {
     setError(null);
     try {
-      await startStream(facingMode, false);
+      await startStream(facingMode, false, quality);
       setCameraMode(true);
     } catch (err) {
       setError("Impossible d'accéder à la caméra : " + (err as Error).message);
@@ -313,15 +351,40 @@ export default function AnalysisForm() {
     try {
       // "exact" force un vrai changement de caméra ; sans ça certains
       // navigateurs renvoient silencieusement la même caméra qu'avant.
-      await startStream(nextMode, true);
+      await startStream(nextMode, true, quality);
     } catch {
       setError("Aucune autre caméra disponible sur cet appareil.");
       try {
-        await startStream(facingMode, false);
+        await startStream(facingMode, false, quality);
       } catch {
         // la caméra précédente ne peut pas être restaurée, l'utilisateur
         // devra fermer et rouvrir "Se filmer"
       }
+    }
+  }
+
+  async function changeQuality(newQuality: RecordingQuality) {
+    if (recording) return; // pas de changement de résolution pendant l'enregistrement
+    setError(null);
+    if (!cameraMode) {
+      setQuality(newQuality);
+      return;
+    }
+    try {
+      await startStream(facingMode, false, newQuality);
+    } catch {
+      setError("Impossible de changer la qualité — réessaie ou choisis une résolution plus basse.");
+    }
+  }
+
+  async function handleZoomChange(value: number) {
+    setZoom(value);
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    try {
+      await track.applyConstraints({ advanced: [{ zoom: value } as MediaTrackConstraintSet] });
+    } catch {
+      // certains navigateurs refusent le changement en direct, on ignore
     }
   }
 
@@ -355,8 +418,14 @@ export default function AnalysisForm() {
     const stream = streamRef.current;
     if (!stream) return;
 
+    const mimeCandidates = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
+    const mimeType = mimeCandidates.find((t) => MediaRecorder.isTypeSupported(t)) ?? "video/webm";
+
     chunksRef.current = [];
-    const recorder = new MediaRecorder(stream);
+    const recorder = new MediaRecorder(stream, {
+      mimeType,
+      videoBitsPerSecond: QUALITY_PRESETS[quality].bitrate,
+    });
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
@@ -506,6 +575,9 @@ export default function AnalysisForm() {
     setResult(null);
     setProgressPercent(0);
 
+    const controller = new AbortController();
+    analysisAbortRef.current = controller;
+
     try {
       const analysisResult = await runPoseAnalysis({
         video: previewVideoRef.current,
@@ -515,16 +587,25 @@ export default function AnalysisForm() {
         rangeEnd: trimEnd,
         onProgress: setProgressPercent,
         onLiveAngles: setLiveAngles,
+        signal: controller.signal,
       });
 
       setAnalyzing(false);
       setResult(analysisResult);
       await persist(analysisResult);
     } catch (err) {
-      console.error(err);
       setAnalyzing(false);
+      if ((err as Error).name === "AbortError") {
+        setProgressPercent(0);
+        return;
+      }
+      console.error(err);
       setError("L'analyse a échoué : " + (err as Error).message);
     }
+  }
+
+  function handleCancelAnalysis() {
+    analysisAbortRef.current?.abort();
   }
 
   // Rejoue la mesure sur la même vidéo sans re-sauvegarder — contrairement à
@@ -539,6 +620,9 @@ export default function AnalysisForm() {
     setResult(null);
     setProgressPercent(0);
 
+    const controller = new AbortController();
+    analysisAbortRef.current = controller;
+
     try {
       const analysisResult = await runPoseAnalysis({
         video: previewVideoRef.current,
@@ -548,13 +632,18 @@ export default function AnalysisForm() {
         rangeEnd: trimEnd,
         onProgress: setProgressPercent,
         onLiveAngles: setLiveAngles,
+        signal: controller.signal,
       });
 
       setAnalyzing(false);
       setResult(analysisResult);
     } catch (err) {
-      console.error(err);
       setAnalyzing(false);
+      if ((err as Error).name === "AbortError") {
+        setProgressPercent(0);
+        return;
+      }
+      console.error(err);
       setError("L'analyse a échoué : " + (err as Error).message);
     }
   }
@@ -755,6 +844,25 @@ export default function AnalysisForm() {
 
       {cameraMode && (
         <div className="space-y-3">
+          {!recording && countdown === null && (
+            <div className="flex gap-2">
+              {(["720p", "1080p", "4k"] as const).map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => changeQuality(q)}
+                  className={`flex-1 rounded-lg border py-1.5 text-xs font-medium transition-colors ${
+                    quality === q
+                      ? "border-cyan-500 bg-cyan-500/10 text-white"
+                      : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600"
+                  }`}
+                >
+                  {q === "4k" ? "4K" : q}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-black">
             <video
               ref={cameraVideoRef}
@@ -783,6 +891,20 @@ export default function AnalysisForm() {
                 <span className="text-7xl font-bold text-white drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]">
                   {countdown}
                 </span>
+              </div>
+            )}
+            {zoomRange && (
+              <div className="absolute inset-x-3 bottom-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5">
+                <span className="text-xs font-medium text-white">Zoom</span>
+                <input
+                  type="range"
+                  min={zoomRange.min}
+                  max={zoomRange.max}
+                  step={zoomRange.step || 0.1}
+                  value={zoom}
+                  onChange={(e) => handleZoomChange(Number(e.target.value))}
+                  className="flex-1 accent-cyan-400"
+                />
               </div>
             )}
           </div>
@@ -831,6 +953,14 @@ export default function AnalysisForm() {
               Découpe
             </p>
             <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => file && downloadBlob(file, file.name)}
+                className="flex items-center gap-1 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:border-slate-600"
+              >
+                <DownloadIcon className="h-3.5 w-3.5" />
+                Enregistrer
+              </button>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -968,13 +1098,22 @@ export default function AnalysisForm() {
           )}
 
           {analyzing && (
-            <button
-              type="button"
-              disabled
-              className="w-full rounded-lg bg-slate-800 py-2.5 font-medium text-slate-400"
-            >
-              Analyse en cours...
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                disabled
+                className="w-full rounded-lg bg-slate-800 py-2.5 font-medium text-slate-400"
+              >
+                Analyse en cours...
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelAnalysis}
+                className="w-full rounded-lg border border-slate-700 py-2.5 text-sm font-medium text-slate-300 hover:border-red-800 hover:text-red-400"
+              >
+                Annuler l&apos;analyse
+              </button>
+            </div>
           )}
 
           {result && (

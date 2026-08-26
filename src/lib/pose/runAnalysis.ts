@@ -89,6 +89,7 @@ export async function runPoseAnalysis({
   rangeEnd,
   onProgress,
   onLiveAngles,
+  signal,
 }: {
   video: HTMLVideoElement;
   canvas: HTMLCanvasElement;
@@ -99,6 +100,9 @@ export async function runPoseAnalysis({
   rangeEnd?: number;
   onProgress?: (percent: number) => void;
   onLiveAngles?: (angles: PoseAngles) => void;
+  // Permet d'annuler une analyse en cours (ex. l'utilisateur se rend
+  // compte d'une erreur pendant le traitement) sans attendre la fin.
+  signal?: AbortSignal;
 }): Promise<PoseAnalysisResult> {
   const landmarker = await getLandmarker();
 
@@ -119,8 +123,14 @@ export async function runPoseAnalysis({
   video.currentTime = start;
   await video.play();
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     function loop() {
+      if (signal?.aborted) {
+        video.pause();
+        reject(new DOMException("Analyse annulée.", "AbortError"));
+        return;
+      }
+
       if (video.paused || video.ended || video.currentTime >= end) {
         video.pause();
         resolve();
