@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, HistoryIcon, ProfileIcon } from "@/components/icons";
+import { HomeIcon, HistoryIcon, TrendUpIcon, ProfileIcon } from "@/components/icons";
 
 const TABS = [
   { href: "/", label: "Accueil", Icon: HomeIcon },
   { href: "/historique", label: "Historique", Icon: HistoryIcon },
+  { href: "/progression", label: "Progrès", Icon: TrendUpIcon },
   { href: "/profil", label: "Profil", Icon: ProfileIcon },
 ];
 
