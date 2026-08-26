@@ -172,6 +172,30 @@ export function FullFrontLeverIcon({ className = base }: IconProps) {
   );
 }
 
+export function OneLegFrontLeverIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M2 3h6" {...stroke} />
+      <path d="M5 3v4" {...stroke} />
+      <circle cx="5" cy="9" r="1.6" {...stroke} />
+      <path d="M6.4 10 9 10.5h9" {...stroke} />
+      <path d="M18 10.5v5" {...stroke} />
+    </svg>
+  );
+}
+
+export function OneArmFrontLeverIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M2 3h5" {...stroke} />
+      <path d="M4.5 3v6" {...stroke} />
+      <circle cx="5" cy="9.5" r="1.6" {...stroke} />
+      <path d="M6.4 10.5 9 11h12" {...stroke} />
+      <path d="M9 11 6 14.5" {...stroke} />
+    </svg>
+  );
+}
+
 const smallStroke = { ...stroke, strokeWidth: 1.7 };
 
 export function HoldTypeIcon({ className = "h-5 w-5" }: IconProps) {

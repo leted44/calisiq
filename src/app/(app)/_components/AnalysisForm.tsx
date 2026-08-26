@@ -33,6 +33,8 @@ import {
   AdvancedTuckFrontLeverIcon,
   StraddleFrontLeverIcon,
   FullFrontLeverIcon,
+  OneLegFrontLeverIcon,
+  OneArmFrontLeverIcon,
   HoldTypeIcon,
   PressTypeIcon,
   PushUpTypeIcon,
@@ -41,7 +43,8 @@ import {
 type Figure = "planche" | "handstand" | "front_lever";
 type ExerciseType = "hold" | "press" | "push_up";
 type HandstandVariation = "handstand_push_up" | "one_arm_handstand";
-type Variation = Progression | HandstandVariation;
+type FrontLeverPlaceholderVariation = "one_leg_front_lever" | "one_arm_front_lever";
+type Variation = Progression | HandstandVariation | FrontLeverPlaceholderVariation;
 
 const FIGURES: {
   value: Figure;
@@ -146,6 +149,18 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       label: "Full",
       Icon: FullFrontLeverIcon,
       available: true,
+    },
+    {
+      value: "one_leg_front_lever",
+      label: "One Leg",
+      Icon: OneLegFrontLeverIcon,
+      available: false,
+    },
+    {
+      value: "one_arm_front_lever",
+      label: "One Arm",
+      Icon: OneArmFrontLeverIcon,
+      available: false,
     },
   ],
 };
@@ -774,11 +789,7 @@ export default function AnalysisForm() {
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Variations
         </p>
-        <div
-          className={`grid gap-2 ${
-            figure === "planche" || figure === "front_lever" ? "grid-cols-4" : "grid-cols-3"
-          }`}
-        >
+        <div className={`grid gap-2 ${figure === "planche" ? "grid-cols-4" : "grid-cols-3"}`}>
           {VARIATIONS_BY_FIGURE[figure].map((v) => {
             const selected = progression === v.value;
             return (
