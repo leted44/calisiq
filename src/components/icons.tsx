@@ -424,6 +424,21 @@ export function CameraFlipIcon({ className = base }: IconProps) {
   );
 }
 
+export function HelpCircleIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M9.5 9.3a2.5 2.5 0 0 1 4.9.7c0 1.6-2.1 1.8-2.4 3.3"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="16.8" r="0.9" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function TrendUpIcon({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>

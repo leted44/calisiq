@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CrownIcon, TrendUpIcon } from "@/components/icons";
+import { CrownIcon, TrendUpIcon, HelpCircleIcon } from "@/components/icons";
 import { tierFor } from "@/lib/pose/report";
+import ProgressionTour, {
+  shouldAutoStartProgressionTour,
+} from "./ProgressionTour";
 
 export type ProgressionPoint = { sessionId: string; date: string; score: number };
 export type VariationProgression = {
@@ -94,6 +97,19 @@ export default function ProgressionDashboard({
   const [activeIndex, setActiveIndex] = useState<number | null>(
     variations[0] ? variations[0].points.length - 1 : null
   );
+  const [tourOpen, setTourOpen] = useState(false);
+
+  useEffect(() => {
+    const defaultVariation = variations[0];
+    if (
+      defaultVariation &&
+      defaultVariation.points.length >= 2 &&
+      shouldAutoStartProgressionTour()
+    ) {
+      const timeout = setTimeout(() => setTourOpen(true), 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [variations]);
 
   if (variations.length === 0) {
     return (
@@ -134,8 +150,22 @@ export default function ProgressionDashboard({
 
   return (
     <div className="space-y-4">
+      {n >= 2 && (
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            onClick={() => setTourOpen(true)}
+            aria-label="Revoir l'aide de cet onglet"
+            className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-slate-400 hover:border-cyan-700 hover:text-cyan-300"
+          >
+            <HelpCircleIcon className="h-3.5 w-3.5" />
+            Aide
+          </button>
+        </div>
+      )}
+
       {variations.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-2 overflow-x-auto pb-1" data-tour="progression-variation-selector">
           {variations.map((v) => {
             const active = v.variation === current.variation;
             return (
@@ -157,7 +187,7 @@ export default function ProgressionDashboard({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2" data-tour="progression-stats">
         <StatCard label="Séances" value={String(n)} />
         <StatCard
           label="Score actuel"
@@ -188,7 +218,7 @@ export default function ProgressionDashboard({
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
+        <div className="rounded-xl border border-slate-800 bg-slate-900 p-3" data-tour="progression-chart">
           {isNewRecord && (
             <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-yellow-400">
               <CrownIcon className="h-3.5 w-3.5" />
@@ -204,6 +234,8 @@ export default function ProgressionDashboard({
           />
         </div>
       )}
+
+      {tourOpen && <ProgressionTour onClose={() => setTourOpen(false)} />}
     </div>
   );
 }
@@ -338,6 +370,7 @@ function ChartWithTooltip({
       {active && (
         <Link
           href={`/historique/${active.sessionId}`}
+          data-tour="progression-session-link"
           className="block text-center text-xs text-cyan-400 hover:text-cyan-300"
         >
           Voir cette séance
