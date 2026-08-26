@@ -23,6 +23,26 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   one_arm_handstand: [],
 };
 
+// Définition générique de ce que mesure chaque critère (indépendante du
+// score obtenu) — pour expliquer "qu'est-ce que c'est", pas "est-ce que
+// c'est bon". Affiché dans le rapport à côté du repère mesuré/cible.
+export const CRITERE_DEFINITIONS: Record<CriterionScore["critere"], string> = {
+  elbow_angle:
+    "Angle épaule-coude-poignet. Mesure si le bras est verrouillé (proche de 180°) ou fléchi.",
+  hip_angle:
+    "Angle épaule-hanche-genou. Définit à quel point le corps est plié ou étendu au niveau du bassin.",
+  knee_angle:
+    "Angle hanche-genou-cheville. Mesure si la jambe est tendue (proche de 180°) ou pliée.",
+  shoulder_protraction:
+    "Écart horizontal entre l'épaule et le poignet, normalisé par la longueur du buste. Mesure l'avancée des épaules devant les mains.",
+  shoulder_flexion:
+    "Angle hanche-épaule-poignet. Mesure l'ouverture du bras au-dessus de la tête.",
+  pelvis_deviation:
+    "Écart du bassin par rapport à la ligne droite épaule-cheville. Détecte un bassin qui tombe (sag) ou remonte (pike).",
+  body_line_angle:
+    "Angle du corps entier (épaule-cheville) par rapport à l'horizontale. Mesure si le corps est bien aligné pour la progression visée.",
+};
+
 export type ScoreTier = "optimal" | "bon" | "faible";
 
 export function tierFor(score: number): ScoreTier {

@@ -1,6 +1,8 @@
 import { PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
 import type { CriterionScore } from "./scoring";
 import { getLandmarker } from "./runAnalysis";
+import { computeAngles } from "./angles";
+import { drawAngleLabels } from "./canvasHud";
 
 // MP4 en priorité : format fiable pour republier sur Instagram/réseaux sociaux.
 // WebM en repli pour les navigateurs qui ne savent pas encoder de MP4.
@@ -231,6 +233,7 @@ export async function recordAnnotatedVideo({
           color: "#22d3ee",
           lineWidth: 3,
         });
+        drawAngleLabels(ctx, canvas, landmarks, computeAngles(landmarks));
       }
 
       drawHud(ctx, canvas, {

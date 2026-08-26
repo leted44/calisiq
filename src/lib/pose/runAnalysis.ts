@@ -18,6 +18,7 @@ import {
   type Recommendation,
 } from "./recommendations";
 import type { Progression } from "./grid";
+import { drawAngleLabels } from "./canvasHud";
 
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
@@ -147,6 +148,7 @@ export async function runPoseAnalysis({
 
         drawingUtils.drawLandmarks(landmarks, { radius: 3 });
         drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS);
+        drawAngleLabels(ctx, canvas, landmarks, a);
       }
 
       requestAnimationFrame(loop);
@@ -260,6 +262,7 @@ export async function measureImage(
     const drawingUtils = new DrawingUtils(ctx);
     drawingUtils.drawLandmarks(landmarks, { radius: 4 });
     drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS);
+    drawAngleLabels(ctx, canvas, landmarks, angles);
     representativeFrameDataUrl = canvas.toDataURL("image/jpeg", 0.85);
   }
 
@@ -301,6 +304,7 @@ async function captureFrame(
   const drawingUtils = new DrawingUtils(ctx);
   drawingUtils.drawLandmarks(landmarks, { radius: 3 });
   drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS);
+  drawAngleLabels(ctx, offscreen, landmarks, computeAngles(landmarks));
 
   return offscreen.toDataURL("image/jpeg", 0.85);
 }

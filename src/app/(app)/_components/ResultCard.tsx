@@ -6,6 +6,7 @@ import {
   TIER_COLORS,
   describeCriterion,
   formatHoldDuration,
+  CRITERE_DEFINITIONS,
 } from "@/lib/pose/report";
 import ScoreRing from "@/components/ScoreRing";
 
@@ -98,7 +99,10 @@ export default function ResultCard({
                   {TIER_LABELS[tier]}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] italic text-slate-500">
+                {CRITERE_DEFINITIONS[s.critere]}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
                 {describeCriterion(s.critere, s.score, figure)}
               </p>
               <p className="mt-1 font-mono text-[10px] text-slate-600">
