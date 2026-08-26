@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { CriterionScore } from "@/lib/pose/scoring";
 import type { Recommendation } from "@/lib/pose/recommendations";
 import {
@@ -9,6 +12,7 @@ import {
   CRITERE_DEFINITIONS,
 } from "@/lib/pose/report";
 import ScoreRing from "@/components/ScoreRing";
+import { ChevronDownIcon } from "@/components/icons";
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   shoulder_protraction: "Épaules",
@@ -41,6 +45,8 @@ export default function ResultCard({
   holdDurationSeconds?: number | null;
   figure?: "planche" | "handstand" | "front_lever";
 }) {
+  const [showDetails, setShowDetails] = useState(false);
+
   return (
     <div className="space-y-5 rounded-xl border border-slate-800 bg-slate-900 p-4">
       <div className="flex items-center gap-4">
@@ -76,55 +82,68 @@ export default function ResultCard({
         )}
       </div>
 
-      <div className="space-y-3">
-        {scores.map((s) => {
-          const tier = tierFor(s.score);
-          const isAngle =
-            s.critere === "hip_angle" ||
-            s.critere === "elbow_angle" ||
-            s.critere === "knee_angle" ||
-            s.critere === "body_line_angle" ||
-            s.critere === "shoulder_flexion";
-          const unit = isAngle ? "°" : "";
-          const decimals = isAngle ? 0 : 2;
-          return (
-            <div key={s.critere} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-sm font-medium text-white">
-                  {CRITERE_LABELS[s.critere]}
-                </span>
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${TIER_COLORS[tier]}`}
-                >
-                  {TIER_LABELS[tier]}
-                </span>
+      <button
+        type="button"
+        onClick={() => setShowDetails((v) => !v)}
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-800 py-2 text-xs font-medium text-slate-400 hover:border-slate-700 hover:text-slate-200"
+      >
+        {showDetails ? "Masquer les détails" : "Afficher les détails"}
+        <ChevronDownIcon
+          className={`h-3.5 w-3.5 transition-transform ${showDetails ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {showDetails && (
+        <div className="space-y-3">
+          {scores.map((s) => {
+            const tier = tierFor(s.score);
+            const isAngle =
+              s.critere === "hip_angle" ||
+              s.critere === "elbow_angle" ||
+              s.critere === "knee_angle" ||
+              s.critere === "body_line_angle" ||
+              s.critere === "shoulder_flexion";
+            const unit = isAngle ? "°" : "";
+            const decimals = isAngle ? 0 : 2;
+            return (
+              <div key={s.critere} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="text-sm font-medium text-white">
+                    {CRITERE_LABELS[s.critere]}
+                  </span>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${TIER_COLORS[tier]}`}
+                  >
+                    {TIER_LABELS[tier]}
+                  </span>
+                </div>
+                <p className="text-[11px] italic text-slate-500">
+                  {CRITERE_DEFINITIONS[s.critere]}
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  {describeCriterion(s.critere, s.score, figure)}
+                </p>
+                <p className="mt-1 font-mono text-[10px] text-slate-600">
+                  mesuré {s.valeurMesuree.toFixed(decimals)}
+                  {unit} · cible {s.valeurCible.toFixed(decimals)}
+                  {unit}
+                </p>
               </div>
-              <p className="text-[11px] italic text-slate-500">
-                {CRITERE_DEFINITIONS[s.critere]}
-              </p>
-              <p className="mt-1 text-xs text-slate-400">
-                {describeCriterion(s.critere, s.score, figure)}
-              </p>
-              <p className="mt-1 font-mono text-[10px] text-slate-600">
-                mesuré {s.valeurMesuree.toFixed(decimals)}
-                {unit} · cible {s.valeurCible.toFixed(decimals)}
-                {unit}
+            );
+          })}
+          {holdDurationSeconds !== undefined && holdDurationSeconds !== null && (
+            <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-sm font-medium text-white">Durée du hold</span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Temps réellement maintenu en position stable :{" "}
+                {formatHoldDuration(holdDurationSeconds)}
               </p>
             </div>
-          );
-        })}
-        {holdDurationSeconds !== undefined && holdDurationSeconds !== null && (
-          <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-sm font-medium text-white">Durée du hold</span>
-            </div>
-            <p className="text-xs text-slate-400">
-              Temps réellement maintenu en position stable :{" "}
-              {formatHoldDuration(holdDurationSeconds)}
-            </p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {recommendations && recommendations.length > 0 && (
         <div className="rounded-lg border border-cyan-900/50 bg-cyan-500/10 p-3">
