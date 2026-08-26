@@ -52,6 +52,14 @@ export type PoseAngles = {
   // Signe de l'écart du bassin : positif = bassin plus bas que prévu (sag),
   // négatif = bassin plus haut que prévu (pike). Sert à choisir l'exercice correctif.
   pelvisSagSign: number;
+  // Détecte si le corps est réellement inversé (mains au sol, pieds en
+  // l'air) plutôt que simplement vertical — une personne debout donne
+  // aussi un axe du corps proche de 90°, ce qui la rendrait indiscernable
+  // d'un handstand sans ce contrôle. En image, y augmente vers le bas :
+  // dans un vrai handstand les poignets sont plus bas que les chevilles
+  // ET les épaules plus basses que les hanches (corps retourné) ; c'est
+  // l'inverse pour quelqu'un debout.
+  isInvertedPose: boolean;
 };
 
 // Moyenne des angles gauche/droite pour plus de robustesse à l'angle caméra
@@ -149,6 +157,8 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
   const expectedHipY = midShoulder.y + t * (midAnkle.y - midShoulder.y);
   const pelvisSagSign = midHip.y - expectedHipY;
 
+  const isInvertedPose = midWrist.y > midAnkle.y && midShoulder.y > midHip.y;
+
   return {
     elbowAngle: (leftElbowAngle + rightElbowAngle) / 2,
     hipAngle: (leftHipAngle + rightHipAngle) / 2,
@@ -158,6 +168,7 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     shoulderProtraction,
     pelvisDeviation,
     pelvisSagSign,
+    isInvertedPose,
   };
 }
 
@@ -247,5 +258,7 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
     shoulderProtraction: median(frames.map((f) => f.shoulderProtraction)),
     pelvisDeviation: median(frames.map((f) => f.pelvisDeviation)),
     pelvisSagSign: median(frames.map((f) => f.pelvisSagSign)),
+    isInvertedPose:
+      frames.filter((f) => f.isInvertedPose).length >= frames.length / 2,
   };
 }

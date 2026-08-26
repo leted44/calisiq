@@ -215,6 +215,19 @@ export async function runPoseAnalysis({
     };
   }
 
+  // Un handstand exige un corps inversé (mains au sol, pieds en l'air) —
+  // sans ce contrôle, une personne simplement debout donne aussi un axe du
+  // corps proche de 90° et se ferait noter comme un handstand valide.
+  if (progression === "handstand" && !median.isInvertedPose) {
+    return {
+      ok: false,
+      framesAnalyzed: frames.length,
+      detectionRate,
+      warning:
+        "Position debout détectée, pas un handstand. Pour analyser un handstand, les mains doivent être au sol et les pieds en l'air (position inversée).",
+    };
+  }
+
   const scores = scoreAngles(median, progression);
   const weakest = pickWeakestCriterion(scores);
   const recommendations = recommendationsFor(
