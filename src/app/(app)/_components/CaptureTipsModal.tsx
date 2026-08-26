@@ -16,6 +16,14 @@ const TIPS = [
   { Icon: AngleWarningIcon, text: "Place la caméra à hauteur du buste, sans contre-plongée." },
 ];
 
+// En straddle, les jambes sont écartées de part et d'autre du corps : une
+// caméra pile de face ou pile de profil fait que les deux jambes se
+// superposent à l'écran, et l'app perd le suivi d'une des deux.
+const STRADDLE_TIP = {
+  Icon: AngleWarningIcon,
+  text: "Straddle : filme légèrement de biais (pas totalement de face ni de profil) pour bien distinguer tes deux jambes.",
+};
+
 export const HIDE_TIPS_KEY = "calisiq_hide_capture_tips";
 
 export function shouldSkipTips(): boolean {
@@ -26,9 +34,11 @@ export function shouldSkipTips(): boolean {
 export default function CaptureTipsModal({
   onContinue,
   onClose,
+  isStraddle = false,
 }: {
   onContinue: () => void;
   onClose: () => void;
+  isStraddle?: boolean;
 }) {
   function handleContinue(hide: boolean) {
     if (hide) {
@@ -36,6 +46,8 @@ export default function CaptureTipsModal({
     }
     onContinue();
   }
+
+  const tips = isStraddle ? [...TIPS, STRADDLE_TIP] : TIPS;
 
   return (
     <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/70 sm:items-center">
@@ -60,7 +72,7 @@ export default function CaptureTipsModal({
         </div>
 
         <ul className="space-y-3">
-          {TIPS.map(({ Icon, text }) => (
+          {tips.map(({ Icon, text }) => (
             <li
               key={text}
               className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-2.5"

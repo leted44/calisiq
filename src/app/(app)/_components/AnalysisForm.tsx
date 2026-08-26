@@ -668,6 +668,7 @@ export default function AnalysisForm() {
         <CaptureTipsModal
           onContinue={confirmTips}
           onClose={() => setPendingAction(null)}
+          isStraddle={progression === "straddle_planche"}
         />
       )}
 

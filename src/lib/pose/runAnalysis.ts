@@ -178,16 +178,29 @@ export async function runPoseAnalysis({
     };
   }
 
-  const warning =
-    detectionRate < 0.5
-      ? `Corps détecté seulement sur ${Math.round(detectionRate * 100)}% des frames — vérifie le cadrage et l'angle de caméra pour un résultat fiable.`
-      : null;
-
   const window = detectHoldWindow(frames);
   const holdAngles = angles.slice(window.start, window.end + 1);
   const median = medianAngles(holdAngles);
   const holdDurationSeconds =
     ((window.end - window.start + 1) / frames.length) * (end - start);
+
+  const warningParts: string[] = [];
+  if (detectionRate < 0.5) {
+    warningParts.push(
+      `Corps détecté seulement sur ${Math.round(detectionRate * 100)}% des frames — vérifie le cadrage et l'angle de caméra pour un résultat fiable.`
+    );
+  }
+  // En straddle, les deux jambes doivent être écartées de part et d'autre
+  // du corps ; si la caméra filme presque dans l'axe de cet écartement,
+  // elles se superposent à l'écran et les angles genou/axe du corps
+  // deviennent peu fiables — on prévient plutôt que d'afficher un score
+  // silencieusement faussé.
+  if (progression === "straddle_planche" && median.legOcclusionRisk) {
+    warningParts.push(
+      "Une jambe semble mal détectée ou superposée à l'autre sur cette vidéo — pour un straddle, filme légèrement de biais (pas totalement de face ni de profil) pour bien distinguer les deux jambes, sinon les angles genou et axe du corps peuvent être faussés."
+    );
+  }
+  const warning = warningParts.length > 0 ? warningParts.join(" ") : null;
 
   const midIndex = Math.floor((window.start + window.end) / 2);
   const representativeFrameDataUrl = await captureFrame(

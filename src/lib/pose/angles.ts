@@ -60,6 +60,12 @@ export type PoseAngles = {
   // ET les épaules plus basses que les hanches (corps retourné) ; c'est
   // l'inverse pour quelqu'un debout.
   isInvertedPose: boolean;
+  // Risque qu'une jambe soit mal détectée en straddle (jambes écartées) :
+  // si la caméra filme presque de profil par rapport au plan d'écartement,
+  // les deux jambes se superposent dans l'image et MediaPipe perd le
+  // suivi d'une des deux (faible visibility) ou les place quasi au même
+  // endroit — les angles genou/axe du corps deviennent alors peu fiables.
+  legOcclusionRisk: boolean;
 };
 
 // Moyenne des angles gauche/droite pour plus de robustesse à l'angle caméra
@@ -159,6 +165,31 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
 
   const isInvertedPose = midWrist.y > midAnkle.y && midShoulder.y > midHip.y;
 
+  // Visibilité moyenne genou+cheville de chaque côté : un côté sous le
+  // seuil signifie que MediaPipe n'arrive pas à suivre correctement cette
+  // jambe (souvent la jambe la plus éloignée de la caméra en straddle).
+  const VISIBILITY_THRESHOLD = 0.5;
+  const leftLegVisibility =
+    (landmarks[LEFT_KNEE].visibility + landmarks[LEFT_ANKLE].visibility) / 2;
+  const rightLegVisibility =
+    (landmarks[RIGHT_KNEE].visibility + landmarks[RIGHT_ANKLE].visibility) / 2;
+  const lowVisibilityLeg =
+    leftLegVisibility < VISIBILITY_THRESHOLD || rightLegVisibility < VISIBILITY_THRESHOLD;
+
+  // Écart horizontal entre les deux chevilles, normalisé par la longueur
+  // du corps (épaule-cheville) pour rester valable quel que soit le zoom.
+  // Des jambes vraiment écartées (straddle) doivent projeter un écart
+  // net dans l'image ; un écart trop faible trahit des jambes superposées
+  // à l'écran (caméra alignée avec le plan d'écartement), même si les
+  // deux points sont individuellement bien détectés.
+  const ankleSeparation =
+    bodyLength === 0
+      ? 1
+      : Math.abs(landmarks[LEFT_ANKLE].x - landmarks[RIGHT_ANKLE].x) / bodyLength;
+  const legsTooClose = ankleSeparation < 0.15;
+
+  const legOcclusionRisk = lowVisibilityLeg || legsTooClose;
+
   return {
     elbowAngle: (leftElbowAngle + rightElbowAngle) / 2,
     hipAngle: (leftHipAngle + rightHipAngle) / 2,
@@ -169,6 +200,7 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     pelvisDeviation,
     pelvisSagSign,
     isInvertedPose,
+    legOcclusionRisk,
   };
 }
 
@@ -260,5 +292,7 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
     pelvisSagSign: median(frames.map((f) => f.pelvisSagSign)),
     isInvertedPose:
       frames.filter((f) => f.isInvertedPose).length >= frames.length / 2,
+    legOcclusionRisk:
+      frames.filter((f) => f.legOcclusionRisk).length >= frames.length / 2,
   };
 }
