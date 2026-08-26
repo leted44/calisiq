@@ -572,6 +572,16 @@ export default function AnalysisForm() {
         />
       )}
 
+      {/* Toujours monté (même vidéo déjà chargée) pour que "Changer" dans
+          la section Découpe puisse toujours déclencher le sélecteur. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       <div className="space-y-3">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Figures
@@ -740,13 +750,6 @@ export default function AnalysisForm() {
               Se filmer
             </button>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="video/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
         </div>
       )}
 
