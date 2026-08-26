@@ -14,8 +14,8 @@ export const PROGRESSION_LABELS: Record<string, string> = {
 // que le code a déjà été mis à jour avec. Tenu à jour manuellement à
 // chaque recalibration (voir aussi les commentaires dans grid.ts).
 export const CALIBRATED_CRITERIA: Record<string, string[]> = {
-  tuck_planche: [],
-  advanced_tuck_planche: ["shoulder_protraction"],
+  tuck_planche: ["hip_angle"],
+  advanced_tuck_planche: ["shoulder_protraction", "hip_angle"],
   straddle_planche: [],
   full_planche: ["elbow_angle", "hip_angle", "body_line_angle"],
   handstand: ["hip_angle", "pelvis_deviation"],

@@ -86,8 +86,8 @@ export function scoreAngles(
     });
   }
 
-  scores.push(
-    {
+  if (grid.pelvis_deviation) {
+    scores.push({
       critere: "pelvis_deviation",
       score: scoreFromThreshold(
         angles.pelvisDeviation,
@@ -96,7 +96,10 @@ export function scoreAngles(
       ),
       valeurMesuree: angles.pelvisDeviation,
       valeurCible: grid.pelvis_deviation.target,
-    },
+    });
+  }
+
+  scores.push(
     {
       critere: "hip_angle",
       score: scoreFromThreshold(

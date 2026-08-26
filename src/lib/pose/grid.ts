@@ -33,16 +33,31 @@
 // qu'épaule->hanche : base plus longue, moins bruitée.
 //
 // Full Planche : elbow_angle, hip_angle et body_line_angle_from_horizontal
-// recalibrés le 2026-08-26 à partir de 6 échantillons réels notés par
+// recalibrés le 2026-08-26 à partir de 8 échantillons réels notés par
 // l'utilisateur (calibration_samples), après correction d'un bug sur
 // body_line_angle_from_horizontal (voir angles.ts — l'angle dépendait du
-// sens de la caméra). Les 6 échantillons, tous notés 7 à 10/10, mesuraient
-// coude 165-176°, hanche 158-178° et axe (corrigé) 1-10° — aucun ne
-// descendait sous 7, ce qui indique que cette plage entière correspond à
-// une "bonne" exécution pour l'utilisateur, pas à un défaut. hip_angle
-// recentré à 170° (au lieu de 180) : même constat que pour le Handstand,
-// une exécution jugée excellente n'atteint quasiment jamais 180° pile en
-// mesure caméra 2D.
+// sens de la caméra). Confirmé par 2 échantillons de contraste ajoutés
+// ensuite (9.5/10 et 2.5/10, ce dernier étant en réalité une Tuck Planche
+// mal étiquetée) : les deux se placent correctement aux deux bouts de
+// l'échelle avec la grille actuelle, sans ajustement supplémentaire.
+//
+// Tuck Planche et Advanced Tuck Planche recalibrés le 2026-08-26 à partir
+// de 5 et 11 échantillons réels :
+// - hip_angle (Tuck) : cible corrigée de 90° à 47° — les 2 échantillons
+//   jugés 9.5/10 mesuraient tous deux ~46-47°, très loin de la cible
+//   d'origine (jamais validée sur données réelles).
+// - hip_angle (Advanced Tuck) : cible 110° confirmée, mais tolérance
+//   élargie (15 -> 30) — la "bonne zone" couvre en réalité ~90-130°.
+// - elbow_angle : ne montre pas de signal isolable dans ces deux
+//   variations (mêmes valeurs d'élite y compris sur des échantillons mal
+//   notés pour d'autres raisons) — tolérance élargie par cohérence avec
+//   Handstand/Full Planche plutôt que resserrée sur du bruit.
+// - pelvis_deviation retiré des deux : mesure la déviation par rapport à
+//   la ligne épaule-cheville, qui n'a pas de sens jambes repliées (même
+//   raison que knee_angle/body_line_angle déjà retirés) — confirmé cette
+//   fois par les données : les échantillons les mieux notés montrent une
+//   déviation élevée (jambes tendues vers l'arrière = "déviation" par
+//   rapport à une ligne droite, ce qui est normal et attendu en tuck).
 
 export type Progression =
   | "tuck_planche"
@@ -61,21 +76,19 @@ export type ProgressionThresholds = {
   knee_angle?: Threshold;
   shoulder_protraction?: ShoulderProtractionThreshold;
   shoulder_flexion?: Threshold;
-  pelvis_deviation: Threshold;
+  pelvis_deviation?: Threshold;
 };
 
 export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   tuck_planche: {
-    elbow_angle: { target: 175, tolerance: 10 },
-    hip_angle: { target: 90, tolerance: 20 },
+    elbow_angle: { target: 176, tolerance: 20 },
+    hip_angle: { target: 47, tolerance: 85 },
     shoulder_protraction: { target: 0.35, tolerance: 0.2, mode: "minimum" },
-    pelvis_deviation: { target: 0, tolerance: 0.25 },
   },
   advanced_tuck_planche: {
-    elbow_angle: { target: 178, tolerance: 8 },
-    hip_angle: { target: 110, tolerance: 15 },
+    elbow_angle: { target: 176, tolerance: 20 },
+    hip_angle: { target: 110, tolerance: 30 },
     shoulder_protraction: { target: 0.5, tolerance: 0.2, mode: "minimum" },
-    pelvis_deviation: { target: 0, tolerance: 0.25 },
   },
   straddle_planche: {
     body_line_angle_from_horizontal: { target: 8, tolerance: 6 },
