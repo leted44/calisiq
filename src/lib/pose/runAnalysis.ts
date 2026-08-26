@@ -197,7 +197,7 @@ export async function runPoseAnalysis({
   // silencieusement faussé.
   if (progression === "straddle_planche" && median.legOcclusionRisk) {
     warningParts.push(
-      "Une jambe semble mal détectée ou superposée à l'autre sur cette vidéo — pour un straddle, filme légèrement de biais (pas totalement de face ni de profil) pour bien distinguer les deux jambes, sinon les angles genou et axe du corps peuvent être faussés."
+      "Une jambe peut être mal détectée ou superposée à l'autre sur cette vidéo — pour un straddle, filme légèrement de biais (pas totalement de face ni de profil) pour bien distinguer les deux jambes, sinon les angles genou et axe du corps peuvent être faussés."
     );
   }
   const warning = warningParts.length > 0 ? warningParts.join(" ") : null;
