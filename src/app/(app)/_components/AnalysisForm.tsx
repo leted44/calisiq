@@ -18,6 +18,7 @@ import {
   ChangeVideoIcon,
   TrashIcon,
   DownloadIcon,
+  CheckCircleIcon,
 } from "@/components/icons";
 import {
   PlancheFigureIcon,
@@ -295,6 +296,10 @@ export default function AnalysisForm() {
   const [result, setResult] = useState<PoseAnalysisResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // L'enregistrement dans l'historique/la progression est désormais un
+  // choix explicite (bouton), plus une sauvegarde automatique après
+  // analyse — certaines vidéos sont juste un test qu'on ne veut pas garder.
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -316,6 +321,7 @@ export default function AnalysisForm() {
     setError(null);
     setResult(null);
     setSaveError(null);
+    setSaved(false);
 
     let videoDuration: number;
     try {
@@ -350,6 +356,7 @@ export default function AnalysisForm() {
     setTrimEnd(0);
     setResult(null);
     setSaveError(null);
+    setSaved(false);
     setFileSource(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -636,6 +643,7 @@ export default function AnalysisForm() {
     }
 
     setSaving(false);
+    setSaved(true);
     router.refresh();
   }
 
@@ -662,6 +670,8 @@ export default function AnalysisForm() {
 
     setAnalyzing(true);
     setResult(null);
+    setSaved(false);
+    setSaveError(null);
     setProgressPercent(0);
 
     const controller = new AbortController();
@@ -681,7 +691,6 @@ export default function AnalysisForm() {
 
       setAnalyzing(false);
       setResult(analysisResult);
-      await persist(analysisResult);
     } catch (err) {
       setAnalyzing(false);
       if ((err as Error).name === "AbortError") {
@@ -693,14 +702,20 @@ export default function AnalysisForm() {
     }
   }
 
+  async function handleSaveResult() {
+    if (!result) return;
+    await persist(result);
+  }
+
   function handleCancelAnalysis() {
     analysisAbortRef.current?.abort();
   }
 
-  // Rejoue la mesure sur la même vidéo sans re-sauvegarder — contrairement à
-  // handleSubmit, n'appelle pas persist() pour éviter de dupliquer la
-  // session et l'upload vidéo dans l'historique. Sert juste à vérifier
-  // qu'il n'y a pas eu d'erreur ponctuelle sur la première analyse.
+  // Rejoue la mesure sur la même vidéo sans jamais appeler persist() —
+  // l'enregistrement reste un choix explicite via handleSaveResult. Si la
+  // séance était déjà enregistrée (saved=true), ce nouveau résultat reste
+  // volontairement non sauvegardable pour éviter de dupliquer la session
+  // en base ; sinon le bouton "Enregistrer" reste disponible normalement.
   async function handleReanalyze() {
     setError(null);
     if (!previewVideoRef.current || !canvasRef.current) return;
@@ -1164,8 +1179,7 @@ export default function AnalysisForm() {
 
           {result && !result.ok && (
             <p className="rounded-lg bg-orange-500/10 p-2 text-xs text-orange-400">
-              {result.warning} Ta vidéo est tout de même enregistrée dans
-              l&apos;historique.
+              {result.warning}
             </p>
           )}
 
@@ -1197,7 +1211,25 @@ export default function AnalysisForm() {
 
           {saveError && (
             <p className="text-xs text-red-400">
-              Analyse calculée mais non sauvegardée : {saveError}
+              Échec de l&apos;enregistrement : {saveError}
+            </p>
+          )}
+
+          {result && !saved && !analyzing && (
+            <button
+              type="button"
+              onClick={handleSaveResult}
+              disabled={saving}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)] disabled:opacity-50"
+            >
+              {saving ? "Enregistrement..." : "Enregistrer cette figure"}
+            </button>
+          )}
+
+          {saved && (
+            <p className="flex items-center justify-center gap-1.5 rounded-lg border border-green-800 bg-green-500/10 py-2.5 text-sm font-medium text-green-400">
+              <CheckCircleIcon className="h-4 w-4" />
+              Enregistré dans ton historique
             </p>
           )}
 
@@ -1239,9 +1271,9 @@ export default function AnalysisForm() {
                 Réanalyser cette vidéo
               </button>
               <p className="text-center text-xs text-slate-500">
-                Vérifie la cohérence du résultat, sans re-sauvegarder. Le
-                score déjà enregistré dans l&apos;historique n&apos;est pas
-                modifié.
+                {saved
+                  ? "Vérifie la cohérence du résultat, sans re-sauvegarder. Le score déjà enregistré dans l'historique n'est pas modifié."
+                  : "Vérifie la cohérence du résultat avant de l'enregistrer."}
               </p>
               <button
                 type="button"
@@ -1251,10 +1283,6 @@ export default function AnalysisForm() {
                 Nouvelle analyse
               </button>
             </div>
-          )}
-
-          {saving && (
-            <p className="text-center text-xs text-slate-500">Enregistrement...</p>
           )}
         </form>
       )}
