@@ -71,6 +71,7 @@ export default async function SessionDetailPage({
                     day: "2-digit",
                     month: "short",
                     year: "numeric",
+                    timeZone: "Europe/Paris",
                   })
                 : new Date(session.created_at).toLocaleString("fr-FR", {
                     day: "2-digit",
@@ -78,6 +79,7 @@ export default async function SessionDetailPage({
                     year: "numeric",
                     hour: "2-digit",
                     minute: "2-digit",
+                    timeZone: "Europe/Paris",
                   })}
             </p>
           </div>

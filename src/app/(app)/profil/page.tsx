@@ -117,6 +117,7 @@ export default async function ProfilPage() {
                       day: "2-digit",
                       month: "long",
                       year: "numeric",
+                      timeZone: "Europe/Paris",
                     })
                   : "—"}
               </p>

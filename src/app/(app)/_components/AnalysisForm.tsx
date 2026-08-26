@@ -202,6 +202,18 @@ function formatTime(seconds: number): string {
   return `${m}:${s}`;
 }
 
+// "Aujourd'hui" au format YYYY-MM-DD attendu par <input type="date">, dans
+// le fuseau LOCAL du navigateur — new Date().toISOString() convertit en
+// UTC et peut donner la mauvaille date (ex. peu après minuit en France,
+// en avance sur UTC).
+function todayLocalDateString(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 type RecordingQuality = "720p" | "1080p" | "4k";
 
 const QUALITY_PRESETS: Record<RecordingQuality, { width: number; height: number; bitrate: number }> = {
@@ -259,9 +271,10 @@ export default function AnalysisForm() {
   // à un enregistrement caméra qui vient d'être filmé à l'instant — on ne
   // demande donc la date réelle que pour un import.
   const [fileSource, setFileSource] = useState<"import" | "camera" | null>(null);
-  const [performedAt, setPerformedAt] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  // Calculé une fois au montage (lazy initializer) plutôt qu'appelé pendant
+  // le rendu (impur) — sert aussi de borne max pour le sélecteur de date.
+  const [today] = useState(() => todayLocalDateString());
+  const [performedAt, setPerformedAt] = useState<string>(today);
 
   const [cameraMode, setCameraMode] = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
@@ -319,7 +332,7 @@ export default function AnalysisForm() {
     setTrimStart(0);
     setTrimEnd(videoDuration);
     setFileSource(source);
-    setPerformedAt(new Date().toISOString().slice(0, 10));
+    setPerformedAt(todayLocalDateString());
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1069,7 +1082,7 @@ export default function AnalysisForm() {
                 id="performed-at"
                 type="date"
                 value={performedAt}
-                max={new Date().toISOString().slice(0, 10)}
+                max={today}
                 onChange={(e) => setPerformedAt(e.target.value)}
                 className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white outline-none focus:border-cyan-500"
               />

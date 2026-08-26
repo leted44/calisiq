@@ -67,6 +67,7 @@ export default async function HistoriquePage() {
                         day: "2-digit",
                         month: "short",
                         year: "numeric",
+                        timeZone: "Europe/Paris",
                       })
                     : new Date(session.effectiveDate).toLocaleString("fr-FR", {
                         day: "2-digit",
@@ -74,6 +75,7 @@ export default async function HistoriquePage() {
                         year: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",
+                        timeZone: "Europe/Paris",
                       })}
                 </p>
               </div>

@@ -47,7 +47,11 @@ const PERIODS: Period[] = [
 const DEFAULT_PERIOD_INDEX = PERIODS.length - 1; // "Tout"
 
 function formatShortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    timeZone: "Europe/Paris",
+  });
 }
 
 function formatFullDate(iso: string): string {
@@ -55,6 +59,7 @@ function formatFullDate(iso: string): string {
     day: "2-digit",
     month: "long",
     year: "numeric",
+    timeZone: "Europe/Paris",
   });
 }
 
