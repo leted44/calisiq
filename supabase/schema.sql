@@ -37,7 +37,8 @@ create table sessions (
   status text default 'processing', -- 'processing' | 'done' | 'error'
   trim_start numeric, -- secondes, début du segment à analyser (choisi par l'utilisateur)
   trim_end numeric, -- secondes, fin du segment à analyser
-  hold_duration_seconds numeric -- durée du hold détecté (fenêtre stable), en secondes
+  hold_duration_seconds numeric, -- durée du hold détecté (fenêtre stable), en secondes
+  performed_at timestamptz -- date réelle de la figure (import uniquement) ; à défaut, retomber sur created_at
 );
 
 create table scores (

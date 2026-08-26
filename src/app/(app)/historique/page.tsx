@@ -20,18 +20,23 @@ export default async function HistoriquePage() {
   const { data: sessions } = await supabase
     .from("sessions")
     .select(
-      "id, progression, status, created_at, hold_duration_seconds, scores(score)"
+      "id, progression, status, created_at, performed_at, hold_duration_seconds, scores(score)"
     )
     .order("created_at", { ascending: false });
 
-  const rows = (sessions ?? []).map((session) => {
-    const scoreValues = (session.scores ?? []).map((s: { score: number }) => s.score);
-    const globalScore =
-      scoreValues.length > 0
-        ? scoreValues.reduce((a: number, b: number) => a + b, 0) / scoreValues.length
-        : null;
-    return { ...session, globalScore };
-  });
+  const rows = (sessions ?? [])
+    .map((session) => {
+      const scoreValues = (session.scores ?? []).map((s: { score: number }) => s.score);
+      const globalScore =
+        scoreValues.length > 0
+          ? scoreValues.reduce((a: number, b: number) => a + b, 0) / scoreValues.length
+          : null;
+      const effectiveDate = session.performed_at ?? session.created_at;
+      return { ...session, globalScore, effectiveDate };
+    })
+    .sort(
+      (a, b) => new Date(b.effectiveDate).getTime() - new Date(a.effectiveDate).getTime()
+    );
 
   return (
     <div className="flex flex-col items-center gap-4 px-4 pt-10">
@@ -57,13 +62,19 @@ export default async function HistoriquePage() {
                   {PROGRESSION_LABELS[session.progression] ?? session.progression}
                 </p>
                 <p className="text-xs text-slate-500">
-                  {new Date(session.created_at).toLocaleString("fr-FR", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {session.performed_at
+                    ? new Date(session.effectiveDate).toLocaleDateString("fr-FR", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : new Date(session.effectiveDate).toLocaleString("fr-FR", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                 </p>
               </div>
               <span

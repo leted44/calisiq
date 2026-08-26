@@ -9,7 +9,7 @@ export default async function ProgressionPage() {
 
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, progression, created_at, hold_duration_seconds, scores(score)")
+    .select("id, progression, created_at, performed_at, hold_duration_seconds, scores(score)")
     .eq("status", "done")
     .order("created_at", { ascending: true });
 
@@ -30,10 +30,21 @@ export default async function ProgressionPage() {
     }
     byVariation.get(key)!.points.push({
       sessionId: session.id as string,
-      date: session.created_at as string,
+      // performed_at (date choisie à l'import) prime sur created_at (date
+      // d'analyse) pour refléter quand la figure a réellement été faite,
+      // pas quand la vidéo a été traitée par l'app.
+      date: (session.performed_at as string | null) ?? (session.created_at as string),
       score,
       holdDuration: (session.hold_duration_seconds as number | null) ?? null,
     });
+  }
+
+  // Re-trie chaque série par date effective : performed_at peut réordonner
+  // une séance importée en retard par rapport à created_at.
+  for (const variation of byVariation.values()) {
+    variation.points.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
   }
 
   // Figure la plus pratiquée en premier — la plus pertinente à afficher par défaut.

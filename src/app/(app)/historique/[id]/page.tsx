@@ -18,7 +18,7 @@ export default async function SessionDetailPage({
   const { data: session } = await supabase
     .from("sessions")
     .select(
-      "id, progression, status, video_url, created_at, trim_start, trim_end, hold_duration_seconds, scores(critere, score, valeur_mesuree, valeur_cible), recommendations(exercice, raison)"
+      "id, progression, status, video_url, created_at, performed_at, trim_start, trim_end, hold_duration_seconds, scores(critere, score, valeur_mesuree, valeur_cible), recommendations(exercice, raison)"
     )
     .eq("id", id)
     .single();
@@ -66,13 +66,19 @@ export default async function SessionDetailPage({
               {PROGRESSION_LABELS[session.progression] ?? session.progression}
             </h1>
             <p className="text-xs text-slate-500">
-              {new Date(session.created_at).toLocaleString("fr-FR", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {session.performed_at
+                ? new Date(session.performed_at).toLocaleDateString("fr-FR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : new Date(session.created_at).toLocaleString("fr-FR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
             </p>
           </div>
           <DeleteSessionButton

@@ -72,6 +72,7 @@ const FIGURES: {
     label: "Front Lever",
     available: true,
     Icon: FrontLeverFigureIcon,
+    image: "/figures/full-front-lever.png",
   },
 ];
 
@@ -253,6 +254,14 @@ export default function AnalysisForm() {
   const [duration, setDuration] = useState<number | null>(null);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
+  // Source du fichier chargé : une vidéo importée peut avoir été filmée il
+  // y a longtemps (import d'un backlog, vidéo Instagram...), contrairement
+  // à un enregistrement caméra qui vient d'être filmé à l'instant — on ne
+  // demande donc la date réelle que pour un import.
+  const [fileSource, setFileSource] = useState<"import" | "camera" | null>(null);
+  const [performedAt, setPerformedAt] = useState<string>(() =>
+    new Date().toISOString().slice(0, 10)
+  );
 
   const [cameraMode, setCameraMode] = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
@@ -290,7 +299,7 @@ export default function AnalysisForm() {
     }
   }, [cameraMode]);
 
-  async function loadSelectedFile(selected: File) {
+  async function loadSelectedFile(selected: File, source: "import" | "camera") {
     setError(null);
     setResult(null);
     setSaveError(null);
@@ -309,12 +318,14 @@ export default function AnalysisForm() {
     setDuration(videoDuration);
     setTrimStart(0);
     setTrimEnd(videoDuration);
+    setFileSource(source);
+    setPerformedAt(new Date().toISOString().slice(0, 10));
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];
     if (!selected) return;
-    await loadSelectedFile(selected);
+    await loadSelectedFile(selected, "import");
   }
 
   function handleRemoveVideo() {
@@ -326,6 +337,7 @@ export default function AnalysisForm() {
     setTrimEnd(0);
     setResult(null);
     setSaveError(null);
+    setFileSource(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -500,7 +512,7 @@ export default function AnalysisForm() {
         type: blob.type,
       });
       closeCamera();
-      void loadSelectedFile(recordedFile);
+      void loadSelectedFile(recordedFile, "camera");
     };
 
     mediaRecorderRef.current = recorder;
@@ -577,6 +589,7 @@ export default function AnalysisForm() {
         hold_duration_seconds: analysisResult.ok
           ? analysisResult.holdDurationSeconds
           : null,
+        performed_at: fileSource === "import" ? performedAt : null,
       })
       .select("id")
       .single();
@@ -1043,6 +1056,29 @@ export default function AnalysisForm() {
               </button>
             </div>
           </div>
+
+          {fileSource === "import" && (
+            <div className="space-y-1.5 rounded-lg border border-slate-800 bg-slate-900 p-3">
+              <label
+                htmlFor="performed-at"
+                className="text-xs font-medium uppercase tracking-wide text-slate-500"
+              >
+                Quand as-tu réalisé cette figure ?
+              </label>
+              <input
+                id="performed-at"
+                type="date"
+                value={performedAt}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setPerformedAt(e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white outline-none focus:border-cyan-500"
+              />
+              <p className="text-[11px] text-slate-500">
+                Utilisé pour ton historique et ta progression — pratique si tu
+                importes une vidéo filmée il y a un moment.
+              </p>
+            </div>
+          )}
 
           <div className="relative overflow-hidden rounded-xl border border-slate-800">
             <video ref={previewVideoRef} src={videoUrl} controls playsInline className="w-full" />
