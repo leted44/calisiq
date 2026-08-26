@@ -2,13 +2,24 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CrownIcon, TrendUpIcon, HelpCircleIcon } from "@/components/icons";
-import { tierFor } from "@/lib/pose/report";
+import {
+  CrownIcon,
+  TrendUpIcon,
+  HelpCircleIcon,
+  TimerIcon,
+  ChevronDownIcon,
+} from "@/components/icons";
+import { tierFor, formatHoldDuration } from "@/lib/pose/report";
 import ProgressionTour, {
   shouldAutoStartProgressionTour,
 } from "./ProgressionTour";
 
-export type ProgressionPoint = { sessionId: string; date: string; score: number };
+export type ProgressionPoint = {
+  sessionId: string;
+  date: string;
+  score: number;
+  holdDuration: number | null;
+};
 export type VariationProgression = {
   variation: string;
   label: string;
@@ -23,6 +34,17 @@ const TIER_COLORS: Record<string, string> = {
 
 const GREEN = "#4ade80";
 const ORANGE = "#fb923c";
+const CYAN = "#22d3ee";
+
+type Period = { label: string; days: number | null };
+const PERIODS: Period[] = [
+  { label: "2 sem", days: 14 },
+  { label: "1 mois", days: 30 },
+  { label: "3 mois", days: 90 },
+  { label: "6 mois", days: 180 },
+  { label: "Tout", days: null },
+];
+const DEFAULT_PERIOD_INDEX = PERIODS.length - 1; // "Tout"
 
 function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
@@ -36,12 +58,19 @@ function formatFullDate(iso: string): string {
   });
 }
 
+function formatDurationCompact(seconds: number): string {
+  if (seconds < 60) return `${seconds.toFixed(1)}s`;
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return `${m}min ${s}s`;
+}
+
 // Dimensions internes du SVG (unités arbitraires) — le conteneur applique
 // le même ratio en CSS (aspect-ratio) pour que les positions en %
 // utilisées par le tooltip HTML restent alignées avec le tracé quel que
 // soit la largeur réelle à l'écran.
 const CHART_W = 320;
-const CHART_H = 170;
+const CHART_H = 150;
 const PAD_X = 10;
 const PAD_TOP = 20;
 const PAD_BOTTOM = 22;
@@ -94,10 +123,18 @@ export default function ProgressionDashboard({
   const [selected, setSelected] = useState<string | null>(
     variations[0]?.variation ?? null
   );
-  const [activeIndex, setActiveIndex] = useState<number | null>(
-    variations[0] ? variations[0].points.length - 1 : null
-  );
+  // null = "pas de sélection explicite", le graphique retombe alors sur le
+  // dernier point par défaut — évite un index périmé quand le nombre de
+  // points change (changement de variation ou de période).
+  const [activeScoreIndex, setActiveScoreIndex] = useState<number | null>(null);
+  const [activeHoldIndex, setActiveHoldIndex] = useState<number | null>(null);
+  const [periodIndex, setPeriodIndex] = useState(DEFAULT_PERIOD_INDEX);
+  const [selectorOpen, setSelectorOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  // Instantané au montage plutôt qu'un Date.now() appelé pendant le rendu
+  // (impur) — un filtre par période n'a pas besoin d'être exact à la
+  // milliseconde près pendant qu'un onglet reste ouvert.
+  const [now] = useState(() => Date.now());
 
   useEffect(() => {
     const defaultVariation = variations[0];
@@ -133,20 +170,61 @@ export default function ProgressionDashboard({
   }
 
   const current = variations.find((v) => v.variation === selected) ?? variations[0];
-  const points = current.points;
+  const period = PERIODS[periodIndex];
+  const points =
+    period.days === null
+      ? current.points
+      : current.points.filter(
+          (p) => now - new Date(p.date).getTime() <= period.days! * 86400000
+        );
   const n = points.length;
+  const holdPoints = points.filter(
+    (p): p is ProgressionPoint & { holdDuration: number } => p.holdDuration !== null
+  );
 
   function selectVariation(v: VariationProgression) {
     setSelected(v.variation);
-    setActiveIndex(v.points.length - 1);
+    setActiveScoreIndex(null);
+    setActiveHoldIndex(null);
+    setSelectorOpen(false);
   }
 
-  const latest = points[n - 1];
-  const first = points[0];
-  const best = points.reduce((a, b) => (b.score > a.score ? b : a), points[0]);
-  const delta = n > 1 ? latest.score - first.score : null;
-  const isNewRecord = n > 1 && latest.sessionId === best.sessionId;
-  const trendColor = delta === null ? TIER_COLORS[tierFor(latest.score)] : delta >= 0 ? GREEN : ORANGE;
+  function selectPeriod(i: number) {
+    setPeriodIndex(i);
+    setActiveScoreIndex(null);
+    setActiveHoldIndex(null);
+  }
+
+  const scoreStats =
+    n > 0
+      ? {
+          latest: points[n - 1].score,
+          first: points[0].score,
+          best: points.reduce((a, b) => (b.score > a.score ? b : a), points[0]),
+        }
+      : null;
+  const scoreDelta = n > 1 && scoreStats ? scoreStats.latest - scoreStats.first : null;
+  const isNewRecord =
+    n > 1 && scoreStats !== null && points[n - 1].sessionId === scoreStats.best.sessionId;
+  const scoreTrendColor =
+    scoreDelta === null
+      ? scoreStats
+        ? TIER_COLORS[tierFor(scoreStats.latest)]
+        : CYAN
+      : scoreDelta >= 0
+      ? GREEN
+      : ORANGE;
+
+  const holdBest =
+    holdPoints.length > 0
+      ? holdPoints.reduce((a, b) => (b.holdDuration > a.holdDuration ? b : a), holdPoints[0])
+      : null;
+  const holdTotal = holdPoints.reduce((sum, p) => sum + p.holdDuration, 0);
+  const holdDelta =
+    holdPoints.length > 1
+      ? holdPoints[holdPoints.length - 1].holdDuration - holdPoints[0].holdDuration
+      : null;
+  const holdTrendColor = holdDelta === null ? CYAN : holdDelta >= 0 ? GREEN : ORANGE;
 
   return (
     <div className="space-y-4">
@@ -165,74 +243,185 @@ export default function ProgressionDashboard({
       )}
 
       {variations.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1" data-tour="progression-variation-selector">
-          {variations.map((v) => {
-            const active = v.variation === current.variation;
-            return (
-              <button
-                key={v.variation}
-                type="button"
-                onClick={() => selectVariation(v)}
-                className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  active
-                    ? "border-cyan-500 bg-cyan-500/10 text-cyan-300"
-                    : "border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-600"
-                }`}
-              >
-                {v.label}
-                <span className="ml-1.5 opacity-60">{v.points.length}</span>
-              </button>
-            );
-          })}
+        <div data-tour="progression-variation-selector">
+          <p className="mb-1.5 text-[10px] uppercase tracking-wide text-slate-500">
+            Exercice
+          </p>
+          <button
+            type="button"
+            onClick={() => setSelectorOpen((o) => !o)}
+            className="flex w-full items-center justify-between rounded-lg border border-slate-800 bg-slate-900 px-3 py-3"
+          >
+            <span className="font-semibold text-white">{current.label}</span>
+            <div className="flex items-center gap-2 text-slate-400">
+              <TimerIcon className="h-4 w-4" />
+              <ChevronDownIcon
+                className={`h-4 w-4 transition-transform ${selectorOpen ? "rotate-180" : ""}`}
+              />
+            </div>
+          </button>
+
+          {selectorOpen && (
+            <div className="mt-1 divide-y divide-slate-800 overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
+              {variations.map((v) => {
+                const active = v.variation === current.variation;
+                return (
+                  <button
+                    key={v.variation}
+                    type="button"
+                    onClick={() => selectVariation(v)}
+                    className={`flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition-colors ${
+                      active ? "bg-cyan-500/10 text-cyan-300" : "text-slate-300 hover:bg-slate-800/60"
+                    }`}
+                  >
+                    <span className="font-medium">{v.label}</span>
+                    <span className="flex items-center gap-1 text-xs text-slate-500">
+                      <TimerIcon className="h-3.5 w-3.5" />
+                      hold · {v.points.length}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
+
+      <div data-tour="progression-period-filter">
+        <p className="mb-1.5 text-[10px] uppercase tracking-wide text-slate-500">
+          Période
+        </p>
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {PERIODS.map((p, i) => (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => selectPeriod(i)}
+              className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                i === periodIndex
+                  ? "border-cyan-500 bg-cyan-500/10 text-cyan-300"
+                  : "border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-600"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-2" data-tour="progression-stats">
         <StatCard label="Séances" value={String(n)} />
         <StatCard
           label="Score actuel"
-          value={`${latest.score.toFixed(1)}/10`}
-          valueColor={TIER_COLORS[tierFor(latest.score)]}
+          value={scoreStats ? `${scoreStats.latest.toFixed(1)}/10` : "—"}
+          valueColor={scoreStats ? TIER_COLORS[tierFor(scoreStats.latest)] : undefined}
         />
         <StatCard
-          label="Record"
-          value={`${best.score.toFixed(1)}/10`}
+          label="Record score"
+          value={scoreStats ? `${scoreStats.best.score.toFixed(1)}/10` : "—"}
           valueColor={GREEN}
           icon={<CrownIcon className="h-4 w-4 text-yellow-400" />}
         />
         <StatCard
-          label="Évolution"
-          value={delta === null ? "—" : `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}`}
-          valueColor={delta === null ? "#94a3b8" : trendColor}
+          label="Évolution score"
+          value={
+            scoreDelta === null ? "—" : `${scoreDelta >= 0 ? "+" : ""}${scoreDelta.toFixed(1)}`
+          }
+          valueColor={scoreDelta === null ? "#94a3b8" : scoreTrendColor}
         />
       </div>
 
-      {n < 2 ? (
-        <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900 p-6 text-center">
-          <p className="text-sm font-medium text-white">
-            Une seule séance pour l&apos;instant
-          </p>
-          <p className="text-xs text-slate-500">
-            Refais une analyse de {current.label} pour voir apparaître ta
-            courbe de progression.
-          </p>
-        </div>
+      {n === 0 ? (
+        <EmptyPeriodPanel onReset={() => selectPeriod(DEFAULT_PERIOD_INDEX)} />
+      ) : n < 2 ? (
+        current.points.length < 2 ? (
+          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900 p-6 text-center">
+            <p className="text-sm font-medium text-white">
+              Une seule séance pour l&apos;instant
+            </p>
+            <p className="text-xs text-slate-500">
+              Refais une analyse de {current.label} pour voir apparaître ta
+              courbe de progression.
+            </p>
+          </div>
+        ) : (
+          <EmptyPeriodPanel onReset={() => selectPeriod(DEFAULT_PERIOD_INDEX)} />
+        )
       ) : (
-        <div className="rounded-xl border border-slate-800 bg-slate-900 p-3" data-tour="progression-chart">
-          {isNewRecord && (
-            <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-yellow-400">
-              <CrownIcon className="h-3.5 w-3.5" />
-              Nouveau record sur cette figure
+        <>
+          <div
+            className="rounded-xl border border-slate-800 bg-slate-900 p-3"
+            data-tour="progression-chart"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-semibold text-white">Score</p>
+              {isNewRecord && (
+                <div className="flex items-center gap-1 text-xs font-medium text-yellow-400">
+                  <CrownIcon className="h-3.5 w-3.5" />
+                  Nouveau record
+                </div>
+              )}
             </div>
-          )}
-          <ChartWithTooltip
-            points={points}
-            activeIndex={activeIndex}
-            onSelectIndex={setActiveIndex}
-            color={trendColor}
-            bestScore={best.score}
-          />
-        </div>
+            <ChartWithTooltip
+              points={points.map((p) => ({
+                sessionId: p.sessionId,
+                date: p.date,
+                value: p.score,
+              }))}
+              activeIndex={activeScoreIndex}
+              onSelectIndex={setActiveScoreIndex}
+              color={scoreTrendColor}
+              bestValue={scoreStats?.best.score ?? 0}
+              axisMin={0}
+              axisMax={10}
+              formatValue={(v) => `${v.toFixed(1)}/10`}
+              sessionLinkTourId="progression-session-link"
+            />
+          </div>
+
+          <div
+            className="rounded-xl border border-slate-800 bg-slate-900 p-3"
+            data-tour="progression-hold-chart"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-semibold text-white">Durée de hold</p>
+              <div className="flex gap-3 text-[11px] text-slate-500">
+                <span>
+                  Meilleur{" "}
+                  <span className="font-semibold text-white">
+                    {holdBest ? formatDurationCompact(holdBest.holdDuration) : "—"}
+                  </span>
+                </span>
+                <span>
+                  Total{" "}
+                  <span className="font-semibold text-white">
+                    {formatDurationCompact(holdTotal)}
+                  </span>
+                </span>
+              </div>
+            </div>
+            {holdPoints.length < 2 ? (
+              <p className="py-8 text-center text-xs text-slate-500">
+                Pas encore assez de données de hold sur cette période.
+              </p>
+            ) : (
+              <ChartWithTooltip
+                points={holdPoints.map((p) => ({
+                  sessionId: p.sessionId,
+                  date: p.date,
+                  value: p.holdDuration,
+                }))}
+                activeIndex={activeHoldIndex}
+                onSelectIndex={setActiveHoldIndex}
+                color={holdTrendColor}
+                bestValue={holdBest?.holdDuration ?? 0}
+                axisMin={0}
+                axisMax={Math.max(5, Math.ceil(((holdBest?.holdDuration ?? 5) * 1.15) / 5) * 5)}
+                formatValue={(v) => formatHoldDuration(v)}
+              />
+            )}
+          </div>
+        </>
       )}
 
       {tourOpen && <ProgressionTour onClose={() => setTourOpen(false)} />}
@@ -240,48 +429,75 @@ export default function ProgressionDashboard({
   );
 }
 
+function EmptyPeriodPanel({ onReset }: { onReset: () => void }) {
+  return (
+    <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900 p-6 text-center">
+      <p className="text-sm font-medium text-white">Aucune séance dans cette période</p>
+      <p className="text-xs text-slate-500">
+        Élargis la période pour retrouver tes séances plus anciennes.
+      </p>
+      <button
+        type="button"
+        onClick={onReset}
+        className="text-xs font-medium text-cyan-400 hover:text-cyan-300"
+      >
+        Voir tout l&apos;historique
+      </button>
+    </div>
+  );
+}
+
+type SeriesPoint = { sessionId: string; date: string; value: number };
+
 function ChartWithTooltip({
   points,
   activeIndex,
   onSelectIndex,
   color,
-  bestScore,
+  bestValue,
+  axisMin,
+  axisMax,
+  formatValue,
+  sessionLinkTourId,
 }: {
-  points: ProgressionPoint[];
+  points: SeriesPoint[];
   activeIndex: number | null;
   onSelectIndex: (i: number) => void;
   color: string;
-  bestScore: number;
+  bestValue: number;
+  axisMin: number;
+  axisMax: number;
+  formatValue: (v: number) => string;
+  sessionLinkTourId?: string;
 }) {
   const n = points.length;
-  const minScore = 0;
-  const maxScore = 10;
 
   function xFor(i: number) {
     return PAD_X + (i / (n - 1)) * (CHART_W - PAD_X * 2);
   }
-  function yFor(score: number) {
+  function yFor(value: number) {
     const usableH = CHART_H - PAD_TOP - PAD_BOTTOM;
-    return PAD_TOP + usableH * (1 - (score - minScore) / (maxScore - minScore));
+    return PAD_TOP + usableH * (1 - (value - axisMin) / (axisMax - axisMin));
   }
 
-  const coords = points.map((p, i) => ({ x: xFor(i), y: yFor(p.score) }));
+  const coords = points.map((p, i) => ({ x: xFor(i), y: yFor(p.value) }));
   const linePath = buildSmoothPath(coords);
   const areaPath =
     `${linePath} L ${coords[n - 1].x} ${CHART_H - PAD_BOTTOM}` +
     ` L ${coords[0].x} ${CHART_H - PAD_BOTTOM} Z`;
 
-  const bestY = yFor(bestScore);
-  const gradientId = "progression-fill";
-  const active = activeIndex !== null ? points[activeIndex] : null;
-  const activeCoord = activeIndex !== null ? coords[activeIndex] : null;
+  const bestY = yFor(bestValue);
+  const gradientId = `progression-fill-${color.replace("#", "")}`;
+  // null = pas de sélection explicite -> retombe sur le dernier point,
+  // toujours valide quel que soit le nombre de points affichés.
+  const effectiveIndex = activeIndex ?? n - 1;
+  const active = points[effectiveIndex] ?? null;
+  const activeCoord = coords[effectiveIndex] ?? null;
+  const midValue = (axisMin + axisMax) / 2;
 
   return (
     <div className="space-y-1">
-      <div
-        className="relative w-full"
-        style={{ aspectRatio: `${CHART_W} / ${CHART_H}` }}
-      >
+      <div className="relative w-full" style={{ aspectRatio: `${CHART_W} / ${CHART_H}` }}>
         <svg
           viewBox={`0 0 ${CHART_W} ${CHART_H}`}
           className="h-full w-full overflow-visible"
@@ -294,17 +510,21 @@ function ChartWithTooltip({
             </linearGradient>
           </defs>
 
-          {/* Repères horizontaux 0 / 5 / 10 */}
-          {[0, 5, 10].map((s) => (
-            <line
-              key={s}
-              x1={PAD_X}
-              x2={CHART_W - PAD_X}
-              y1={yFor(s)}
-              y2={yFor(s)}
-              stroke="#1e293b"
-              strokeWidth={1}
-            />
+          {/* Repères horizontaux bas / milieu / haut */}
+          {[axisMin, midValue, axisMax].map((v) => (
+            <g key={v}>
+              <line
+                x1={PAD_X}
+                x2={CHART_W - PAD_X}
+                y1={yFor(v)}
+                y2={yFor(v)}
+                stroke="#1e293b"
+                strokeWidth={1}
+              />
+              <text x={0} y={yFor(v) - 3} fill="#475569" fontSize={8}>
+                {Math.round(v * 10) / 10}
+              </text>
+            </g>
           ))}
 
           {/* Ligne pointillée au record */}
@@ -323,7 +543,7 @@ function ChartWithTooltip({
           <path d={linePath} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
 
           {coords.map((c, i) => {
-            const isActive = i === activeIndex;
+            const isActive = i === effectiveIndex;
             return (
               <g key={points[i].sessionId}>
                 <circle
@@ -356,7 +576,7 @@ function ChartWithTooltip({
               top: `${(activeCoord.y / CHART_H) * 100 - 4}%`,
             }}
           >
-            <p className="text-xs font-bold text-white">{active.score.toFixed(1)}/10</p>
+            <p className="text-xs font-bold text-white">{formatValue(active.value)}</p>
             <p className="text-[10px] text-slate-400">{formatFullDate(active.date)}</p>
           </div>
         )}
@@ -370,7 +590,7 @@ function ChartWithTooltip({
       {active && (
         <Link
           href={`/historique/${active.sessionId}`}
-          data-tour="progression-session-link"
+          data-tour={sessionLinkTourId}
           className="block text-center text-xs text-cyan-400 hover:text-cyan-300"
         >
           Voir cette séance

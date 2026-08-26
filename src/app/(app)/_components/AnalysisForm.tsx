@@ -149,6 +149,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       label: "Full",
       Icon: FullFrontLeverIcon,
       available: true,
+      image: "/figures/full-front-lever.png",
     },
     {
       value: "one_leg_front_lever",

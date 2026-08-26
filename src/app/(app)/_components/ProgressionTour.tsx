@@ -22,6 +22,12 @@ const STEPS: TourStep[] = [
       "Bascule d'un tap entre toutes les figures que tu as déjà analysées plusieurs fois.",
   },
   {
+    target: "progression-period-filter",
+    title: "Filtre par période",
+    description:
+      "Concentre-toi sur une fenêtre précise (2 semaines, 1 mois...) ou regarde toute ton histoire sur cette figure.",
+  },
+  {
     target: "progression-stats",
     title: "Tes chiffres clés",
     description:
@@ -32,6 +38,12 @@ const STEPS: TourStep[] = [
     title: "Ta courbe de progression",
     description:
       "Chaque point représente une séance analysée. Touche un point pour afficher sa date et son score exact.",
+  },
+  {
+    target: "progression-hold-chart",
+    title: "Ta durée de hold",
+    description:
+      "Suis aussi combien de temps tu tiens la position, pas seulement la qualité technique — les deux comptent pour progresser.",
   },
   {
     target: "progression-session-link",

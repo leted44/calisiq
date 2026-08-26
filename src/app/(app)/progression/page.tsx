@@ -9,7 +9,7 @@ export default async function ProgressionPage() {
 
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, progression, created_at, scores(score)")
+    .select("id, progression, created_at, hold_duration_seconds, scores(score)")
     .eq("status", "done")
     .order("created_at", { ascending: true });
 
@@ -32,6 +32,7 @@ export default async function ProgressionPage() {
       sessionId: session.id as string,
       date: session.created_at as string,
       score,
+      holdDuration: (session.hold_duration_seconds as number | null) ?? null,
     });
   }
 
@@ -45,7 +46,8 @@ export default async function ProgressionPage() {
       <div className="w-full max-w-md">
         <h1 className="text-2xl font-bold text-white">Progression</h1>
         <p className="text-sm text-slate-400">
-          L&apos;évolution de ton score, séance après séance, figure par figure.
+          Score, durée de hold et records — figure par figure, sur la période
+          de ton choix.
         </p>
       </div>
 
