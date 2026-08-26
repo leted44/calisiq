@@ -68,7 +68,28 @@ export type PoseAngles = {
   legOcclusionRisk: boolean;
 };
 
-// Moyenne des angles gauche/droite pour plus de robustesse à l'angle caméra
+// Visibilité moyenne des points utilisés pour un angle, sert de poids de
+// confiance pour ce côté (gauche/droite).
+function sideConfidence(...points: NormalizedLandmark[]): number {
+  return points.reduce((sum, p) => sum + p.visibility, 0) / points.length;
+}
+
+// Moyenne pondérée par la confiance de chaque côté plutôt qu'une moyenne
+// 50/50 aveugle : en straddle notamment, une jambe mal suivie (caméra trop
+// alignée avec l'écartement) a une visibility basse — sans pondération,
+// son angle (souvent aberrant) pèserait autant que celui de la jambe bien
+// suivie et fausserait silencieusement le résultat.
+function weightedAverage(
+  aValue: number,
+  aWeight: number,
+  bValue: number,
+  bWeight: number
+): number {
+  const total = aWeight + bWeight;
+  if (total === 0) return (aValue + bValue) / 2;
+  return (aValue * aWeight + bValue * bWeight) / total;
+}
+
 export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
   const leftElbowAngle = angleAt(
     landmarks[LEFT_SHOULDER],
@@ -76,6 +97,16 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     landmarks[LEFT_WRIST]
   );
   const rightElbowAngle = angleAt(
+    landmarks[RIGHT_SHOULDER],
+    landmarks[RIGHT_ELBOW],
+    landmarks[RIGHT_WRIST]
+  );
+  const leftElbowConfidence = sideConfidence(
+    landmarks[LEFT_SHOULDER],
+    landmarks[LEFT_ELBOW],
+    landmarks[LEFT_WRIST]
+  );
+  const rightElbowConfidence = sideConfidence(
     landmarks[RIGHT_SHOULDER],
     landmarks[RIGHT_ELBOW],
     landmarks[RIGHT_WRIST]
@@ -91,6 +122,16 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     landmarks[RIGHT_HIP],
     landmarks[RIGHT_KNEE]
   );
+  const leftHipConfidence = sideConfidence(
+    landmarks[LEFT_SHOULDER],
+    landmarks[LEFT_HIP],
+    landmarks[LEFT_KNEE]
+  );
+  const rightHipConfidence = sideConfidence(
+    landmarks[RIGHT_SHOULDER],
+    landmarks[RIGHT_HIP],
+    landmarks[RIGHT_KNEE]
+  );
 
   const leftKneeAngle = angleAt(
     landmarks[LEFT_HIP],
@@ -102,6 +143,16 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     landmarks[RIGHT_KNEE],
     landmarks[RIGHT_ANKLE]
   );
+  const leftKneeConfidence = sideConfidence(
+    landmarks[LEFT_HIP],
+    landmarks[LEFT_KNEE],
+    landmarks[LEFT_ANKLE]
+  );
+  const rightKneeConfidence = sideConfidence(
+    landmarks[RIGHT_HIP],
+    landmarks[RIGHT_KNEE],
+    landmarks[RIGHT_ANKLE]
+  );
 
   const leftShoulderFlexion = angleAt(
     landmarks[LEFT_HIP],
@@ -109,6 +160,16 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     landmarks[LEFT_WRIST]
   );
   const rightShoulderFlexion = angleAt(
+    landmarks[RIGHT_HIP],
+    landmarks[RIGHT_SHOULDER],
+    landmarks[RIGHT_WRIST]
+  );
+  const leftShoulderFlexionConfidence = sideConfidence(
+    landmarks[LEFT_HIP],
+    landmarks[LEFT_SHOULDER],
+    landmarks[LEFT_WRIST]
+  );
+  const rightShoulderFlexionConfidence = sideConfidence(
     landmarks[RIGHT_HIP],
     landmarks[RIGHT_SHOULDER],
     landmarks[RIGHT_WRIST]
@@ -191,10 +252,25 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
   const legOcclusionRisk = lowVisibilityLeg || legsTooClose;
 
   return {
-    elbowAngle: (leftElbowAngle + rightElbowAngle) / 2,
-    hipAngle: (leftHipAngle + rightHipAngle) / 2,
-    kneeAngle: (leftKneeAngle + rightKneeAngle) / 2,
-    shoulderFlexionAngle: (leftShoulderFlexion + rightShoulderFlexion) / 2,
+    elbowAngle: weightedAverage(
+      leftElbowAngle,
+      leftElbowConfidence,
+      rightElbowAngle,
+      rightElbowConfidence
+    ),
+    hipAngle: weightedAverage(leftHipAngle, leftHipConfidence, rightHipAngle, rightHipConfidence),
+    kneeAngle: weightedAverage(
+      leftKneeAngle,
+      leftKneeConfidence,
+      rightKneeAngle,
+      rightKneeConfidence
+    ),
+    shoulderFlexionAngle: weightedAverage(
+      leftShoulderFlexion,
+      leftShoulderFlexionConfidence,
+      rightShoulderFlexion,
+      rightShoulderFlexionConfidence
+    ),
     bodyLineAngleFromHorizontal,
     shoulderProtraction,
     pelvisDeviation,
