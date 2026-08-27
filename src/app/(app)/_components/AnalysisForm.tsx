@@ -1058,14 +1058,16 @@ export default function AnalysisForm() {
               Découpe
             </p>
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => file && downloadBlob(file, file.name)}
-                className="flex items-center gap-1 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:border-slate-600"
-              >
-                <DownloadIcon className="h-3.5 w-3.5" />
-                Enregistrer
-              </button>
+              {fileSource === "camera" && (
+                <button
+                  type="button"
+                  onClick={() => file && downloadBlob(file, file.name)}
+                  className="flex items-center gap-1 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:border-slate-600"
+                >
+                  <DownloadIcon className="h-3.5 w-3.5" />
+                  Enregistrer sur le téléphone
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
