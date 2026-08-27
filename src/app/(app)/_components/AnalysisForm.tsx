@@ -1280,16 +1280,6 @@ export default function AnalysisForm() {
               </button>
             </div>
           )}
-
-          {result && (
-            <button
-              type="button"
-              onClick={handleRemoveVideo}
-              className="w-full rounded-lg border border-slate-700 py-2.5 font-medium text-slate-200 hover:border-slate-600"
-            >
-              Nouvelle analyse
-            </button>
-          )}
         </form>
       )}
       </>

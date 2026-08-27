@@ -63,7 +63,7 @@ export default function ExportVideoButton({
         className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-slate-200 hover:border-cyan-700 disabled:opacity-50"
       >
         <DownloadIcon className="h-4 w-4 text-cyan-400" />
-        {recording ? `Génération... ${progress}%` : "Télécharger la vidéo annotée"}
+        {recording ? `Génération... ${progress}%` : "Télécharger la vidéo (squelette + score)"}
       </button>
       {recording && (
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
