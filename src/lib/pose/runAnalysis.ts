@@ -49,7 +49,7 @@ export function getLandmarker() {
   return sharedLandmarkerPromise;
 }
 
-function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
+export function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
   return new Promise((resolve) => {
     function onSeeked() {
       video.removeEventListener("seeked", onSeeked);

@@ -4,9 +4,15 @@ import {
   type NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
 import type { CriterionScore } from "./scoring";
-import { getLandmarker } from "./runAnalysis";
+import { getLandmarker, seekTo } from "./runAnalysis";
 import { computeAngles } from "./angles";
 import { drawAngleLabels } from "./canvasHud";
+
+const EXPORT_FPS = 30;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 // Taille max de sortie, alignée sur ce que consomment réellement Instagram/
 // TikTok (1080x1920 en portrait) — exporter en UHD natif (souvent 2160x3840
@@ -219,7 +225,7 @@ export async function recordAnnotatedVideo({
     25_000_000,
     Math.max(6_000_000, Math.round(canvas.width * canvas.height * 9))
   );
-  const canvasStream = canvas.captureStream(30);
+  const canvasStream = canvas.captureStream(EXPORT_FPS);
   const recorder = new MediaRecorder(canvasStream, { mimeType, videoBitsPerSecond });
   const chunks: Blob[] = [];
   recorder.ondataavailable = (e) => {
@@ -231,57 +237,69 @@ export async function recordAnnotatedVideo({
     recorder.onerror = (e) => reject(e);
   });
 
-  video.currentTime = rangeStart;
-  await video.play();
+  // Piloté par seek explicite plutôt que par lecture temps réel + rAF : la
+  // version précédente laissait la vidéo jouer en vrai temps réel pendant
+  // que dessin/HUD tournaient dans requestAnimationFrame, deux horloges
+  // indépendantes. Dès que le dessin prenait ne serait-ce qu'un peu de
+  // retard (HUD, tracé du squelette, décodage d'une vidéo importée avec un
+  // framerate variable), la vidéo source continuait d'avancer pendant ce
+  // temps et des portions entières étaient sautées dans l'enregistrement —
+  // c'est ce qui produisait le saccadé, pas la charge de calcul en soi.
+  // Ici, chaque frame de sortie est explicitement visitée par seek (aucune
+  // portion de la vidéo source n'est jamais sautée), et un rythme est
+  // imposé par rapport au temps réel écoulé pour que la durée du fichier
+  // exporté corresponde à la durée réelle du hold.
+  video.pause();
+  const totalFrames = Math.max(1, Math.round((rangeEnd - rangeStart) * EXPORT_FPS));
+  const frameDurationMs = 1000 / EXPORT_FPS;
+  const exportStart = performance.now();
+
   recorder.start();
 
-  await new Promise<void>((resolve) => {
-    function loop() {
-      if (video.paused || video.ended || video.currentTime >= rangeEnd) {
-        video.pause();
-        resolve();
-        return;
-      }
+  for (let i = 0; i < totalFrames; i++) {
+    const targetTime = Math.min(rangeStart + i / EXPORT_FPS, rangeEnd);
+    await seekTo(video, targetTime);
 
-      const elapsed = video.currentTime - rangeStart;
-      const progress = elapsed / (rangeEnd - rangeStart);
-      onProgress?.(Math.min(100, Math.round(progress * 100)));
+    const elapsed = targetTime - rangeStart;
+    const progress = elapsed / (rangeEnd - rangeStart);
+    onProgress?.(Math.min(100, Math.round(progress * 100)));
 
-      let landmarks: NormalizedLandmark[] | undefined;
-      if (landmarksFrames) {
-        const frameIndex = Math.min(
-          landmarksFrames.length - 1,
-          Math.max(0, Math.floor(progress * landmarksFrames.length))
-        );
-        landmarks = landmarksFrames[frameIndex];
-      } else {
-        landmarks = landmarker?.detectForVideo(video, performance.now()).landmarks[0];
-      }
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      if (landmarks) {
-        drawingUtils.drawLandmarks(landmarks, { radius: 4, color: "#22d3ee" });
-        drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
-          color: "#22d3ee",
-          lineWidth: 3,
-        });
-        drawAngleLabels(ctx, canvas, landmarks, computeAngles(landmarks));
-      }
-
-      drawHud(ctx, canvas, {
-        figureLabel,
-        elapsedSeconds: elapsed,
-        globalScoreValue,
-        scores,
-      });
-
-      requestAnimationFrame(loop);
+    let landmarks: NormalizedLandmark[] | undefined;
+    if (landmarksFrames) {
+      const frameIndex = Math.min(
+        landmarksFrames.length - 1,
+        Math.max(0, Math.floor(progress * landmarksFrames.length))
+      );
+      landmarks = landmarksFrames[frameIndex];
+    } else {
+      landmarks = landmarker?.detectForVideo(video, performance.now()).landmarks[0];
     }
-    loop();
-  });
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (landmarks) {
+      drawingUtils.drawLandmarks(landmarks, { radius: 4, color: "#22d3ee" });
+      drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
+        color: "#22d3ee",
+        lineWidth: 3,
+      });
+      drawAngleLabels(ctx, canvas, landmarks, computeAngles(landmarks));
+    }
+
+    drawHud(ctx, canvas, {
+      figureLabel,
+      elapsedSeconds: elapsed,
+      globalScoreValue,
+      scores,
+    });
+
+    const targetElapsedMs = (i + 1) * frameDurationMs;
+    const actualElapsedMs = performance.now() - exportStart;
+    if (actualElapsedMs < targetElapsedMs) {
+      await sleep(targetElapsedMs - actualElapsedMs);
+    }
+  }
 
   recorder.stop();
-  video.pause();
   return recorded;
 }
 
