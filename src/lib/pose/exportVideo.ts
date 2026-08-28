@@ -151,14 +151,18 @@ function drawHud(
   const h = canvas.height;
   const scale = w / 400;
   const margin = 16 * scale;
-  const radius = 16 * scale;
+  const radius = 14 * scale;
+  // Fond plus transparent que la première version : la priorité est de
+  // bien voir la personne exécuter la figure, le HUD reste un repère
+  // discret en surimpression, pas un écran d'app qui recouvre la vidéo.
+  const cardBackground = "rgba(2,6,23,0.62)";
 
-  // --- Carte haut-centre : nom de la figure + chrono du hold ---
-  const topPaddingX = 22 * scale;
-  const figureFont = `700 ${16 * scale}px sans-serif`;
-  const holdLabelFont = `700 ${10 * scale}px sans-serif`;
-  const timerFont = `700 ${34 * scale}px sans-serif`;
-  const timerSuffixFont = `600 ${16 * scale}px sans-serif`;
+  // --- Carte haut-centre : nom de la figure + chrono du hold, en petit ---
+  const topPaddingX = 14 * scale;
+  const figureFont = `700 ${11 * scale}px sans-serif`;
+  const holdLabelFont = `700 ${7 * scale}px sans-serif`;
+  const timerFont = `700 ${20 * scale}px sans-serif`;
+  const timerSuffixFont = `600 ${10 * scale}px sans-serif`;
 
   ctx.font = figureFont;
   const figureLabelWidth = ctx.measureText(figureLabel).width;
@@ -170,25 +174,25 @@ function drawHud(
   const topContentWidth = Math.max(
     figureLabelWidth,
     timerWidth + timerSuffixWidth,
-    70 * scale
+    50 * scale
   );
   const topCardWidth = topContentWidth + topPaddingX * 2;
-  const topCardHeight = 100 * scale;
+  const topCardHeight = 62 * scale;
   const topCardX = (w - topCardWidth) / 2;
   const topCardY = margin;
   const topCenterX = topCardX + topCardWidth / 2;
 
-  fillRoundedRect(ctx, topCardX, topCardY, topCardWidth, topCardHeight, radius, "rgba(2,6,23,0.82)");
+  fillRoundedRect(ctx, topCardX, topCardY, topCardWidth, topCardHeight, radius, cardBackground);
 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#f8fafc";
   ctx.font = figureFont;
-  ctx.fillText(figureLabel, topCenterX, topCardY + 25 * scale);
+  ctx.fillText(figureLabel, topCenterX, topCardY + 17 * scale);
 
   ctx.fillStyle = "#c4b5fd";
   ctx.font = holdLabelFont;
-  ctx.fillText("HOLD", topCenterX, topCardY + 41 * scale);
+  ctx.fillText("HOLD", topCenterX, topCardY + 28 * scale);
 
   drawMixedText(
     ctx,
@@ -197,57 +201,57 @@ function drawHud(
       { text: "s", font: timerSuffixFont, color: "#c4b5fd" },
     ],
     topCenterX,
-    topCardY + 82 * scale,
+    topCardY + 52 * scale,
     "center"
   );
 
-  // --- Carte bas pleine largeur : score global + barres par critère ---
-  const cardPadding = 16 * scale;
+  // --- Carte bas pleine largeur : score global + barres par critère, en discret ---
+  const cardPadding = 12 * scale;
   const cardWidth = w - margin * 2;
-  const headerHeight = 30 * scale;
-  const rowHeight = 28 * scale;
+  const headerHeight = 22 * scale;
+  const rowHeight = 21 * scale;
   const cardHeight = headerHeight + scores.length * rowHeight + cardPadding * 2;
   const cardX = margin;
   const cardY = h - margin - cardHeight;
 
-  fillRoundedRect(ctx, cardX, cardY, cardWidth, cardHeight, radius, "rgba(2,6,23,0.82)");
+  fillRoundedRect(ctx, cardX, cardY, cardWidth, cardHeight, radius, cardBackground);
 
-  const headerY = cardY + cardPadding + 14 * scale;
+  const headerY = cardY + cardPadding + 10 * scale;
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#94a3b8";
-  ctx.font = `700 ${12 * scale}px sans-serif`;
+  ctx.font = `700 ${9 * scale}px sans-serif`;
   ctx.fillText("SCORE", cardX + cardPadding, headerY);
 
   const globalColor = scoreColor(globalScoreValue);
   drawMixedText(
     ctx,
     [
-      { text: globalScoreValue.toFixed(1), font: `700 ${14 * scale}px sans-serif`, color: globalColor },
-      { text: "/10", font: `600 ${9 * scale}px sans-serif`, color: globalColor },
+      { text: globalScoreValue.toFixed(1), font: `700 ${12 * scale}px sans-serif`, color: globalColor },
+      { text: "/10", font: `600 ${8 * scale}px sans-serif`, color: globalColor },
     ],
     cardX + cardWidth - cardPadding,
     headerY,
     "right"
   );
 
-  const labelWidth = 82 * scale;
-  const valueWidth = 54 * scale;
-  const barGap = 10 * scale;
+  const labelWidth = 70 * scale;
+  const valueWidth = 44 * scale;
+  const barGap = 8 * scale;
   const barX = cardX + cardPadding + labelWidth + barGap;
   const barWidth = cardWidth - cardPadding * 2 - labelWidth - valueWidth - barGap * 2;
-  const barHeight = 8 * scale;
+  const barHeight = 6 * scale;
   const rowsTop = cardY + cardPadding + headerHeight;
 
   scores.forEach((s, i) => {
     const rowCenterY = rowsTop + i * rowHeight + rowHeight / 2;
-    const textY = rowCenterY + 4 * scale;
+    const textY = rowCenterY + 3 * scale;
     const barY = rowCenterY - barHeight / 2;
     const fillColor = scoreColor(s.score);
 
     ctx.textAlign = "left";
     ctx.fillStyle = "#e2e8f0";
-    ctx.font = `600 ${12 * scale}px sans-serif`;
+    ctx.font = `600 ${10 * scale}px sans-serif`;
     ctx.fillText(CRITERE_LABELS[s.critere], cardX + cardPadding, textY);
 
     fillRoundedRect(ctx, barX, barY, barWidth, barHeight, barHeight / 2, "rgba(148,163,184,0.25)");
@@ -260,8 +264,8 @@ function drawHud(
     drawMixedText(
       ctx,
       [
-        { text: s.score.toFixed(1), font: `700 ${12 * scale}px sans-serif`, color: fillColor },
-        { text: "/10", font: `500 ${9 * scale}px sans-serif`, color: fillColor },
+        { text: s.score.toFixed(1), font: `700 ${10 * scale}px sans-serif`, color: fillColor },
+        { text: "/10", font: `500 ${7 * scale}px sans-serif`, color: fillColor },
       ],
       cardX + cardWidth - cardPadding,
       textY,
@@ -405,12 +409,22 @@ export async function recordAnnotatedVideo({
         });
         drawAngleLabels(ctx, canvas, landmarks, liveAngles);
 
-        // Score recalculé à partir de la pose de cette frame précise plutôt
-        // que le score final (moyenne du hold) : c'est ce qui fait évoluer
-        // les barres par critère en direct pendant la figure, au lieu
-        // d'afficher un chiffre figé du début à la fin de l'export.
-        liveScores = scoreAngles(liveAngles, progression);
-        liveGlobalScoreValue = globalScore(liveScores);
+        // Score recalculé à partir de la pose de cette frame précise tant
+        // que le hold est en cours : c'est ce qui fait évoluer les barres
+        // par critère en direct pendant la figure plutôt qu'un chiffre figé.
+        if (mediaTime < hudHoldEnd) {
+          liveScores = scoreAngles(liveAngles, progression);
+          liveGlobalScoreValue = globalScore(liveScores);
+        }
+      }
+
+      // Une fois le hold terminé (sortie de figure), on verrouille sur le
+      // vrai score final (moyenne du hold complet) plutôt que de continuer
+      // à afficher un score recalculé sur une posture de sortie qui n'a
+      // plus rien à voir avec la figure évaluée.
+      if (mediaTime >= hudHoldEnd) {
+        liveScores = scores;
+        liveGlobalScoreValue = globalScoreValue;
       }
 
       // Le chrono affiché ne défile que pendant le hold réel : figé à 0
