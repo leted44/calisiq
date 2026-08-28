@@ -4,6 +4,7 @@ import { useState, type RefObject } from "react";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { recordAnnotatedVideo, downloadBlob } from "@/lib/pose/exportVideo";
 import type { CriterionScore } from "@/lib/pose/scoring";
+import type { Progression } from "@/lib/pose/grid";
 import { DownloadIcon } from "@/components/icons";
 
 export default function ExportVideoButton({
@@ -11,6 +12,7 @@ export default function ExportVideoButton({
   figureLabel,
   globalScoreValue,
   scores,
+  progression,
   rangeStart,
   rangeEnd,
   landmarksFrames,
@@ -21,6 +23,7 @@ export default function ExportVideoButton({
   figureLabel: string;
   globalScoreValue: number;
   scores: CriterionScore[];
+  progression: Progression;
   rangeStart?: number;
   rangeEnd?: number;
   landmarksFrames?: NormalizedLandmark[][];
@@ -49,6 +52,7 @@ export default function ExportVideoButton({
         figureLabel,
         globalScoreValue,
         scores,
+        progression,
         landmarksFrames,
         holdStartSeconds,
         holdEndSeconds,

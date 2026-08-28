@@ -1250,6 +1250,7 @@ export default function AnalysisForm() {
               figureLabel={PROGRESSION_LABELS[progression] ?? progression}
               globalScoreValue={result.globalScoreValue}
               scores={result.scores}
+              progression={progression as Progression}
               rangeStart={trimStart}
               rangeEnd={trimEnd}
               landmarksFrames={result.landmarksFrames}

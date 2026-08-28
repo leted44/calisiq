@@ -192,6 +192,7 @@ export default function VideoPoseOverlay({
             figureLabel={PROGRESSION_LABELS[progression] ?? progression}
             globalScoreValue={report.globalScoreValue}
             scores={report.scores}
+            progression={progression}
             rangeStart={trimStart}
             rangeEnd={trimEnd}
             landmarksFrames={freshResult?.landmarksFrames}

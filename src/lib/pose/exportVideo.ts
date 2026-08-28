@@ -3,10 +3,11 @@ import {
   DrawingUtils,
   type NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
-import type { CriterionScore } from "./scoring";
+import { scoreAngles, globalScore, type CriterionScore } from "./scoring";
 import { getLandmarker, seekTo } from "./runAnalysis";
 import { computeAngles } from "./angles";
 import { drawAngleLabels } from "./canvasHud";
+import type { Progression } from "./grid";
 
 const EXPORT_FPS = 30;
 
@@ -222,8 +223,8 @@ function drawHud(
   drawMixedText(
     ctx,
     [
-      { text: globalScoreValue.toFixed(1), font: `700 ${20 * scale}px sans-serif`, color: globalColor },
-      { text: "/10", font: `600 ${12 * scale}px sans-serif`, color: globalColor },
+      { text: globalScoreValue.toFixed(1), font: `700 ${14 * scale}px sans-serif`, color: globalColor },
+      { text: "/10", font: `600 ${9 * scale}px sans-serif`, color: globalColor },
     ],
     cardX + cardWidth - cardPadding,
     headerY,
@@ -277,6 +278,7 @@ export async function recordAnnotatedVideo({
   figureLabel,
   globalScoreValue,
   scores,
+  progression,
   landmarksFrames,
   holdStartSeconds,
   holdEndSeconds,
@@ -287,8 +289,13 @@ export async function recordAnnotatedVideo({
   rangeStart: number;
   rangeEnd: number;
   figureLabel: string;
+  // Score final (moyenne du hold) : sert de repli tant qu'aucune frame
+  // n'a encore été traitée dans la boucle.
   globalScoreValue: number;
   scores: CriterionScore[];
+  // Nécessaire pour recalculer un score par frame (voir plus bas) : les
+  // cibles/tolérances par critère dépendent de la progression.
+  progression: Progression;
   // Landmarks déjà calculés pendant l'analyse (un par frame échantillonnée
   // dans la plage rangeStart-rangeEnd) — réutilisés ici par recherche
   // proportionnelle plutôt que recalculés, pour ne pas faire tourner
@@ -361,6 +368,12 @@ export async function recordAnnotatedVideo({
   recorder.start(1000);
   await video.play();
 
+  // Repli tant qu'aucune frame n'a encore été traitée (ou si une frame n'a
+  // pas de landmarks détectés) : le score final sert de valeur de départ,
+  // remplacé dès qu'un calcul en direct est disponible.
+  let liveScores = scores;
+  let liveGlobalScoreValue = globalScoreValue;
+
   await new Promise<void>((resolve) => {
     function drawFrame(mediaTime: number) {
       const elapsed = mediaTime - rangeStart;
@@ -384,12 +397,20 @@ export async function recordAnnotatedVideo({
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       if (landmarks) {
+        const liveAngles = computeAngles(landmarks);
         drawingUtils.drawLandmarks(landmarks, { radius: 4, color: "#22d3ee" });
         drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
           color: "#22d3ee",
           lineWidth: 3,
         });
-        drawAngleLabels(ctx, canvas, landmarks, computeAngles(landmarks));
+        drawAngleLabels(ctx, canvas, landmarks, liveAngles);
+
+        // Score recalculé à partir de la pose de cette frame précise plutôt
+        // que le score final (moyenne du hold) : c'est ce qui fait évoluer
+        // les barres par critère en direct pendant la figure, au lieu
+        // d'afficher un chiffre figé du début à la fin de l'export.
+        liveScores = scoreAngles(liveAngles, progression);
+        liveGlobalScoreValue = globalScore(liveScores);
       }
 
       // Le chrono affiché ne défile que pendant le hold réel : figé à 0
@@ -402,8 +423,8 @@ export async function recordAnnotatedVideo({
       drawHud(ctx, canvas, {
         figureLabel,
         elapsedSeconds: Math.max(0, holdElapsed),
-        globalScoreValue,
-        scores,
+        globalScoreValue: liveGlobalScoreValue,
+        scores: liveScores,
       });
     }
 
