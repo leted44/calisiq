@@ -273,7 +273,11 @@ export async function recordAnnotatedVideo({
     function drawFrame(mediaTime: number) {
       const elapsed = mediaTime - rangeStart;
       const progress = Math.min(1, Math.max(0, elapsed / (rangeEnd - rangeStart)));
-      onProgress?.(Math.round(progress * 100));
+      // Plafonné à 99 : la dernière frame dessinée n'est pas encore la
+      // vidéo finale, il reste l'assemblage du fichier par le navigateur
+      // (recorder.stop() + flush) une fois la boucle de dessin terminée.
+      // 100% n'est envoyé qu'une fois ce fichier réellement prêt, plus bas.
+      onProgress?.(Math.min(99, Math.round(progress * 100)));
 
       let landmarks: NormalizedLandmark[] | undefined;
       if (landmarksFrames) {
@@ -343,7 +347,9 @@ export async function recordAnnotatedVideo({
 
   recorder.stop();
   video.pause();
-  return recorded;
+  const blob = await recorded;
+  onProgress?.(100);
+  return blob;
 }
 
 export function downloadBlob(blob: Blob, filename: string) {
