@@ -158,9 +158,9 @@ export default function ResultCard({
             {scores.map((s) => (
               <ScoreRing key={s.critere} value={s.score} label={CRITERE_LABELS[s.critere]} />
             ))}
-            {holdDurationSeconds !== undefined && (
+            {holdDurationSeconds !== undefined && holdDurationSeconds !== null && (
               <ScoreRing
-                value={Number(holdDurationSeconds?.toFixed(1) ?? 0)}
+                value={Number(holdDurationSeconds.toFixed(1))}
                 label="Hold"
                 suffix="s"
               />

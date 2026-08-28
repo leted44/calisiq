@@ -67,7 +67,7 @@ export type PoseAnalysisResult =
       detectionRate: number;
       warning: string | null;
       holdWindow: HoldWindow;
-      holdDurationSeconds: number;
+      holdDurationSeconds: number | null;
       summaryAngles: PoseAngles;
       scores: CriterionScore[];
       globalScoreValue: number;
@@ -181,13 +181,23 @@ export async function runPoseAnalysis({
   const window = detectHoldWindow(frames);
   const holdAngles = angles.slice(window.start, window.end + 1);
   const median = medianAngles(holdAngles);
-  const holdDurationSeconds =
-    ((window.end - window.start + 1) / frames.length) * (end - start);
+  // Si aucun segment immobile assez long n'est trouvé, detectHoldWindow
+  // retombe sur la vidéo entière (voir angles.ts) — dans ce cas la "durée"
+  // ne correspond à aucun hold réel, mieux vaut ne rien afficher que de
+  // faire croire que la figure a été tenue pendant tout le clip.
+  const holdDurationSeconds = window.detected
+    ? ((window.end - window.start + 1) / frames.length) * (end - start)
+    : null;
 
   const warningParts: string[] = [];
   if (detectionRate < 0.5) {
     warningParts.push(
       `Corps détecté seulement sur ${Math.round(detectionRate * 100)}% des frames — vérifie le cadrage et l'angle de caméra pour un résultat fiable.`
+    );
+  }
+  if (!window.detected) {
+    warningParts.push(
+      "Aucune position stable assez longue détectée — la durée du hold n'a pas pu être mesurée. Filme si possible avec le téléphone posé/stable plutôt qu'à la main."
     );
   }
   // En straddle, les deux jambes doivent être écartées de part et d'autre
