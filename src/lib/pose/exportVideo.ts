@@ -325,27 +325,50 @@ export async function recordAnnotatedVideo({
       return video.paused || video.ended || video.currentTime >= rangeEnd;
     }
 
+    // requestVideoFrameCallback ne se redéclenche que s'il existe une
+    // prochaine frame à présenter : si la vidéo atteint sa fin et se met en
+    // pause juste après avoir présenté l'avant-dernière image, il n'y a
+    // plus jamais de "prochaine frame" pour déclencher un dernier appel —
+    // la boucle attendrait alors indéfiniment un callback qui ne vient
+    // plus, sans jamais résoudre l'export. Les événements 'ended'/'pause'
+    // du lecteur servent de filet pour terminer proprement dans ce cas, et
+    // un timeout de sécurité couvre tout autre blocage imprévu.
+    let settled = false;
+    function finish() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(safetyTimeout);
+      video.removeEventListener("ended", finish);
+      video.removeEventListener("pause", finish);
+      video.pause();
+      resolve();
+    }
+    const safetyTimeout = setTimeout(
+      finish,
+      Math.max(5000, (rangeEnd - rangeStart) * 1000 * 3)
+    );
+    video.addEventListener("ended", finish);
+    video.addEventListener("pause", finish);
+
     if (supportsFrameCallback) {
       const videoWithCallback = video as Required<VideoWithFrameCallback>;
       function onFrame(_now: number, metadata: { mediaTime: number }) {
-        if (finishedRange()) {
-          video.pause();
-          resolve();
+        if (settled || finishedRange()) {
+          finish();
           return;
         }
         drawFrame(metadata.mediaTime);
-        videoWithCallback.requestVideoFrameCallback(onFrame);
+        if (!settled) videoWithCallback.requestVideoFrameCallback(onFrame);
       }
       videoWithCallback.requestVideoFrameCallback(onFrame);
     } else {
       function loop() {
-        if (finishedRange()) {
-          video.pause();
-          resolve();
+        if (settled || finishedRange()) {
+          finish();
           return;
         }
         drawFrame(video.currentTime);
-        requestAnimationFrame(loop);
+        if (!settled) requestAnimationFrame(loop);
       }
       loop();
     }
