@@ -10,9 +10,13 @@ import { drawAngleLabels } from "./canvasHud";
 
 const EXPORT_FPS = 30;
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+// requestVideoFrameCallback n'est pas encore dans tous les lib.dom.d.ts —
+// typé ici a minima plutôt que d'élargir le lib cible du projet pour ça.
+type VideoWithFrameCallback = HTMLVideoElement & {
+  requestVideoFrameCallback?: (
+    callback: (now: number, metadata: { mediaTime: number }) => void
+  ) => number;
+};
 
 // Taille max de sortie, alignée sur ce que consomment réellement Instagram/
 // TikTok (1080x1920 en portrait) — exporter en UHD natif (souvent 2160x3840
@@ -237,69 +241,92 @@ export async function recordAnnotatedVideo({
     recorder.onerror = (e) => reject(e);
   });
 
-  // Piloté par seek explicite plutôt que par lecture temps réel + rAF : la
-  // version précédente laissait la vidéo jouer en vrai temps réel pendant
-  // que dessin/HUD tournaient dans requestAnimationFrame, deux horloges
-  // indépendantes. Dès que le dessin prenait ne serait-ce qu'un peu de
-  // retard (HUD, tracé du squelette, décodage d'une vidéo importée avec un
-  // framerate variable), la vidéo source continuait d'avancer pendant ce
-  // temps et des portions entières étaient sautées dans l'enregistrement —
-  // c'est ce qui produisait le saccadé, pas la charge de calcul en soi.
-  // Ici, chaque frame de sortie est explicitement visitée par seek (aucune
-  // portion de la vidéo source n'est jamais sautée), et un rythme est
-  // imposé par rapport au temps réel écoulé pour que la durée du fichier
-  // exporté corresponde à la durée réelle du hold.
-  video.pause();
-  const totalFrames = Math.max(1, Math.round((rangeEnd - rangeStart) * EXPORT_FPS));
-  const frameDurationMs = 1000 / EXPORT_FPS;
-  const exportStart = performance.now();
+  // Piloté par requestVideoFrameCallback plutôt que par seek manuel ou par
+  // requestAnimationFrame : seeker image par image s'est révélé bien pire
+  // (chercher une position précise force le navigateur à redécoder depuis
+  // l'image-clé précédente, ce qui peut coûter largement plus qu'un cycle
+  // d'image selon la vidéo — d'où le rendu au ralenti observé). rAF seul a
+  // le défaut inverse : il tourne sur l'horloge d'affichage, indépendante
+  // de la vidéo, et peut donc sauter des portions de la source si le dessin
+  // prend du retard. requestVideoFrameCallback se déclenche exactement une
+  // fois par frame vidéo réellement décodée pendant une lecture normale —
+  // aucun seek, aucune horloge indépendante, la durée de sortie suit
+  // naturellement la vraie durée de lecture.
+  const supportsFrameCallback =
+    typeof (video as VideoWithFrameCallback).requestVideoFrameCallback === "function";
 
+  video.currentTime = rangeStart;
+  await seekTo(video, rangeStart);
   recorder.start();
+  await video.play();
 
-  for (let i = 0; i < totalFrames; i++) {
-    const targetTime = Math.min(rangeStart + i / EXPORT_FPS, rangeEnd);
-    await seekTo(video, targetTime);
+  await new Promise<void>((resolve) => {
+    function drawFrame(mediaTime: number) {
+      const elapsed = mediaTime - rangeStart;
+      const progress = Math.min(1, Math.max(0, elapsed / (rangeEnd - rangeStart)));
+      onProgress?.(Math.round(progress * 100));
 
-    const elapsed = targetTime - rangeStart;
-    const progress = elapsed / (rangeEnd - rangeStart);
-    onProgress?.(Math.min(100, Math.round(progress * 100)));
+      let landmarks: NormalizedLandmark[] | undefined;
+      if (landmarksFrames) {
+        const frameIndex = Math.min(
+          landmarksFrames.length - 1,
+          Math.max(0, Math.floor(progress * landmarksFrames.length))
+        );
+        landmarks = landmarksFrames[frameIndex];
+      } else {
+        landmarks = landmarker?.detectForVideo(video, performance.now()).landmarks[0];
+      }
 
-    let landmarks: NormalizedLandmark[] | undefined;
-    if (landmarksFrames) {
-      const frameIndex = Math.min(
-        landmarksFrames.length - 1,
-        Math.max(0, Math.floor(progress * landmarksFrames.length))
-      );
-      landmarks = landmarksFrames[frameIndex];
-    } else {
-      landmarks = landmarker?.detectForVideo(video, performance.now()).landmarks[0];
-    }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (landmarks) {
+        drawingUtils.drawLandmarks(landmarks, { radius: 4, color: "#22d3ee" });
+        drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
+          color: "#22d3ee",
+          lineWidth: 3,
+        });
+        drawAngleLabels(ctx, canvas, landmarks, computeAngles(landmarks));
+      }
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    if (landmarks) {
-      drawingUtils.drawLandmarks(landmarks, { radius: 4, color: "#22d3ee" });
-      drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
-        color: "#22d3ee",
-        lineWidth: 3,
+      drawHud(ctx, canvas, {
+        figureLabel,
+        elapsedSeconds: Math.max(0, elapsed),
+        globalScoreValue,
+        scores,
       });
-      drawAngleLabels(ctx, canvas, landmarks, computeAngles(landmarks));
     }
 
-    drawHud(ctx, canvas, {
-      figureLabel,
-      elapsedSeconds: elapsed,
-      globalScoreValue,
-      scores,
-    });
-
-    const targetElapsedMs = (i + 1) * frameDurationMs;
-    const actualElapsedMs = performance.now() - exportStart;
-    if (actualElapsedMs < targetElapsedMs) {
-      await sleep(targetElapsedMs - actualElapsedMs);
+    function finishedRange() {
+      return video.paused || video.ended || video.currentTime >= rangeEnd;
     }
-  }
+
+    if (supportsFrameCallback) {
+      const videoWithCallback = video as Required<VideoWithFrameCallback>;
+      function onFrame(_now: number, metadata: { mediaTime: number }) {
+        if (finishedRange()) {
+          video.pause();
+          resolve();
+          return;
+        }
+        drawFrame(metadata.mediaTime);
+        videoWithCallback.requestVideoFrameCallback(onFrame);
+      }
+      videoWithCallback.requestVideoFrameCallback(onFrame);
+    } else {
+      function loop() {
+        if (finishedRange()) {
+          video.pause();
+          resolve();
+          return;
+        }
+        drawFrame(video.currentTime);
+        requestAnimationFrame(loop);
+      }
+      loop();
+    }
+  });
 
   recorder.stop();
+  video.pause();
   return recorded;
 }
 
