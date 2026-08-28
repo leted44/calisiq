@@ -266,7 +266,13 @@ export async function recordAnnotatedVideo({
 
   video.currentTime = rangeStart;
   await seekTo(video, rangeStart);
-  recorder.start();
+  // Timeslice de 1s : sans argument, MediaRecorder n'encode et ne livre
+  // rien pendant l'enregistrement, il accumule tout en mémoire et ne fait
+  // le travail d'encodage réel qu'au moment de stop() — d'où l'attente
+  // invisible après 99%. Avec un timeslice, l'encodage est étalé pendant
+  // l'enregistrement (visible dans la progression 0-99%), et il ne reste
+  // au stop() que le dernier fragment (~1s) à finaliser.
+  recorder.start(1000);
   await video.play();
 
   await new Promise<void>((resolve) => {
