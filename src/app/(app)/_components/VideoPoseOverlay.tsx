@@ -195,6 +195,8 @@ export default function VideoPoseOverlay({
             rangeStart={trimStart}
             rangeEnd={trimEnd}
             landmarksFrames={freshResult?.landmarksFrames}
+            holdStartSeconds={freshResult?.holdStartSeconds}
+            holdEndSeconds={freshResult?.holdEndSeconds}
           />
         </>
       )}

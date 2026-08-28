@@ -68,6 +68,12 @@ export type PoseAnalysisResult =
       warning: string | null;
       holdWindow: HoldWindow;
       holdDurationSeconds: number | null;
+      // Bornes temporelles (dans le référentiel de la vidéo entière, pas
+      // de la plage rognée) du hold réellement détecté — utilisées par
+      // l'export vidéo pour que le chrono affiché ne défile que pendant la
+      // figure elle-même, pas pendant la mise en place ou la sortie.
+      holdStartSeconds: number | null;
+      holdEndSeconds: number | null;
       summaryAngles: PoseAngles;
       scores: CriterionScore[];
       globalScoreValue: number;
@@ -192,6 +198,12 @@ export async function runPoseAnalysis({
   const holdDurationSeconds = window.detected
     ? ((window.end - window.start + 1) / frames.length) * (end - start)
     : null;
+  const holdStartSeconds = window.detected
+    ? start + (window.start / frames.length) * (end - start)
+    : null;
+  const holdEndSeconds = window.detected
+    ? start + ((window.end + 1) / frames.length) * (end - start)
+    : null;
 
   const warningParts: string[] = [];
   if (detectionRate < 0.5) {
@@ -236,6 +248,8 @@ export async function runPoseAnalysis({
       warning,
       holdWindow: window,
       holdDurationSeconds,
+      holdStartSeconds,
+      holdEndSeconds,
       summaryAngles: median,
       scores: [],
       globalScoreValue: 0,
@@ -275,6 +289,8 @@ export async function runPoseAnalysis({
     warning,
     holdWindow: window,
     holdDurationSeconds,
+    holdStartSeconds,
+    holdEndSeconds,
     summaryAngles: median,
     scores,
     globalScoreValue: globalScore(scores),
@@ -329,6 +345,8 @@ export async function measureImage(
     warning: null,
     holdWindow: { start: 0, end: 0, detected: true },
     holdDurationSeconds: 0,
+    holdStartSeconds: 0,
+    holdEndSeconds: 0,
     summaryAngles: angles,
     scores: [],
     globalScoreValue: 0,

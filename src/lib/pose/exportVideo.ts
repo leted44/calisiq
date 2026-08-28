@@ -192,6 +192,8 @@ export async function recordAnnotatedVideo({
   globalScoreValue,
   scores,
   landmarksFrames,
+  holdStartSeconds,
+  holdEndSeconds,
   onProgress,
 }: {
   video: HTMLVideoElement;
@@ -208,8 +210,15 @@ export async function recordAnnotatedVideo({
   // (ex. export depuis un rapport d'historique sans ré-analyse récente),
   // on retombe sur une détection en direct, plus lente mais fonctionnelle.
   landmarksFrames?: NormalizedLandmark[][];
+  // Bornes réelles du hold détecté (référentiel vidéo entière). Si absentes
+  // (repli historique sans ré-analyse), le chrono du HUD couvre toute la
+  // plage exportée comme avant, faute de mieux.
+  holdStartSeconds?: number | null;
+  holdEndSeconds?: number | null;
   onProgress?: (percent: number) => void;
 }): Promise<Blob> {
+  const hudHoldStart = holdStartSeconds ?? rangeStart;
+  const hudHoldEnd = holdEndSeconds ?? rangeEnd;
   const landmarker = landmarksFrames ? null : await getLandmarker();
   const exportScale = Math.min(
     1,
@@ -287,9 +296,16 @@ export async function recordAnnotatedVideo({
         drawAngleLabels(ctx, canvas, landmarks, computeAngles(landmarks));
       }
 
+      // Le chrono affiché ne défile que pendant le hold réel : figé à 0
+      // avant que la figure ne soit tenue (mise en place), et figé à la
+      // durée finale une fois la figure relâchée (sortie), plutôt que de
+      // suivre le temps écoulé sur toute la plage exportée.
+      const holdElapsed =
+        Math.min(mediaTime, hudHoldEnd) - hudHoldStart;
+
       drawHud(ctx, canvas, {
         figureLabel,
-        elapsedSeconds: Math.max(0, elapsed),
+        elapsedSeconds: Math.max(0, holdElapsed),
         globalScoreValue,
         scores,
       });
