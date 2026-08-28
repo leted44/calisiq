@@ -11,6 +11,10 @@ import type { Progression } from "./grid";
 
 const EXPORT_FPS = 30;
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // requestVideoFrameCallback n'est pas encore dans tous les lib.dom.d.ts —
 // typé ici a minima plutôt que d'élargir le lib cible du projet pour ça.
 type VideoWithFrameCallback = HTMLVideoElement & {
@@ -274,6 +278,71 @@ function drawHud(
   });
 }
 
+// Écran de révélation apposé après la fin du hold : un vrai moment de
+// conclusion (score final en grand, dans un encadré coloré selon le
+// niveau) plutôt qu'une coupure brutale sur la dernière frame de sortie.
+// cardOpacity permet un fondu d'apparition ; le fond assombrit l'image
+// existante plutôt que de la remplacer, pour un enchaînement plus fluide.
+function drawOutro(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  {
+    figureLabel,
+    globalScoreValue,
+    cardOpacity,
+  }: { figureLabel: string; globalScoreValue: number; cardOpacity: number }
+) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const scale = w / 400;
+  const tierColor = scoreColor(globalScoreValue);
+
+  ctx.fillStyle = "rgba(2,6,23,0.72)";
+  ctx.fillRect(0, 0, w, h);
+
+  const cardWidth = Math.min(w - 48 * scale, 220 * scale);
+  const cardHeight = 170 * scale;
+  const cardX = (w - cardWidth) / 2;
+  const cardY = (h - cardHeight) / 2;
+  const centerX = w / 2;
+
+  ctx.globalAlpha = cardOpacity;
+
+  roundedRectPath(ctx, cardX, cardY, cardWidth, cardHeight, 20 * scale);
+  ctx.fillStyle = "rgba(8,15,32,0.92)";
+  ctx.fill();
+  ctx.lineWidth = 2.5 * scale;
+  ctx.strokeStyle = tierColor;
+  ctx.stroke();
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = `700 ${14 * scale}px sans-serif`;
+  ctx.fillText(figureLabel, centerX, cardY + 34 * scale);
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = `700 ${10 * scale}px sans-serif`;
+  ctx.fillText("SCORE FINAL", centerX, cardY + 52 * scale);
+
+  drawMixedText(
+    ctx,
+    [
+      { text: globalScoreValue.toFixed(1), font: `800 ${46 * scale}px sans-serif`, color: tierColor },
+      { text: "/10", font: `700 ${18 * scale}px sans-serif`, color: tierColor },
+    ],
+    centerX,
+    cardY + 116 * scale,
+    "center"
+  );
+
+  ctx.fillStyle = "#475569";
+  ctx.font = `700 ${9 * scale}px sans-serif`;
+  ctx.fillText("CALISIQ", centerX, cardY + cardHeight - 16 * scale);
+
+  ctx.globalAlpha = 1;
+}
+
 export async function recordAnnotatedVideo({
   video,
   canvas,
@@ -494,6 +563,19 @@ export async function recordAnnotatedVideo({
       loop();
     }
   });
+
+  // Écran de révélation du score final, apposé après la fin du hold plutôt
+  // que de couper directement sur la dernière frame (sortie de figure) —
+  // fondu d'apparition sur les ~600 premières ms, puis tenu à l'écran.
+  const OUTRO_STEP_MS = 100;
+  const OUTRO_STEPS = 20;
+  const OUTRO_FADE_STEPS = 6;
+  for (let i = 0; i < OUTRO_STEPS; i++) {
+    const cardOpacity = Math.min(1, (i + 1) / OUTRO_FADE_STEPS);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    drawOutro(ctx, canvas, { figureLabel, globalScoreValue, cardOpacity });
+    await sleep(OUTRO_STEP_MS);
+  }
 
   recorder.stop();
   video.pause();
