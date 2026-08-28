@@ -249,6 +249,7 @@ export async function runPoseAnalysis({
     weakest.critere,
     weakest.score,
     median.pelvisSagSign,
+    weakest.valeurMesuree - weakest.valeurCible,
     progression
   );
 

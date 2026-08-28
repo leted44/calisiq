@@ -107,6 +107,58 @@ const PLANCHE_EXERCISE_MAP: Record<string, TieredRecommendations> = {
       },
     ],
   },
+  // Variante de hip_angle utilisée uniquement en Tuck/Advanced Tuck (voir
+  // recommendationsFor) : la hanche est plus ouverte que la cible, donc le
+  // tuck n'est pas assez compact/arrondi. Pas de mesure directe de la
+  // courbure du dos possible (MediaPipe n'a aucun point sur la colonne),
+  // ce cue reste donc formulé via le proxy hip_angle plutôt qu'une vraie
+  // mesure de rondeur.
+  hip_angle_open: {
+    faible: [
+      {
+        exercice: "Tuck hold isométrique, cue « arrondis le dos, ramène les hanches vers la poitrine »",
+        raison:
+          "Les hanches sont trop ouvertes pour cette progression — un tuck plus compact et plus arrondi rend la position plus stable.",
+      },
+      {
+        exercice: "L-sit progressif, genoux ramenés loin vers la poitrine",
+        raison: "Développe la force de flexion de hanche nécessaire pour resserrer le tuck.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Même position, cue « arrondis un peu plus le dos » à chaque série",
+        raison: "L'angle est proche de la cible — un ajustement de compacité plutôt qu'un nouvel exercice.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Compacité du tuck déjà maîtrisée — travaille plutôt la durée du hold",
+        raison: "Rien à corriger ici, la priorité passe à l'endurance plutôt qu'à la technique.",
+      },
+    ],
+  },
+  hip_angle_closed: {
+    faible: [
+      {
+        exercice: "Tuck hold isométrique, cue « ouvre très légèrement les hanches »",
+        raison:
+          "Le tuck est plus refermé que la cible — un excès de flexion de hanche peut nuire à l'équilibre autant qu'un manque.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Même position, cue « ouvre très légèrement les hanches » à chaque série",
+        raison: "L'angle est proche de la cible — un ajustement fin suffit.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Angle de hanche déjà maîtrisé — travaille plutôt la durée du hold à cet angle",
+        raison: "Rien à corriger ici, la priorité passe à l'endurance plutôt qu'à la technique.",
+      },
+    ],
+  },
   elbow_angle: {
     faible: [
       {
@@ -364,6 +416,54 @@ const FRONT_LEVER_EXERCISE_MAP: Record<string, TieredRecommendations> = {
       },
     ],
   },
+  // Voir hip_angle_open/hip_angle_closed dans PLANCHE_EXERCISE_MAP : même
+  // logique, réservée à Tuck/Advanced Tuck Front Lever.
+  hip_angle_open: {
+    faible: [
+      {
+        exercice: "Tuck front lever hold, cue « arrondis le dos, genoux loin vers la poitrine »",
+        raison:
+          "Les hanches sont trop ouvertes pour cette progression — un tuck plus compact et plus arrondi rend la position plus tenable.",
+      },
+      {
+        exercice: "Ice cream makers, insiste sur la position la plus repliée",
+        raison: "Développe la force de traction nécessaire pour resserrer le tuck sans se dégrader.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Même position, cue « arrondis un peu plus le dos » à chaque série",
+        raison: "L'angle est proche de la cible — un ajustement de compacité plutôt qu'un nouvel exercice.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Compacité du tuck déjà maîtrisée — travaille plutôt la durée du hold",
+        raison: "Rien à corriger ici, la priorité passe à l'endurance plutôt qu'à la technique.",
+      },
+    ],
+  },
+  hip_angle_closed: {
+    faible: [
+      {
+        exercice: "Tuck front lever hold, cue « ouvre très légèrement les hanches »",
+        raison:
+          "Le tuck est plus refermé que la cible — un excès de flexion de hanche peut nuire au contrôle autant qu'un manque.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Même position, cue « ouvre très légèrement les hanches » à chaque série",
+        raison: "L'angle est proche de la cible — un ajustement fin suffit.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Angle de hanche déjà maîtrisé — travaille plutôt la durée du hold à cet angle",
+        raison: "Rien à corriger ici, la priorité passe à l'endurance plutôt qu'à la technique.",
+      },
+    ],
+  },
   elbow_angle: {
     faible: [
       {
@@ -440,10 +540,23 @@ export function pickWeakestCriterion(scores: CriterionScore[]): CriterionScore {
   return scores.reduce((worst, s) => (s.score < worst.score ? s : worst));
 }
 
+// Progressions où hip_angle cible une position repliée (tuck) : c'est là,
+// et uniquement là, qu'un écart vers l'ouverture se traduit par "pas assez
+// arrondi/compact" (voir hip_angle_open/hip_angle_closed). En Straddle/Full/
+// Handstand, la cible est au contraire tendue (~170-180°), donc la même
+// logique de direction n'aurait pas le même sens.
+const TUCK_FAMILY_PROGRESSIONS: Progression[] = [
+  "tuck_planche",
+  "advanced_tuck_planche",
+  "tuck_front_lever",
+  "advanced_tuck_front_lever",
+];
+
 export function recommendationsFor(
   critere: CriterionScore["critere"],
   score: number,
   pelvisSagSign: number,
+  hipAngleDeviation: number,
   progression: Progression
 ): Recommendation[] {
   const figure = figureFromProgression(progression);
@@ -454,12 +567,17 @@ export function recommendationsFor(
       ? FRONT_LEVER_EXERCISE_MAP
       : PLANCHE_EXERCISE_MAP;
   const tier = tierFor(score);
+  const isTuckFamily = TUCK_FAMILY_PROGRESSIONS.includes(progression);
 
   const key =
     critere === "pelvis_deviation"
       ? pelvisSagSign >= 0
         ? "pelvis_deviation_sag"
         : "pelvis_deviation_pike"
+      : critere === "hip_angle" && isTuckFamily
+      ? hipAngleDeviation > 0
+        ? "hip_angle_open"
+        : "hip_angle_closed"
       : critere;
 
   return exerciseMap[key]?.[tier] ?? [];
