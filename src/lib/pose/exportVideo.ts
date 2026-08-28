@@ -55,10 +55,40 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   body_line_angle: "Axe",
 };
 
+// Palette feu tricolore (vert/jaune/rouge) : plus lisible en incrustation
+// vidéo qu'un dégradé à 3 teintes proches, et c'est le code couleur que la
+// référence utilise pour ses barres de progression.
 function scoreColor(score: number): string {
   if (score >= 8) return "#4ade80";
-  if (score >= 6) return "#22d3ee";
-  return "#fb923c";
+  if (score >= 5) return "#facc15";
+  return "#f87171";
+}
+
+// Dessine plusieurs segments de texte à des tailles/couleurs différentes
+// bout à bout (ex. "1.1" en grand + "s" en petit) comme un seul bloc aligné
+// sur x selon align. Le canvas ne permet pas de mélanger les tailles dans
+// un seul fillText, d'où ce petit layout manuel.
+function drawMixedText(
+  ctx: CanvasRenderingContext2D,
+  parts: { text: string; font: string; color: string }[],
+  x: number,
+  y: number,
+  align: "left" | "center" | "right" = "left"
+) {
+  const widths = parts.map((p) => {
+    ctx.font = p.font;
+    return ctx.measureText(p.text).width;
+  });
+  const totalWidth = widths.reduce((a, b) => a + b, 0);
+  let cursor = align === "center" ? x - totalWidth / 2 : align === "right" ? x - totalWidth : x;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  parts.forEach((p, i) => {
+    ctx.font = p.font;
+    ctx.fillStyle = p.color;
+    ctx.fillText(p.text, cursor, y);
+    cursor += widths[i];
+  });
 }
 
 function roundedRectPath(
@@ -96,10 +126,11 @@ function fillRoundedRect(
   ctx.fill();
 }
 
-// Bandeaux compacts en coin, pas des bandes pleine largeur : sur une vidéo
-// portrait le corps occupe presque tout le cadre, un gros bandeau le
-// masquerait ("effet rogné"). Tailles proportionnelles à une largeur de
-// référence de 400px pour rester lisibles sur toutes les résolutions.
+// Carte compacte centrée en haut (figure + chrono du hold en grand) et
+// carte pleine largeur en bas (score global + une barre de progression par
+// critère) — inspiré d'une référence fournie par l'utilisateur. Tailles
+// proportionnelles à une largeur de référence de 400px pour rester
+// lisibles sur toutes les résolutions d'export.
 function drawHud(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
@@ -119,67 +150,122 @@ function drawHud(
   const h = canvas.height;
   const scale = w / 400;
   const margin = 16 * scale;
-  const radius = 12 * scale;
+  const radius = 16 * scale;
 
-  // Badge haut-gauche : figure + timer
-  const pillText = `${figureLabel} · ${elapsedSeconds.toFixed(1)}s`;
-  ctx.font = `600 ${14 * scale}px sans-serif`;
-  const pillPaddingX = 12 * scale;
-  const pillHeight = 30 * scale;
-  const textWidth = ctx.measureText(pillText).width;
-  const pillWidth = textWidth + pillPaddingX * 2;
+  // --- Carte haut-centre : nom de la figure + chrono du hold ---
+  const topPaddingX = 22 * scale;
+  const figureFont = `700 ${16 * scale}px sans-serif`;
+  const holdLabelFont = `700 ${10 * scale}px sans-serif`;
+  const timerFont = `700 ${34 * scale}px sans-serif`;
+  const timerSuffixFont = `600 ${16 * scale}px sans-serif`;
 
-  fillRoundedRect(ctx, margin, margin, pillWidth, pillHeight, radius, "rgba(2,6,23,0.72)");
-  ctx.fillStyle = "#22d3ee";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText(pillText, margin + pillPaddingX, margin + pillHeight / 2);
+  ctx.font = figureFont;
+  const figureLabelWidth = ctx.measureText(figureLabel).width;
+  ctx.font = timerFont;
+  const timerWidth = ctx.measureText(elapsedSeconds.toFixed(1)).width;
+  ctx.font = timerSuffixFont;
+  const timerSuffixWidth = ctx.measureText("s").width;
 
-  // Carte bas-gauche : score global + grille compacte des critères
-  const cols = scores.length > 2 ? 2 : 1;
-  const rows = Math.ceil(scores.length / cols);
-  const rowHeight = 20 * scale;
-  const headerHeight = 34 * scale;
-  const cardPadding = 12 * scale;
-  const cardWidth = Math.min(w - margin * 2, (cols === 2 ? 230 : 150) * scale);
-  const cardHeight = headerHeight + rows * rowHeight + cardPadding * 2;
+  const topContentWidth = Math.max(
+    figureLabelWidth,
+    timerWidth + timerSuffixWidth,
+    70 * scale
+  );
+  const topCardWidth = topContentWidth + topPaddingX * 2;
+  const topCardHeight = 100 * scale;
+  const topCardX = (w - topCardWidth) / 2;
+  const topCardY = margin;
+  const topCenterX = topCardX + topCardWidth / 2;
+
+  fillRoundedRect(ctx, topCardX, topCardY, topCardWidth, topCardHeight, radius, "rgba(2,6,23,0.82)");
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = figureFont;
+  ctx.fillText(figureLabel, topCenterX, topCardY + 25 * scale);
+
+  ctx.fillStyle = "#c4b5fd";
+  ctx.font = holdLabelFont;
+  ctx.fillText("HOLD", topCenterX, topCardY + 41 * scale);
+
+  drawMixedText(
+    ctx,
+    [
+      { text: elapsedSeconds.toFixed(1), font: timerFont, color: "#c4b5fd" },
+      { text: "s", font: timerSuffixFont, color: "#c4b5fd" },
+    ],
+    topCenterX,
+    topCardY + 82 * scale,
+    "center"
+  );
+
+  // --- Carte bas pleine largeur : score global + barres par critère ---
+  const cardPadding = 16 * scale;
+  const cardWidth = w - margin * 2;
+  const headerHeight = 30 * scale;
+  const rowHeight = 28 * scale;
+  const cardHeight = headerHeight + scores.length * rowHeight + cardPadding * 2;
   const cardX = margin;
   const cardY = h - margin - cardHeight;
 
-  fillRoundedRect(ctx, cardX, cardY, cardWidth, cardHeight, radius, "rgba(2,6,23,0.78)");
+  fillRoundedRect(ctx, cardX, cardY, cardWidth, cardHeight, radius, "rgba(2,6,23,0.82)");
 
-  ctx.textBaseline = "alphabetic";
+  const headerY = cardY + cardPadding + 14 * scale;
   ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#94a3b8";
-  ctx.font = `${10 * scale}px sans-serif`;
-  ctx.fillText("SCORE GLOBAL", cardX + cardPadding, cardY + cardPadding + 9 * scale);
+  ctx.font = `700 ${12 * scale}px sans-serif`;
+  ctx.fillText("SCORE", cardX + cardPadding, headerY);
 
-  ctx.fillStyle = scoreColor(globalScoreValue);
-  ctx.font = `bold ${20 * scale}px sans-serif`;
-  ctx.fillText(
-    `${globalScoreValue.toFixed(1)}/10`,
-    cardX + cardPadding,
-    cardY + cardPadding + 30 * scale
+  const globalColor = scoreColor(globalScoreValue);
+  drawMixedText(
+    ctx,
+    [
+      { text: globalScoreValue.toFixed(1), font: `700 ${20 * scale}px sans-serif`, color: globalColor },
+      { text: "/10", font: `600 ${12 * scale}px sans-serif`, color: globalColor },
+    ],
+    cardX + cardWidth - cardPadding,
+    headerY,
+    "right"
   );
 
-  const gridTop = cardY + headerHeight + cardPadding;
-  const colWidth = (cardWidth - cardPadding * 2) / cols;
+  const labelWidth = 82 * scale;
+  const valueWidth = 54 * scale;
+  const barGap = 10 * scale;
+  const barX = cardX + cardPadding + labelWidth + barGap;
+  const barWidth = cardWidth - cardPadding * 2 - labelWidth - valueWidth - barGap * 2;
+  const barHeight = 8 * scale;
+  const rowsTop = cardY + cardPadding + headerHeight;
 
   scores.forEach((s, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = cardX + cardPadding + col * colWidth;
-    const y = gridTop + row * rowHeight + 12 * scale;
+    const rowCenterY = rowsTop + i * rowHeight + rowHeight / 2;
+    const textY = rowCenterY + 4 * scale;
+    const barY = rowCenterY - barHeight / 2;
+    const fillColor = scoreColor(s.score);
 
     ctx.textAlign = "left";
-    ctx.fillStyle = "#cbd5e1";
-    ctx.font = `${11 * scale}px sans-serif`;
-    ctx.fillText(CRITERE_LABELS[s.critere], x, y);
+    ctx.fillStyle = "#e2e8f0";
+    ctx.font = `600 ${12 * scale}px sans-serif`;
+    ctx.fillText(CRITERE_LABELS[s.critere], cardX + cardPadding, textY);
 
-    ctx.textAlign = "right";
-    ctx.fillStyle = scoreColor(s.score);
-    ctx.font = `600 ${11 * scale}px sans-serif`;
-    ctx.fillText(s.score.toFixed(1), x + colWidth - 6 * scale, y);
+    fillRoundedRect(ctx, barX, barY, barWidth, barHeight, barHeight / 2, "rgba(148,163,184,0.25)");
+    const filledWidth = Math.max(
+      barHeight,
+      (Math.max(0, Math.min(10, s.score)) / 10) * barWidth
+    );
+    fillRoundedRect(ctx, barX, barY, filledWidth, barHeight, barHeight / 2, fillColor);
+
+    drawMixedText(
+      ctx,
+      [
+        { text: s.score.toFixed(1), font: `700 ${12 * scale}px sans-serif`, color: fillColor },
+        { text: "/10", font: `500 ${9 * scale}px sans-serif`, color: fillColor },
+      ],
+      cardX + cardWidth - cardPadding,
+      textY,
+      "right"
+    );
   });
 }
 
