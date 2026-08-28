@@ -311,7 +311,11 @@ export function detectHoldWindow(
   frames: NormalizedLandmark[][],
   options?: { threshold?: number; minFrames?: number }
 ): HoldWindow {
-  const threshold = options?.threshold ?? 0.004;
+  // 0.008 plutôt que 0.004 : tolère le tremblement normal d'un téléphone
+  // tenu à la main sans re-classer un vrai hold comme "non détecté" — à
+  // resserrer plus tard si des faux positifs (mouvement réel classé comme
+  // hold) apparaissent sur des échantillons réels.
+  const threshold = options?.threshold ?? 0.008;
   const minFrames = options?.minFrames ?? 15;
 
   if (frames.length === 0) return { start: 0, end: 0, detected: false };
