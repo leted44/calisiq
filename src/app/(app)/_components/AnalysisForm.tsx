@@ -1252,6 +1252,7 @@ export default function AnalysisForm() {
               scores={result.scores}
               rangeStart={trimStart}
               rangeEnd={trimEnd}
+              landmarksFrames={result.landmarksFrames}
             />
           )}
 

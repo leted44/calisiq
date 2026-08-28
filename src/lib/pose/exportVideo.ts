@@ -1,8 +1,19 @@
-import { PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
+import {
+  PoseLandmarker,
+  DrawingUtils,
+  type NormalizedLandmark,
+} from "@mediapipe/tasks-vision";
 import type { CriterionScore } from "./scoring";
 import { getLandmarker } from "./runAnalysis";
 import { computeAngles } from "./angles";
 import { drawAngleLabels } from "./canvasHud";
+
+// Taille max de sortie, alignée sur ce que consomment réellement Instagram/
+// TikTok (1080x1920 en portrait) — exporter en UHD natif (souvent 2160x3840
+// sur un téléphone récent) n'apporte aucune qualité visible une fois republié
+// (le réseau recompresse de toute façon) et multiplie par 4 le travail de
+// rendu par frame, l'une des causes du saccadé à l'enregistrement.
+const MAX_EXPORT_DIMENSION = 1080;
 
 // MP4 en priorité : format fiable pour republier sur Instagram/réseaux sociaux.
 // WebM en repli pour les navigateurs qui ne savent pas encoder de MP4.
@@ -170,6 +181,7 @@ export async function recordAnnotatedVideo({
   figureLabel,
   globalScoreValue,
   scores,
+  landmarksFrames,
   onProgress,
 }: {
   video: HTMLVideoElement;
@@ -179,12 +191,22 @@ export async function recordAnnotatedVideo({
   figureLabel: string;
   globalScoreValue: number;
   scores: CriterionScore[];
+  // Landmarks déjà calculés pendant l'analyse (un par frame échantillonnée
+  // dans la plage rangeStart-rangeEnd) — réutilisés ici par recherche
+  // proportionnelle plutôt que recalculés, pour ne pas faire tourner
+  // l'inférence pose une seconde fois pendant l'enregistrement. Absent
+  // (ex. export depuis un rapport d'historique sans ré-analyse récente),
+  // on retombe sur une détection en direct, plus lente mais fonctionnelle.
+  landmarksFrames?: NormalizedLandmark[][];
   onProgress?: (percent: number) => void;
 }): Promise<Blob> {
-  const landmarker = await getLandmarker();
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  const landmarker = landmarksFrames ? null : await getLandmarker();
+  const exportScale = Math.min(
+    1,
+    MAX_EXPORT_DIMENSION / Math.max(video.videoWidth, video.videoHeight)
+  );
+  canvas.width = Math.round(video.videoWidth * exportScale);
+  canvas.height = Math.round(video.videoHeight * exportScale);
   const context2d = canvas.getContext("2d");
   if (!context2d) throw new Error("Impossible d'initialiser le canvas d'export.");
   const ctx: CanvasRenderingContext2D = context2d;
@@ -222,12 +244,22 @@ export async function recordAnnotatedVideo({
       }
 
       const elapsed = video.currentTime - rangeStart;
-      onProgress?.(Math.min(100, Math.round((elapsed / (rangeEnd - rangeStart)) * 100)));
+      const progress = elapsed / (rangeEnd - rangeStart);
+      onProgress?.(Math.min(100, Math.round(progress * 100)));
 
-      const result = landmarker.detectForVideo(video, performance.now());
+      let landmarks: NormalizedLandmark[] | undefined;
+      if (landmarksFrames) {
+        const frameIndex = Math.min(
+          landmarksFrames.length - 1,
+          Math.max(0, Math.floor(progress * landmarksFrames.length))
+        );
+        landmarks = landmarksFrames[frameIndex];
+      } else {
+        landmarks = landmarker?.detectForVideo(video, performance.now()).landmarks[0];
+      }
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      for (const landmarks of result.landmarks) {
+      if (landmarks) {
         drawingUtils.drawLandmarks(landmarks, { radius: 4, color: "#22d3ee" });
         drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
           color: "#22d3ee",

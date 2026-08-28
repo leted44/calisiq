@@ -73,6 +73,10 @@ export type PoseAnalysisResult =
       globalScoreValue: number;
       recommendations: Recommendation[];
       representativeFrameDataUrl: string | null;
+      // Landmarks bruts déjà calculés pendant l'analyse, réutilisés par
+      // l'export vidéo annotée pour éviter de refaire tourner l'inférence
+      // pose (coûteuse) une seconde fois image par image.
+      landmarksFrames: NormalizedLandmark[][];
     }
   | {
       ok: false;
@@ -237,6 +241,7 @@ export async function runPoseAnalysis({
       globalScoreValue: 0,
       recommendations: [],
       representativeFrameDataUrl,
+      landmarksFrames: frames,
     };
   }
 
@@ -275,6 +280,7 @@ export async function runPoseAnalysis({
     globalScoreValue: globalScore(scores),
     recommendations,
     representativeFrameDataUrl,
+    landmarksFrames: frames,
   };
 }
 
@@ -328,6 +334,7 @@ export async function measureImage(
     globalScoreValue: 0,
     recommendations: [],
     representativeFrameDataUrl,
+    landmarksFrames: [landmarks],
   };
 }
 

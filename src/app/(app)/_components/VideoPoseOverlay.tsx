@@ -194,6 +194,7 @@ export default function VideoPoseOverlay({
             scores={report.scores}
             rangeStart={trimStart}
             rangeEnd={trimEnd}
+            landmarksFrames={freshResult?.landmarksFrames}
           />
         </>
       )}

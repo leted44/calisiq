@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type RefObject } from "react";
+import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { recordAnnotatedVideo, downloadBlob } from "@/lib/pose/exportVideo";
 import type { CriterionScore } from "@/lib/pose/scoring";
 import { DownloadIcon } from "@/components/icons";
@@ -12,6 +13,7 @@ export default function ExportVideoButton({
   scores,
   rangeStart,
   rangeEnd,
+  landmarksFrames,
 }: {
   videoRef: RefObject<HTMLVideoElement | null>;
   figureLabel: string;
@@ -19,6 +21,7 @@ export default function ExportVideoButton({
   scores: CriterionScore[];
   rangeStart?: number;
   rangeEnd?: number;
+  landmarksFrames?: NormalizedLandmark[][];
 }) {
   const [recording, setRecording] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -42,6 +45,7 @@ export default function ExportVideoButton({
         figureLabel,
         globalScoreValue,
         scores,
+        landmarksFrames,
         onProgress: setProgress,
       });
       const extension = blob.type.includes("mp4") ? "mp4" : "webm";
