@@ -311,11 +311,13 @@ export function detectHoldWindow(
   frames: NormalizedLandmark[][],
   options?: { threshold?: number; minFrames?: number }
 ): HoldWindow {
-  // 0.008 plutôt que 0.004 : tolère le tremblement normal d'un téléphone
-  // tenu à la main sans re-classer un vrai hold comme "non détecté" — à
-  // resserrer plus tard si des faux positifs (mouvement réel classé comme
-  // hold) apparaissent sur des échantillons réels.
-  const threshold = options?.threshold ?? 0.008;
+  // Relevé de 0.004 à 0.008 puis à 0.02 : un hold réel tremble souvent
+  // beaucoup (manque de force, fatigue) sans que ce soit un vrai mouvement
+  // vers/hors de la figure — l'ancien seuil classait ce tremblement comme
+  // "non détecté" alors que la figure était bien tenue. Il y a une limite à
+  // ce réglage : trop haut, on finit par inclure la mise en place ou la
+  // sortie de figure dans le hold, ce qui fausserait les angles mesurés.
+  const threshold = options?.threshold ?? 0.02;
   const minFrames = options?.minFrames ?? 15;
 
   if (frames.length === 0) return { start: 0, end: 0, detected: false };
