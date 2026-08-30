@@ -84,13 +84,13 @@ export default function ExportVideoButton({
     setError(null);
     setNotice(null);
 
-    try {
+    async function render(forceLegacyEncoder: boolean): Promise<Blob> {
       const canvas = document.createElement("canvas");
-      const blob = await recordAnnotatedVideo({
-        video,
+      return recordAnnotatedVideo({
+        video: video!,
         canvas,
         rangeStart: rangeStart ?? 0,
-        rangeEnd: rangeEnd ?? video.duration,
+        rangeEnd: rangeEnd ?? video!.duration,
         figureLabel,
         globalScoreValue,
         scores,
@@ -100,8 +100,27 @@ export default function ExportVideoButton({
         holdEndSeconds,
         holdDurationSeconds,
         weakPointCue,
+        forceLegacyEncoder,
         onProgress: setProgress,
       });
+    }
+
+    try {
+      // L'encodage moderne donne un fichier dont la durée déclarée est
+      // correcte (indispensable pour l'import Instagram), mais il dépend
+      // du matériel du téléphone. S'il échoue pour une raison qu'on ne
+      // peut pas anticiper, on refait l'export avec l'ancienne méthode
+      // plutôt que de laisser l'utilisateur sans vidéo.
+      let blob: Blob;
+      try {
+        blob = await render(false);
+      } catch {
+        setProgress(0);
+        blob = await render(true);
+        setNotice(
+          "Export réalisé en mode compatible. Si l'import réseau ne prend qu'une partie de la vidéo, signale-le."
+        );
+      }
       const extension = blob.type.includes("mp4") ? "mp4" : "webm";
       const filename = `calisiq-${figureLabel
         .toLowerCase()

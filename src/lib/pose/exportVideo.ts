@@ -768,6 +768,7 @@ export async function recordAnnotatedVideo({
   holdEndSeconds,
   holdDurationSeconds,
   weakPointCue,
+  forceLegacyEncoder,
   onProgress,
 }: {
   video: HTMLVideoElement;
@@ -800,6 +801,9 @@ export async function recordAnnotatedVideo({
   // Conseil affiché pendant le ralenti sur le point faible (typiquement la
   // première recommandation de l'analyse).
   weakPointCue?: string | null;
+  // Force l'ancienne voie d'encodage (MediaRecorder) : sert à la seconde
+  // tentative automatique quand l'encodage moderne a échoué.
+  forceLegacyEncoder?: boolean;
   onProgress?: (percent: number) => void;
 }): Promise<Blob> {
   const hudHoldStart = holdStartSeconds ?? rangeStart;
@@ -830,7 +834,7 @@ export async function recordAnnotatedVideo({
   // writer.ts) : la sortie de MediaRecorder déclarait une durée fausse dans
   // son en-tête, et les importeurs stricts comme Instagram s'arrêtaient à
   // cette durée au lieu de lire la vidéo entière.
-  const writer = await createVideoWriter(canvas, bitrate);
+  const writer = await createVideoWriter(canvas, bitrate, forceLegacyEncoder);
   const commitFrame = () => writer.addFrame();
 
   video.currentTime = rangeStart;

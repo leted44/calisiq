@@ -249,8 +249,13 @@ function createRecorderWriter(
 
 export async function createVideoWriter(
   canvas: HTMLCanvasElement,
-  bitrate: number
+  bitrate: number,
+  // Force la voie MediaRecorder. Utilisé pour la seconde tentative quand
+  // l'encodage WebCodecs a échoué : mieux vaut une vidéo dont la durée
+  // déclarée est imparfaite que pas de vidéo du tout.
+  forceRecorder = false
 ): Promise<VideoWriter> {
+  if (forceRecorder) return createRecorderWriter(canvas, bitrate);
   const webCodecs = await createWebCodecsWriter(canvas, bitrate).catch(() => null);
   return webCodecs ?? createRecorderWriter(canvas, bitrate);
 }
