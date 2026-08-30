@@ -60,13 +60,14 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   body_line_angle: "Axe",
 };
 
-// Palette feu tricolore (vert/jaune/rouge) : plus lisible en incrustation
-// vidéo qu'un dégradé à 3 teintes proches, et c'est le code couleur que la
-// référence utilise pour ses barres de progression.
+// Palette feu tricolore, saturée pour un rendu net en incrustation vidéo
+// (les teintes trop pâles se noient dans une image en fond) — teintes
+// choisies pour correspondre à une référence fournie par l'utilisateur :
+// vert vif pour optimal, jaune saturé pour bon, orange franc pour faible.
 function scoreColor(score: number): string {
-  if (score >= 8) return "#4ade80";
-  if (score >= 5) return "#facc15";
-  return "#f87171";
+  if (score >= 8) return "#22c55e";
+  if (score >= 5) return "#eab308";
+  return "#f97316";
 }
 
 // Dessine plusieurs segments de texte à des tailles/couleurs différentes
@@ -187,6 +188,13 @@ function drawHud(
   const topCenterX = topCardX + topCardWidth / 2;
 
   fillRoundedRect(ctx, topCardX, topCardY, topCardWidth, topCardHeight, radius, cardBackground);
+  // Léger contour bleu, comme sur la référence visuelle du user — un
+  // encadré subtil qui donne à la carte du timer une identité colorée
+  // sans peser visuellement.
+  roundedRectPath(ctx, topCardX, topCardY, topCardWidth, topCardHeight, radius);
+  ctx.lineWidth = 1.2 * scale;
+  ctx.strokeStyle = "rgba(56,189,248,0.55)";
+  ctx.stroke();
 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
@@ -194,15 +202,15 @@ function drawHud(
   ctx.font = figureFont;
   ctx.fillText(figureLabel, topCenterX, topCardY + 17 * scale);
 
-  ctx.fillStyle = "#c4b5fd";
+  ctx.fillStyle = "#94a3b8";
   ctx.font = holdLabelFont;
   ctx.fillText("HOLD", topCenterX, topCardY + 28 * scale);
 
   drawMixedText(
     ctx,
     [
-      { text: elapsedSeconds.toFixed(1), font: timerFont, color: "#c4b5fd" },
-      { text: "s", font: timerSuffixFont, color: "#c4b5fd" },
+      { text: elapsedSeconds.toFixed(1), font: timerFont, color: "#38bdf8" },
+      { text: "s", font: timerSuffixFont, color: "#38bdf8" },
     ],
     topCenterX,
     topCardY + 52 * scale,
@@ -289,8 +297,16 @@ function drawOutro(
   {
     figureLabel,
     globalScoreValue,
+    holdDurationSeconds,
     cardOpacity,
-  }: { figureLabel: string; globalScoreValue: number; cardOpacity: number }
+  }: {
+    figureLabel: string;
+    globalScoreValue: number;
+    // Durée réelle du hold à afficher à côté du score final ; null si la
+    // détection n'a rien identifié de stable (voir hold-window plus haut).
+    holdDurationSeconds: number | null;
+    cardOpacity: number;
+  }
 ) {
   const w = canvas.width;
   const h = canvas.height;
@@ -300,8 +316,8 @@ function drawOutro(
   ctx.fillStyle = "rgba(2,6,23,0.72)";
   ctx.fillRect(0, 0, w, h);
 
-  const cardWidth = Math.min(w - 48 * scale, 220 * scale);
-  const cardHeight = 170 * scale;
+  const cardWidth = Math.min(w - 48 * scale, 240 * scale);
+  const cardHeight = 210 * scale;
   const cardX = (w - cardWidth) / 2;
   const cardY = (h - cardHeight) / 2;
   const centerX = w / 2;
@@ -336,9 +352,37 @@ function drawOutro(
     "center"
   );
 
+  // Bloc HOLD sous le score final : donne au spectateur les deux chiffres
+  // qui comptent (qualité + durée) en un coup d'œil. Ne s'affiche pas si
+  // aucun hold stable n'a été détecté, pour ne pas mentir avec un 0.0s.
+  if (holdDurationSeconds !== null) {
+    const separatorY = cardY + 140 * scale;
+    ctx.strokeStyle = "rgba(148,163,184,0.25)";
+    ctx.lineWidth = 1 * scale;
+    ctx.beginPath();
+    ctx.moveTo(cardX + 24 * scale, separatorY);
+    ctx.lineTo(cardX + cardWidth - 24 * scale, separatorY);
+    ctx.stroke();
+
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = `700 ${9 * scale}px sans-serif`;
+    ctx.fillText("HOLD TENU", centerX, cardY + 158 * scale);
+
+    drawMixedText(
+      ctx,
+      [
+        { text: holdDurationSeconds.toFixed(1), font: `700 ${24 * scale}px sans-serif`, color: "#38bdf8" },
+        { text: "s", font: `600 ${12 * scale}px sans-serif`, color: "#38bdf8" },
+      ],
+      centerX,
+      cardY + 185 * scale,
+      "center"
+    );
+  }
+
   ctx.fillStyle = "#475569";
   ctx.font = `700 ${9 * scale}px sans-serif`;
-  ctx.fillText("CALISIQ", centerX, cardY + cardHeight - 16 * scale);
+  ctx.fillText("CALISIQ", centerX, cardY + cardHeight - 14 * scale);
 
   ctx.globalAlpha = 1;
 }
@@ -355,6 +399,7 @@ export async function recordAnnotatedVideo({
   landmarksFrames,
   holdStartSeconds,
   holdEndSeconds,
+  holdDurationSeconds,
   onProgress,
 }: {
   video: HTMLVideoElement;
@@ -381,6 +426,9 @@ export async function recordAnnotatedVideo({
   // plage exportée comme avant, faute de mieux.
   holdStartSeconds?: number | null;
   holdEndSeconds?: number | null;
+  // Durée finale du hold (secondes) — affichée sur l'écran de révélation
+  // à la fin de la vidéo, sous le score final.
+  holdDurationSeconds?: number | null;
   onProgress?: (percent: number) => void;
 }): Promise<Blob> {
   const hudHoldStart = holdStartSeconds ?? rangeStart;
@@ -573,7 +621,12 @@ export async function recordAnnotatedVideo({
   for (let i = 0; i < OUTRO_STEPS; i++) {
     const cardOpacity = Math.min(1, (i + 1) / OUTRO_FADE_STEPS);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    drawOutro(ctx, canvas, { figureLabel, globalScoreValue, cardOpacity });
+    drawOutro(ctx, canvas, {
+      figureLabel,
+      globalScoreValue,
+      holdDurationSeconds: holdDurationSeconds ?? null,
+      cardOpacity,
+    });
     await sleep(OUTRO_STEP_MS);
   }
 

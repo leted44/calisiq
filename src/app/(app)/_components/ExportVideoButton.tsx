@@ -18,6 +18,7 @@ export default function ExportVideoButton({
   landmarksFrames,
   holdStartSeconds,
   holdEndSeconds,
+  holdDurationSeconds,
 }: {
   videoRef: RefObject<HTMLVideoElement | null>;
   figureLabel: string;
@@ -29,6 +30,7 @@ export default function ExportVideoButton({
   landmarksFrames?: NormalizedLandmark[][];
   holdStartSeconds?: number | null;
   holdEndSeconds?: number | null;
+  holdDurationSeconds?: number | null;
 }) {
   const [recording, setRecording] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -56,6 +58,7 @@ export default function ExportVideoButton({
         landmarksFrames,
         holdStartSeconds,
         holdEndSeconds,
+        holdDurationSeconds,
         onProgress: setProgress,
       });
       const extension = blob.type.includes("mp4") ? "mp4" : "webm";

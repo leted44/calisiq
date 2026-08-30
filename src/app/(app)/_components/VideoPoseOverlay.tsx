@@ -198,6 +198,7 @@ export default function VideoPoseOverlay({
             landmarksFrames={freshResult?.landmarksFrames}
             holdStartSeconds={freshResult?.holdStartSeconds}
             holdEndSeconds={freshResult?.holdEndSeconds}
+            holdDurationSeconds={report.holdDurationSeconds}
           />
         </>
       )}
