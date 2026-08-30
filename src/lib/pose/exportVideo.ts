@@ -6,12 +6,11 @@ import {
 import { scoreAngles, globalScore, type CriterionScore } from "./scoring";
 import { getLandmarker } from "./runAnalysis";
 import { seekTo, playSegment } from "@/lib/video/playback";
+import { createVideoWriter } from "@/lib/video/writer";
 import { computeAngles } from "./angles";
 import { drawAngleLabels } from "./canvasHud";
 import { buildTargetPose, type TargetPose } from "./targetPose";
 import type { Progression } from "./grid";
-
-const EXPORT_FPS = 30;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -23,26 +22,6 @@ function sleep(ms: number): Promise<void> {
 // (le réseau recompresse de toute façon) et multiplie par 4 le travail de
 // rendu par frame, l'une des causes du saccadé à l'enregistrement.
 const MAX_EXPORT_DIMENSION = 1080;
-
-// MP4 en priorité : format fiable pour republier sur Instagram/réseaux sociaux.
-// WebM en repli pour les navigateurs qui ne savent pas encoder de MP4.
-const CANDIDATE_MIME_TYPES = [
-  "video/mp4;codecs=avc1.42E01E",
-  "video/mp4;codecs=h264",
-  "video/mp4",
-  "video/webm;codecs=vp9",
-  "video/webm;codecs=vp8",
-  "video/webm",
-];
-
-function pickSupportedMimeType(): string {
-  for (const type of CANDIDATE_MIME_TYPES) {
-    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(type)) {
-      return type;
-    }
-  }
-  return "video/webm";
-}
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   shoulder_protraction: "Épaules",
@@ -837,53 +816,21 @@ export async function recordAnnotatedVideo({
   const ctx: CanvasRenderingContext2D = context2d;
   const drawingUtils = new DrawingUtils(ctx);
 
-  const mimeType = pickSupportedMimeType();
   // ~9 bits/pixel/frame à 30fps : nettement au-dessus du bitrate par défaut
   // du navigateur, pour un rendu net et publiable plutôt que compressé.
-  const videoBitsPerSecond = Math.min(
+  const bitrate = Math.min(
     25_000_000,
     Math.max(6_000_000, Math.round(canvas.width * canvas.height * 9))
   );
-  // Capture pilotée explicitement (frameRate 0 + requestFrame) plutôt
-  // qu'automatique : en mode automatique, le navigateur décide seul qu'une
-  // image est "nouvelle" en détectant que le canvas a changé, et cesse
-  // d'alimenter le flux dès qu'il estime qu'il ne se passe plus rien. Entre
-  // deux phases (fin de la figure, ralenti, écran final) le rendu marque
-  // des pauses, et le flux se tarissait — la vidéo exportée s'arrêtait à
-  // la fin de la première phase. En signalant nous-mêmes chaque image
-  // dessinée, aucune phase ne peut plus être omise.
-  const canvasStream = canvas.captureStream(0);
-  const captureTrack = canvasStream.getVideoTracks()[0] as MediaStreamTrack & {
-    requestFrame?: () => void;
-  };
-  const supportsManualCapture = typeof captureTrack?.requestFrame === "function";
-  // Repli sur la capture automatique si requestFrame n'existe pas : mieux
-  // vaut le comportement imparfait que pas de vidéo du tout.
-  const stream = supportsManualCapture ? canvasStream : canvas.captureStream(EXPORT_FPS);
-  const commitFrame = supportsManualCapture
-    ? () => captureTrack.requestFrame!()
-    : () => {};
-
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond });
-  const chunks: Blob[] = [];
-  recorder.ondataavailable = (e) => {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
-
-  const recorded = new Promise<Blob>((resolve, reject) => {
-    recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
-    recorder.onerror = (e) => reject(e);
-  });
+  // Encode via WebCodecs quand c'est possible, sinon MediaRecorder (voir
+  // writer.ts) : la sortie de MediaRecorder déclarait une durée fausse dans
+  // son en-tête, et les importeurs stricts comme Instagram s'arrêtaient à
+  // cette durée au lieu de lire la vidéo entière.
+  const writer = await createVideoWriter(canvas, bitrate);
+  const commitFrame = () => writer.addFrame();
 
   video.currentTime = rangeStart;
   await seekTo(video, rangeStart);
-  // Timeslice de 1s : sans argument, MediaRecorder n'encode et ne livre
-  // rien pendant l'enregistrement, il accumule tout en mémoire et ne fait
-  // le travail d'encodage réel qu'au moment de stop() — d'où l'attente
-  // invisible après 99%. Avec un timeslice, l'encodage est étalé pendant
-  // l'enregistrement (visible dans la progression 0-99%), et il ne reste
-  // au stop() que le dernier fragment (~1s) à finaliser.
-  recorder.start(1000);
 
   // Repli tant qu'aucune frame n'a encore été traitée (ou si une frame n'a
   // pas de landmarks détectés) : le score final sert de valeur de départ,
@@ -1092,9 +1039,8 @@ export async function recordAnnotatedVideo({
     await sleep(OUTRO_STEP_MS);
   }
 
-  recorder.stop();
   video.pause();
-  const blob = await recorded;
+  const blob = await writer.finish();
   onProgress?.(100);
   return blob;
 }
