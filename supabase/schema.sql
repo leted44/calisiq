@@ -9,7 +9,8 @@ create table profiles (
   gender text check (gender in ('homme', 'femme', 'autre')),
   avatar_url text,
   onboarding_completed boolean not null default false,
-  subscription_tier text not null default 'free'
+  subscription_tier text not null default 'free',
+  is_admin boolean not null default false -- accès aux statistiques globales (voir migration 20260830180000)
 );
 
 -- Crée automatiquement un profil à chaque inscription (auth.users est géré par Supabase, pas accessible en direct)

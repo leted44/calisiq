@@ -8,6 +8,7 @@ import {
   CrownIcon,
   EditIcon,
   ProfileIcon,
+  TrendUpIcon,
 } from "@/components/icons";
 
 const SUBSCRIPTION_LABELS: Record<string, string> = {
@@ -30,7 +31,9 @@ export default async function ProfilPage() {
   const { data: profile } = user
     ? await supabase
         .from("profiles")
-        .select("height_cm, weight_kg, birth_date, gender, avatar_url, subscription_tier")
+        .select(
+          "height_cm, weight_kg, birth_date, gender, avatar_url, subscription_tier, is_admin"
+        )
         .eq("id", user.id)
         .single()
     : { data: null };
@@ -131,6 +134,21 @@ export default async function ProfilPage() {
             </div>
           </div>
         </div>
+
+        {profile?.is_admin && (
+          <Link
+            href="/stats"
+            className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4 transition-colors hover:border-cyan-800"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-cyan-400">
+              <TrendUpIcon className="h-4 w-4" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-white">Statistiques</p>
+              <p className="text-xs text-slate-500">Usage réel de l&apos;application</p>
+            </div>
+          </Link>
+        )}
 
         <LogoutButton />
       </div>
