@@ -21,6 +21,57 @@ const FEATURES = [
   { icon: CheckCircleIcon, label: "Écran de score final" },
 ];
 
+// Aucune app mobile Instagram/TikTok n'accepte de recevoir une vidéo par
+// URL scheme : le partage direct passe forcément par le share sheet du
+// système. On l'ouvre au clic sur "Autre app" ; les boutons Instagram/
+// TikTok téléchargent la vidéo dans les fichiers du téléphone et ouvrent
+// l'application, à charge pour l'utilisateur de sélectionner la vidéo
+// depuis sa galerie (le seul chemin qui marche vraiment sur toutes les
+// versions d'OS et modes d'installation Instagram/TikTok).
+const SHARE_TARGETS = [
+  {
+    id: "instagram" as const,
+    label: "Instagram",
+    hint: "Story ou Reel",
+    // instagram:// suffit sur iOS ; sur Android, l'app intercepte aussi
+    // https://www.instagram.com si elle est installée, sinon le lien
+    // ouvre le site dans le navigateur.
+    url: "instagram://app",
+    fallbackUrl: "https://www.instagram.com/",
+    accent: "from-fuchsia-500/25 to-orange-500/25 ring-fuchsia-500/40",
+    dot: "bg-gradient-to-br from-fuchsia-500 to-orange-500",
+  },
+  {
+    id: "tiktok" as const,
+    label: "TikTok",
+    hint: "Nouvelle publication",
+    url: "snssdk1233://",
+    fallbackUrl: "https://www.tiktok.com/",
+    accent: "from-white/20 to-cyan-500/20 ring-white/30",
+    dot: "bg-gradient-to-br from-cyan-400 via-white to-pink-500",
+  },
+];
+
+type ShareTarget = (typeof SHARE_TARGETS)[number];
+
+// Tente d'ouvrir un URL scheme d'application, avec repli sur le site web
+// après un court délai (les schemes non gérés ne renvoient aucune erreur,
+// il faut vérifier après coup si la fenêtre a bien changé de contexte).
+function openApp(appUrl: string, fallbackUrl: string) {
+  const timeout = window.setTimeout(() => {
+    window.location.href = fallbackUrl;
+  }, 1500);
+  // Si l'app s'ouvre, la page perd le focus (visibilitychange). On annule
+  // alors le repli pour ne pas ré-ouvrir le site dans le navigateur au
+  // retour de l'app.
+  const cancel = () => {
+    window.clearTimeout(timeout);
+    document.removeEventListener("visibilitychange", cancel);
+  };
+  document.addEventListener("visibilitychange", cancel);
+  window.location.href = appUrl;
+}
+
 export default function ExportVideoButton({
   videoRef,
   figureLabel,
@@ -52,13 +103,12 @@ export default function ExportVideoButton({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
 
-  // La vidéo générée est mise en cache pour que "Partager" juste après
-  // "Télécharger" soit instantané — indispensable pour le partage natif,
+  // La vidéo générée est mise en cache pour que le partage juste après un
+  // téléchargement soit instantané — indispensable pour le partage natif
   // qui exige un geste utilisateur encore "frais" (une longue génération
   // entre le clic et l'appel de navigator.share le ferait refuser).
-  // La clé rend le cache automatiquement caduc si l'analyse change, sans
-  // avoir besoin d'un effet de synchronisation.
   const cacheKey = [
     figureLabel,
     progression,
@@ -125,11 +175,11 @@ export default function ExportVideoButton({
     }
   }
 
-  // Tente le partage natif SANS aucun await préalable : le navigateur exige
-  // que navigator.share() parte directement du clic (transient activation).
-  // Le moindre await avant l'appel, même sur une valeur déjà en cache, fait
-  // perdre ce "geste utilisateur" et provoque un NotAllowedError.
-  function shareNow(blob: Blob, filename: string): boolean {
+  // navigator.share() sans aucun await préalable : le navigateur exige que
+  // l'appel parte directement du clic (transient activation). Le moindre
+  // await avant, même sur une valeur déjà en cache, fait perdre le "geste
+  // utilisateur" et déclenche NotAllowedError/Permission denied.
+  function nativeShareNow(blob: Blob, filename: string): boolean {
     const file = new File([blob], filename, { type: blob.type });
     if (!navigator.canShare?.({ files: [file] })) return false;
 
@@ -140,34 +190,54 @@ export default function ExportVideoButton({
         text: `${figureLabel} analysée avec CalisIQ : ${globalScoreValue.toFixed(1)}/10`,
       })
       .catch((err: Error) => {
-        // Fermer la fenêtre de partage n'est pas une erreur à signaler.
+        // L'utilisateur qui ferme la fenêtre n'est pas une erreur.
         if (err.name === "AbortError") return;
-        setError("Partage impossible : " + err.message);
+        // Message clair côté user, plutôt que la sortie brute du navigateur
+        // ("Permission denied" / "NotAllowedError") qui n'apprend rien.
+        setError(
+          "Le partage direct a été refusé par ton téléphone. Utilise plutôt Instagram, TikTok, ou télécharge la vidéo."
+        );
       });
     return true;
   }
 
-  function handleShare() {
-    if (validCache) {
-      if (shareNow(validCache.blob, validCache.filename)) return;
-      downloadBlob(validCache.blob, validCache.filename);
-      setNotice(
-        "Le partage direct n'est pas disponible sur ce navigateur, la vidéo a été téléchargée."
-      );
+  function handleNativeShare() {
+    if (!validCache) {
+      generate()
+        .then(() => {
+          setNotice("Vidéo prête. Retouche 'Autre application' pour partager.");
+        })
+        .catch((err: Error) => setError("Export impossible : " + err.message));
       return;
     }
+    if (nativeShareNow(validCache.blob, validCache.filename)) return;
+    downloadBlob(validCache.blob, validCache.filename);
+    setNotice(
+      "Le partage direct n'est pas disponible sur ce navigateur, la vidéo a été téléchargée."
+    );
+  }
 
-    // Pas encore de vidéo : on la génère d'abord. Le geste utilisateur ne
-    // survivra pas à la génération, donc on ne tente pas de partager dans
-    // la foulée — on invite à retoucher le bouton, qui partagera alors
-    // instantanément depuis le cache.
-    generate()
-      .then(() => {
-        setNotice("Vidéo prête. Appuie à nouveau sur Partager.");
-      })
-      .catch((err: Error) => {
-        setError("Export impossible : " + err.message);
-      });
+  // Instagram/TikTok : la seule voie fiable est de télécharger la vidéo
+  // dans les fichiers du téléphone puis d'ouvrir l'application, l'user
+  // sélectionnant ensuite la vidéo depuis sa galerie. Aucune app ne prend
+  // une vidéo par URL scheme, et le share sheet natif dépend d'apps
+  // enregistrées côté OS qui peuvent bloquer (cas "Permission denied").
+  async function handleAppShare(target: ShareTarget) {
+    setShareMenuOpen(false);
+    try {
+      const { blob, filename } = await generate();
+      downloadBlob(blob, filename);
+      setNotice(
+        `Vidéo enregistrée. ${target.label} s'ouvre — sélectionne la vidéo depuis ta galerie pour la publier.`
+      );
+      // Court délai pour que le téléchargement ait le temps de partir
+      // avant que la page ne perde le focus vers l'app.
+      window.setTimeout(() => {
+        openApp(target.url, target.fallbackUrl);
+      }, 400);
+    } catch (err) {
+      setError("Export impossible : " + (err as Error).message);
+    }
   }
 
   const busy = recording;
@@ -213,12 +283,55 @@ export default function ExportVideoButton({
 
           <button
             type="button"
-            onClick={handleShare}
+            onClick={() => setShareMenuOpen((o) => !o)}
             disabled={busy}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/5 py-2.5 text-sm font-medium text-cyan-200 transition-colors hover:border-cyan-400/50 hover:bg-cyan-500/10 disabled:opacity-60"
           >
-            {validCache ? "Partager maintenant" : "Partager sur mes réseaux"}
+            {shareMenuOpen ? "Fermer le menu de partage" : "Partager sur mes réseaux"}
           </button>
+
+          {shareMenuOpen && (
+            <div className="space-y-1.5 rounded-xl border border-slate-800 bg-slate-950/60 p-2">
+              {SHARE_TARGETS.map((target) => (
+                <button
+                  key={target.id}
+                  type="button"
+                  onClick={() => handleAppShare(target)}
+                  disabled={busy}
+                  className={`flex w-full items-center gap-3 rounded-lg bg-gradient-to-r ${target.accent} p-3 text-left ring-1 disabled:opacity-60`}
+                >
+                  <span className={`flex h-9 w-9 shrink-0 rounded-lg ${target.dot}`} />
+                  <span className="flex-1">
+                    <span className="block text-sm font-semibold text-white">
+                      {target.label}
+                    </span>
+                    <span className="block text-[11px] text-slate-300">
+                      {target.hint}
+                    </span>
+                  </span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={handleNativeShare}
+                disabled={busy}
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-700 bg-slate-900 p-3 text-left disabled:opacity-60"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-300">
+                  <DownloadIcon className="h-4 w-4" />
+                </span>
+                <span className="flex-1">
+                  <span className="block text-sm font-semibold text-white">
+                    Autre application
+                  </span>
+                  <span className="block text-[11px] text-slate-400">
+                    Message, mail, cloud, réseau non listé...
+                  </span>
+                </span>
+              </button>
+            </div>
+          )}
         </div>
 
         {busy && (
@@ -228,12 +341,6 @@ export default function ExportVideoButton({
               style={{ width: `${progress}%` }}
             />
           </div>
-        )}
-
-        {validCache && !busy && (
-          <p className="mt-2.5 text-center text-[11px] text-slate-500">
-            Vidéo prête, le partage est instantané.
-          </p>
         )}
 
         {notice && <p className="mt-2 text-xs text-slate-400">{notice}</p>}
