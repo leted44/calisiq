@@ -953,35 +953,41 @@ export async function recordAnnotatedVideo({
     const span = rangeEnd - rangeStart;
     const timeAt = (i: number) => rangeStart + (i / total) * span;
 
-    // Cherché dans le CŒUR du hold, pas dans toute la fenêtre : la
-    // détection de hold tolère volontairement du mouvement (seuil assoupli
-    // pour ne pas rater les holds tremblants de fatigue), donc ses bords
-    // contiennent encore l'entrée dans la figure et le début de la sortie.
-    // Y chercher "le pire moment" pointait systématiquement quelqu'un en
-    // train de se placer, pas un vrai défaut de la position tenue.
-    const holdSpan = hudHoldEnd - hudHoldStart;
-    const edgeMargin = Math.min(holdSpan * 0.25, 0.6);
-    let coreStart = hudHoldStart + edgeMargin;
-    let coreEnd = hudHoldEnd - edgeMargin;
-    // Hold trop court pour rogner quoi que ce soit : on retombe sur la
-    // fenêtre complète plutôt que sur un intervalle vide.
-    if (coreEnd <= coreStart) {
-      coreStart = hudHoldStart;
-      coreEnd = hudHoldEnd;
+    // Identifier "la personne est vraiment dans la figure" à partir de la
+    // fenêtre de hold ne marche pas : son seuil de mouvement est
+    // volontairement permissif (pour ne pas rater les holds tremblants de
+    // fatigue), donc elle englobe largement l'entrée et la sortie de
+    // figure. Rogner ses bords ne suffisait pas non plus.
+    // Le score global par frame est un signal bien plus direct : il est
+    // mauvais tant que le corps n'est pas placé, et atteint son plateau
+    // pendant la position tenue.
+    const candidates: { index: number; global: number; weak: number }[] = [];
+    for (let i = 0; i < total; i++) {
+      const t = timeAt(i);
+      if (t < hudHoldStart || t > hudHoldEnd) continue;
+      const frameScores = scoreAngles(computeAngles(landmarksFrames[i]), progression);
+      const weakScore = frameScores.find((s) => s.critere === weakest.critere);
+      if (!weakScore) continue;
+      candidates.push({
+        index: i,
+        global: globalScore(frameScores),
+        weak: weakScore.score,
+      });
     }
 
     let worstIndex = -1;
     let worstScore = Infinity;
-    for (let i = 0; i < total; i++) {
-      const t = timeAt(i);
-      if (t < coreStart || t > coreEnd) continue;
-      const frameScore = scoreAngles(computeAngles(landmarksFrames[i]), progression).find(
-        (s) => s.critere === weakest.critere
-      );
-      if (frameScore && frameScore.score < worstScore) {
-        worstScore = frameScore.score;
-        worstIndex = i;
-      }
+    if (candidates.length > 0) {
+      const bestGlobal = Math.max(...candidates.map((c) => c.global));
+      // 85% du meilleur score global : assez large pour couvrir toute la
+      // durée réelle du hold (le score fluctue pendant l'effort), assez
+      // strict pour écarter l'entrée et la sortie, où le corps n'est pas
+      // encore — ou n'est plus — dans la position évaluée.
+      const inPosition = candidates.filter((c) => c.global >= bestGlobal * 0.85);
+      const pool = inPosition.length > 0 ? inPosition : candidates;
+      const worst = pool.reduce((w, c) => (c.weak < w.weak ? c : w));
+      worstIndex = worst.index;
+      worstScore = worst.weak;
     }
 
     if (worstIndex >= 0) {
