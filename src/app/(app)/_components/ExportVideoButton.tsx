@@ -128,10 +128,12 @@ export default function ExportVideoButton({
   // navigator.share() parte directement du clic. Le moindre await avant,
   // même sur une valeur déjà en cache, consomme le "geste utilisateur" et
   // fait échouer l'appel avec Permission denied.
-  function handleShare() {
-    if (!validCache) return;
-
-    const { blob, filename } = validCache;
+  // Ouvre la fenêtre de partage du système (WhatsApp, Instagram, TikTok,
+  // Gmail...) à partir d'une vidéo déjà en cache, SANS aucun await
+  // préalable : le navigateur exige que navigator.share() parte
+  // directement du clic. Le moindre await avant, même sur une valeur déjà
+  // disponible, consomme le "geste utilisateur" et fait échouer l'appel.
+  function shareFromCache(blob: Blob, filename: string) {
     const file = new File([blob], filename, { type: blob.type });
 
     if (!navigator.canShare?.({ files: [file] })) {
@@ -148,7 +150,6 @@ export default function ExportVideoButton({
     // le format le plus largement accepté.
     navigator
       .share({ files: [file] })
-      .then(() => setNotice("Vidéo partagée."))
       .catch((err: Error) => {
         // Fermer la fenêtre de partage n'est pas une erreur à signaler.
         if (err.name === "AbortError") return;
@@ -159,13 +160,24 @@ export default function ExportVideoButton({
       });
   }
 
-  async function handlePrepare() {
-    try {
-      await generate();
-      setNotice(null);
-    } catch (err) {
-      setError("Export impossible : " + (err as Error).message);
+  function handleShare() {
+    // Vidéo déjà prête : la fenêtre de partage s'ouvre immédiatement.
+    if (validCache) {
+      shareFromCache(validCache.blob, validCache.filename);
+      return;
     }
+
+    // Sinon on génère d'abord, puis on tente quand même le partage : sur
+    // beaucoup de navigateurs il passe si la génération a été rapide. En
+    // cas de refus (geste utilisateur expiré), la vidéo reste en cache et
+    // un second appui part instantanément.
+    generate()
+      .then(({ blob, filename }) => {
+        shareFromCache(blob, filename);
+      })
+      .catch((err: Error) => {
+        setError("Export impossible : " + err.message);
+      });
   }
 
   const busy = recording;
@@ -199,39 +211,24 @@ export default function ExportVideoButton({
         </div>
 
         <div className="mt-4 space-y-2">
-          {/* Deux étapes explicites plutôt qu'un bouton unique : la
-              génération dure plusieurs secondes, et navigator.share() ne
-              peut pas être appelé après cette attente (le geste utilisateur
-              a expiré). Préparer d'abord, partager ensuite, garantit que le
-              partage part toujours d'un clic frais avec la vidéo en cache. */}
-          {!validCache ? (
-            <button
-              type="button"
-              onClick={handlePrepare}
-              disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 py-3 text-sm font-semibold text-white shadow-[0_0_24px_-4px_rgba(34,211,238,0.6)] transition-opacity disabled:opacity-60"
-            >
-              {busy ? `Génération... ${progress}%` : "Préparer la vidéo"}
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={handleShare}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 py-3 text-sm font-semibold text-white shadow-[0_0_24px_-4px_rgba(34,211,238,0.6)]"
-              >
-                Partager la vidéo
-              </button>
-              <button
-                type="button"
-                onClick={handleDownload}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/5 py-2.5 text-sm font-medium text-cyan-200 transition-colors hover:border-cyan-400/50 hover:bg-cyan-500/10"
-              >
-                <DownloadIcon className="h-4 w-4" />
-                Télécharger
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={handleShare}
+            disabled={busy}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 py-3 text-sm font-semibold text-white shadow-[0_0_24px_-4px_rgba(34,211,238,0.6)] transition-opacity disabled:opacity-60"
+          >
+            {busy ? `Génération... ${progress}%` : "Partager sur mes réseaux"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={busy}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/5 py-2.5 text-sm font-medium text-cyan-200 transition-colors hover:border-cyan-400/50 hover:bg-cyan-500/10 disabled:opacity-60"
+          >
+            <DownloadIcon className="h-4 w-4" />
+            Télécharger la vidéo
+          </button>
         </div>
 
         {busy && (

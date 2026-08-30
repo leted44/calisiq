@@ -70,8 +70,13 @@ const FIGURES: {
   },
   {
     value: "front_lever",
+    // Mis en pause volontairement : les seuils de scoring du front lever
+    // sont entièrement raisonnés (voir grid.ts), aucun échantillon réel
+    // n'a encore été collecté pour les calibrer. Mieux vaut ne pas
+    // proposer la figure que d'afficher des scores non fiables. À
+    // réactiver dès que des calibration_samples existent.
     label: "Front Lever",
-    available: true,
+    available: false,
     Icon: FrontLeverFigureIcon,
     image: "/figures/full-front-lever.png",
   },
