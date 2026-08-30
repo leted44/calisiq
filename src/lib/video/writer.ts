@@ -182,6 +182,15 @@ async function createWebCodecsWriter(
 
     addFrame() {
       if (failure || encoder.state !== "configured") return;
+      // File d'attente saturée : on saute cette image plutôt que d'empiler.
+      // addFrame est appelée depuis un callback de rendu, donc de façon
+      // synchrone et sans pouvoir attendre l'encodeur. Sans ce garde-fou,
+      // chaque image d'un canvas 1080x1920 (plusieurs mégaoctets en
+      // mémoire graphique) s'accumule tant que l'encodeur ne suit pas, et
+      // il finit par échouer en cours de route — d'où un premier export
+      // perdu puis une seconde tentative en mode compatible.
+      // Sauter une image dégrade à peine la fluidité ; saturer casse tout.
+      if (encoder.encodeQueueSize > 8) return;
       // addFrame est appelée depuis un callback du navigateur
       // (requestVideoFrameCallback) : une exception qui s'en échappe est
       // avalée sans remonter jusqu'à l'appelant. On la capture donc ici

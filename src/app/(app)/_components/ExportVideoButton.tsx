@@ -52,6 +52,7 @@ export default function ExportVideoButton({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
 
   // La vidéo générée est mise en cache pour que le partage juste après un
   // téléchargement soit instantané — indispensable pour le partage natif
@@ -115,8 +116,15 @@ export default function ExportVideoButton({
       try {
         result = await render(false);
       } catch {
+        // Sans ce signal, la seconde passe passe pour un bug : l'utilisateur
+        // voit une barre de progression repartir de zéro sans explication.
+        setRetrying(true);
         setProgress(0);
-        result = await render(true);
+        try {
+          result = await render(true);
+        } finally {
+          setRetrying(false);
+        }
       }
       const { blob } = result;
       // Prévenir explicitement plutôt que de laisser l'utilisateur
@@ -241,7 +249,9 @@ export default function ExportVideoButton({
             disabled={busy}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 py-3 text-sm font-semibold text-white shadow-[0_0_24px_-4px_rgba(34,211,238,0.6)] transition-opacity disabled:opacity-60"
           >
-            {busy ? `Génération... ${progress}%` : "Partager sur mes réseaux"}
+            {busy
+              ? `${retrying ? "Nouvelle tentative" : "Génération"}... ${progress}%`
+              : "Partager sur mes réseaux"}
           </button>
 
           <button
