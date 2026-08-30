@@ -953,13 +953,28 @@ export async function recordAnnotatedVideo({
     const span = rangeEnd - rangeStart;
     const timeAt = (i: number) => rangeStart + (i / total) * span;
 
-    // Cherché uniquement dans la fenêtre du hold : une frame de mise en
-    // place ou de sortie serait toujours "la pire" sans rien apprendre.
+    // Cherché dans le CŒUR du hold, pas dans toute la fenêtre : la
+    // détection de hold tolère volontairement du mouvement (seuil assoupli
+    // pour ne pas rater les holds tremblants de fatigue), donc ses bords
+    // contiennent encore l'entrée dans la figure et le début de la sortie.
+    // Y chercher "le pire moment" pointait systématiquement quelqu'un en
+    // train de se placer, pas un vrai défaut de la position tenue.
+    const holdSpan = hudHoldEnd - hudHoldStart;
+    const edgeMargin = Math.min(holdSpan * 0.25, 0.6);
+    let coreStart = hudHoldStart + edgeMargin;
+    let coreEnd = hudHoldEnd - edgeMargin;
+    // Hold trop court pour rogner quoi que ce soit : on retombe sur la
+    // fenêtre complète plutôt que sur un intervalle vide.
+    if (coreEnd <= coreStart) {
+      coreStart = hudHoldStart;
+      coreEnd = hudHoldEnd;
+    }
+
     let worstIndex = -1;
     let worstScore = Infinity;
     for (let i = 0; i < total; i++) {
       const t = timeAt(i);
-      if (t < hudHoldStart || t > hudHoldEnd) continue;
+      if (t < coreStart || t > coreEnd) continue;
       const frameScore = scoreAngles(computeAngles(landmarksFrames[i]), progression).find(
         (s) => s.critere === weakest.critere
       );
@@ -971,8 +986,12 @@ export async function recordAnnotatedVideo({
 
     if (worstIndex >= 0) {
       const worstTime = timeAt(worstIndex);
-      const replayFrom = Math.max(rangeStart, worstTime - 0.5);
-      const replayTo = Math.min(rangeEnd, worstTime + 0.5);
+      // Borné à la fenêtre du hold et pas à la vidéo entière : sans ça, le
+      // demi-seconde de contexte autour du moment clé pouvait repartir sur
+      // la phase d'entrée dans la figure, exactement ce qu'on cherche à
+      // ne pas montrer comme "erreur".
+      const replayFrom = Math.max(hudHoldStart, worstTime - 0.5);
+      const replayTo = Math.min(hudHoldEnd, worstTime + 0.5);
       const replayStartedAt = performance.now();
 
       await playSegment({
