@@ -809,8 +809,12 @@ export async function recordAnnotatedVideo({
     1,
     MAX_EXPORT_DIMENSION / Math.max(video.videoWidth, video.videoHeight)
   );
-  canvas.width = Math.round(video.videoWidth * exportScale);
-  canvas.height = Math.round(video.videoHeight * exportScale);
+  // Dimensions forcées paires : H.264 refuse les tailles impaires, et un
+  // écart entre la taille configurée sur l'encodeur et celle des images
+  // fournies fait échouer l'encodage image par image.
+  const toEven = (value: number) => Math.max(2, Math.round(value / 2) * 2);
+  canvas.width = toEven(video.videoWidth * exportScale);
+  canvas.height = toEven(video.videoHeight * exportScale);
   const context2d = canvas.getContext("2d");
   if (!context2d) throw new Error("Impossible d'initialiser le canvas d'export.");
   const ctx: CanvasRenderingContext2D = context2d;

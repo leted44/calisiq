@@ -66,18 +66,56 @@ async function pickCodec(
   return null;
 }
 
+// Vérifie que ce navigateur encode réellement ce canvas avec cette config,
+// sur un encodeur jetable. isConfigSupported() est déclaratif et se trompe :
+// il a annoncé "supporté" sur des configurations que l'encodeur matériel
+// refusait ensuite image par image. Sans cette vérification, l'échec ne se
+// voyait qu'à la toute fin, une fois toutes les images perdues.
+async function canActuallyEncode(
+  canvas: HTMLCanvasElement,
+  config: VideoEncoderConfig
+): Promise<boolean> {
+  let chunks = 0;
+  let failed = false;
+  try {
+    const probe = new VideoEncoder({
+      output: () => {
+        chunks += 1;
+      },
+      error: () => {
+        failed = true;
+      },
+    });
+    probe.configure(config);
+    const frame = new VideoFrame(canvas, { timestamp: 0 });
+    probe.encode(frame, { keyFrame: true });
+    frame.close();
+    await probe.flush();
+    probe.close();
+  } catch {
+    return false;
+  }
+  return chunks > 0 && !failed;
+}
+
 async function createWebCodecsWriter(
   canvas: HTMLCanvasElement,
   bitrate: number
 ): Promise<VideoWriter | null> {
-  // H.264 exige des dimensions paires. Le canvas est dimensionné en amont
-  // par une mise à l'échelle qui peut produire un nombre impair.
-  const width = canvas.width - (canvas.width % 2);
-  const height = canvas.height - (canvas.height % 2);
-  if (width === 0 || height === 0) return null;
+  // Les dimensions du canvas sont forcées paires en amont (H.264 l'exige) ;
+  // on encode donc exactement la taille du canvas, sans réajustement qui
+  // créerait un écart entre la config et les images fournies.
+  const width = canvas.width;
+  const height = canvas.height;
+  if (width === 0 || height === 0 || width % 2 !== 0 || height % 2 !== 0) {
+    return null;
+  }
 
   const codec = await pickCodec(width, height, bitrate);
   if (!codec) return null;
+
+  const config: VideoEncoderConfig = { codec, width, height, bitrate };
+  if (!(await canActuallyEncode(canvas, config))) return null;
 
   const muxer = new Muxer({
     target: new ArrayBufferTarget(),
@@ -87,39 +125,58 @@ async function createWebCodecsWriter(
     fastStart: "in-memory",
   });
 
-  let encoderError: Error | null = null;
+  let failure: Error | null = null;
+  let chunkCount = 0;
   const encoder = new VideoEncoder({
-    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    output: (chunk, meta) => {
+      chunkCount += 1;
+      muxer.addVideoChunk(chunk, meta);
+    },
     error: (e) => {
-      encoderError = e;
+      failure = e;
     },
   });
-  encoder.configure({ codec, width, height, bitrate });
+  encoder.configure(config);
 
   const startedAt = performance.now();
   let frameCount = 0;
 
   return {
     addFrame() {
-      if (encoderError || encoder.state !== "configured") return;
-      // Horodatage sur le temps réel écoulé plutôt que sur un compteur
-      // d'images : les trois phases de l'export (figure, ralenti, écran
-      // final) n'ont pas la même cadence de rendu, et c'est ce timing réel
-      // qu'on veut restituer.
-      const timestamp = Math.round((performance.now() - startedAt) * 1000);
-      const frame = new VideoFrame(canvas, { timestamp });
-      // Image-clé périodique : sans ça, un fichier long devient impossible
-      // à parcourir et certains lecteurs refusent de démarrer ailleurs
-      // qu'au tout début.
-      encoder.encode(frame, { keyFrame: frameCount % 60 === 0 });
-      frame.close();
-      frameCount += 1;
+      if (failure || encoder.state !== "configured") return;
+      // addFrame est appelée depuis un callback du navigateur
+      // (requestVideoFrameCallback) : une exception qui s'en échappe est
+      // avalée sans remonter jusqu'à l'appelant. On la capture donc ici
+      // pour pouvoir la signaler à la fin, au lieu de terminer sur un
+      // fichier vide et une erreur incompréhensible.
+      try {
+        // Horodatage sur le temps réel écoulé plutôt que sur un compteur
+        // d'images : les trois phases de l'export (figure, ralenti, écran
+        // final) n'ont pas la même cadence de rendu, et c'est ce timing
+        // réel qu'on veut restituer.
+        const timestamp = Math.round((performance.now() - startedAt) * 1000);
+        const frame = new VideoFrame(canvas, { timestamp });
+        // Image-clé périodique : sans ça, un fichier long devient
+        // impossible à parcourir et certains lecteurs refusent de démarrer
+        // ailleurs qu'au tout début.
+        encoder.encode(frame, { keyFrame: frameCount % 60 === 0 });
+        frame.close();
+        frameCount += 1;
+      } catch (e) {
+        failure = e as Error;
+      }
     },
 
     async finish() {
       await encoder.flush();
       encoder.close();
-      if (encoderError) throw encoderError;
+      if (failure) throw failure;
+      // Sans la moindre image encodée, le muxer échouerait sur une erreur
+      // interne obscure ("colorSpace of null") : on préfère un message qui
+      // dit ce qui s'est passé.
+      if (chunkCount === 0) {
+        throw new Error("Aucune image n'a pu être encodée.");
+      }
       muxer.finalize();
       const { buffer } = muxer.target as ArrayBufferTarget;
       return new Blob([buffer], { type: "video/mp4" });
