@@ -7,6 +7,7 @@ import { scoreAngles, globalScore, type CriterionScore } from "./scoring";
 import { getLandmarker, seekTo } from "./runAnalysis";
 import { computeAngles } from "./angles";
 import { drawAngleLabels } from "./canvasHud";
+import { buildTargetPose, type TargetPose } from "./targetPose";
 import type { Progression } from "./grid";
 
 const EXPORT_FPS = 30;
@@ -669,6 +670,95 @@ function drawWeakPointOverlay(
   drawWatermark(ctx, canvas);
 }
 
+// Fantôme de la position idéale, superposé en pointillés : montre l'écart
+// à corriger là où un chiffre en degrés reste abstrait. Reconstruit avec
+// les proportions réelles de la personne (voir buildTargetPose).
+function drawGhostPose(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  ghost: TargetPose,
+  opacity: number
+) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const scale = w / 400;
+  const toPixels = (p: { x: number; y: number }) => ({ x: p.x * w, y: p.y * h });
+
+  const chain = [
+    [ghost.shoulder, ghost.hip],
+    [ghost.hip, ghost.knee],
+    [ghost.knee, ghost.ankle],
+    [ghost.shoulder, ghost.elbow],
+    [ghost.elbow, ghost.wrist],
+  ];
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.setLineDash([6 * scale, 5 * scale]);
+  ctx.lineWidth = 3 * scale;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#4ade80";
+  ctx.shadowColor = "rgba(74,222,128,0.5)";
+  ctx.shadowBlur = 6 * scale;
+
+  for (const [from, to] of chain) {
+    const a = toPixels(from);
+    const b = toPixels(to);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#4ade80";
+  for (const joint of [ghost.hip, ghost.knee, ghost.ankle, ghost.elbow]) {
+    const p = toPixels(joint);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.5 * scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Légende du fantôme : sans elle, le spectateur ne peut pas deviner que le
+// tracé vert en pointillés est la position visée et pas une seconde
+// détection.
+function drawGhostLegend(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, y: number) {
+  const w = canvas.width;
+  const scale = w / 400;
+  const text = "Position idéale";
+  const font = `600 ${9 * scale}px sans-serif`;
+  ctx.font = font;
+  const lineLength = 16 * scale;
+  const gap = 6 * scale;
+  const paddingX = 10 * scale;
+  const contentWidth = lineLength + gap + ctx.measureText(text).width;
+  const badgeWidth = contentWidth + paddingX * 2;
+  const badgeHeight = 20 * scale;
+  const badgeX = (w - badgeWidth) / 2;
+
+  fillRoundedRect(ctx, badgeX, y, badgeWidth, badgeHeight, badgeHeight / 2, "rgba(2,6,23,0.72)");
+
+  const centerY = y + badgeHeight / 2;
+  ctx.save();
+  ctx.setLineDash([4 * scale, 3 * scale]);
+  ctx.strokeStyle = "#4ade80";
+  ctx.lineWidth = 2 * scale;
+  ctx.beginPath();
+  ctx.moveTo(badgeX + paddingX, centerY);
+  ctx.lineTo(badgeX + paddingX + lineLength, centerY);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = font;
+  ctx.fillText(text, badgeX + paddingX + lineLength + gap, centerY);
+  ctx.textBaseline = "alphabetic";
+}
+
 // Badge "RALENTI" en haut, pour que le spectateur comprenne que la vidéo
 // n'a pas bugué et qu'on lui rejoue volontairement le moment clé.
 function drawSlowMotionBadge(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
@@ -1006,14 +1096,24 @@ export async function recordAnnotatedVideo({
           );
           const landmarks = landmarksAt(progress);
 
+          const phase = ((performance.now() - replayStartedAt) / 900) % 1;
+
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           if (landmarks) {
             // Squelette volontairement atténué ici : l'attention doit aller
-            // aux anneaux du point faible, pas au tracé complet.
+            // au fantôme et aux anneaux du point faible, pas au tracé complet.
             drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
               color: "rgba(34,211,238,0.35)",
               lineWidth: 2,
             });
+
+            // Fantôme de la position idéale : l'écart entre le tracé vert
+            // et le corps réel rend le défaut visible d'un coup d'œil.
+            const ghost = buildTargetPose(landmarks, progression);
+            if (ghost) {
+              drawGhostPose(ctx, canvas, ghost, 0.55 + 0.3 * Math.sin(phase * Math.PI * 2));
+              drawGhostLegend(ctx, canvas, 44 * (canvas.width / 400));
+            }
           }
 
           drawSlowMotionBadge(ctx, canvas);
@@ -1022,7 +1122,7 @@ export async function recordAnnotatedVideo({
             critere: weakest.critere,
             score: worstScore,
             cue: weakPointCue ?? null,
-            phase: ((performance.now() - replayStartedAt) / 900) % 1,
+            phase,
           });
         },
       });
