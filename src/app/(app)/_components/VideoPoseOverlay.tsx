@@ -199,6 +199,7 @@ export default function VideoPoseOverlay({
             holdStartSeconds={freshResult?.holdStartSeconds}
             holdEndSeconds={freshResult?.holdEndSeconds}
             holdDurationSeconds={report.holdDurationSeconds}
+            weakPointCue={report.recommendations[0]?.exercice ?? null}
           />
         </>
       )}

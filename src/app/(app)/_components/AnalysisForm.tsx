@@ -1257,6 +1257,7 @@ export default function AnalysisForm() {
               holdStartSeconds={result.holdStartSeconds}
               holdEndSeconds={result.holdEndSeconds}
               holdDurationSeconds={result.holdDurationSeconds}
+              weakPointCue={result.recommendations[0]?.exercice ?? null}
             />
           )}
 

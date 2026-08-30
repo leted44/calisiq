@@ -33,6 +33,7 @@ export default function ExportVideoButton({
   holdStartSeconds,
   holdEndSeconds,
   holdDurationSeconds,
+  weakPointCue,
 }: {
   videoRef: RefObject<HTMLVideoElement | null>;
   figureLabel: string;
@@ -45,6 +46,7 @@ export default function ExportVideoButton({
   holdStartSeconds?: number | null;
   holdEndSeconds?: number | null;
   holdDurationSeconds?: number | null;
+  weakPointCue?: string | null;
 }) {
   const [recording, setRecording] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -99,6 +101,7 @@ export default function ExportVideoButton({
         holdStartSeconds,
         holdEndSeconds,
         holdDurationSeconds,
+        weakPointCue,
         onProgress: setProgress,
       });
       const extension = blob.type.includes("mp4") ? "mp4" : "webm";

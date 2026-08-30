@@ -523,6 +523,257 @@ function drawOutro(
   ctx.globalAlpha = 1;
 }
 
+// Articulations à mettre en évidence pendant le ralenti, selon le critère
+// le plus faible. Indices MediaPipe Pose (11/12 épaules, 13/14 coudes,
+// 23/24 hanches, 25/26 genoux, 27/28 chevilles).
+const CRITERION_LANDMARKS: Record<CriterionScore["critere"], number[]> = {
+  shoulder_protraction: [11, 12],
+  shoulder_flexion: [11, 12],
+  pelvis_deviation: [23, 24],
+  hip_angle: [23, 24],
+  knee_angle: [25, 26],
+  elbow_angle: [13, 14],
+  body_line_angle: [11, 23, 27],
+};
+
+// Découpe un texte en lignes qui tiennent dans maxWidth (le canvas n'a
+// aucun retour à la ligne automatique).
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (ctx.measureText(candidate).width > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+// Surcouche du ralenti : anneaux pulsants sur les articulations fautives
+// + bandeau explicatif. C'est ce qui transforme un score en coaching —
+// on montre l'endroit exact du défaut au lieu de le décrire en degrés.
+function drawWeakPointOverlay(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  {
+    landmarks,
+    critere,
+    score,
+    cue,
+    phase,
+  }: {
+    landmarks: NormalizedLandmark[] | undefined;
+    critere: CriterionScore["critere"];
+    score: number;
+    cue: string | null;
+    // 0..1, avance en boucle pour animer la pulsation des anneaux.
+    phase: number;
+  }
+) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const scale = w / 400;
+  const accent = scoreColor(score);
+
+  if (landmarks) {
+    const pulse = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2);
+    for (const index of CRITERION_LANDMARKS[critere]) {
+      const point = landmarks[index];
+      if (!point) continue;
+      const x = point.x * w;
+      const y = point.y * h;
+
+      ctx.save();
+      ctx.strokeStyle = accent;
+      ctx.globalAlpha = 0.35 + 0.4 * pulse;
+      ctx.lineWidth = 2.5 * scale;
+      ctx.beginPath();
+      ctx.arc(x, y, (10 + 8 * pulse) * scale, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.9;
+      ctx.lineWidth = 2 * scale;
+      ctx.beginPath();
+      ctx.arc(x, y, 6 * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // Bandeau bas : titre "point faible" + critère + score + conseil.
+  const margin = 16 * scale;
+  const cardPadding = 14 * scale;
+  const cardWidth = w - margin * 2;
+  const cueFont = `500 ${10 * scale}px sans-serif`;
+  ctx.font = cueFont;
+  const cueLines = cue ? wrapText(ctx, cue, cardWidth - cardPadding * 2) : [];
+  const lineHeight = 14 * scale;
+  const cardHeight =
+    cardPadding * 2 + 34 * scale + cueLines.length * lineHeight;
+  const cardX = margin;
+  const cardY = h - margin - cardHeight;
+
+  fillRoundedRect(ctx, cardX, cardY, cardWidth, cardHeight, 14 * scale, "rgba(2,6,23,0.82)");
+  roundedRectPath(ctx, cardX, cardY, cardWidth, cardHeight, 14 * scale);
+  ctx.lineWidth = 1.5 * scale;
+  ctx.strokeStyle = accent;
+  ctx.stroke();
+
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
+  ctx.fillStyle = accent;
+  ctx.font = `700 ${9 * scale}px sans-serif`;
+  ctx.fillText("POINT FAIBLE", cardX + cardPadding, cardY + cardPadding + 8 * scale);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = `700 ${13 * scale}px sans-serif`;
+  ctx.fillText(
+    CRITERE_LABELS[critere],
+    cardX + cardPadding,
+    cardY + cardPadding + 27 * scale
+  );
+
+  drawMixedText(
+    ctx,
+    [
+      { text: score.toFixed(1), font: `700 ${13 * scale}px sans-serif`, color: accent },
+      { text: "/10", font: `600 ${9 * scale}px sans-serif`, color: accent },
+    ],
+    cardX + cardWidth - cardPadding,
+    cardY + cardPadding + 27 * scale,
+    "right"
+  );
+
+  cueLines.forEach((line, i) => {
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = cueFont;
+    ctx.fillText(
+      line,
+      cardX + cardPadding,
+      cardY + cardPadding + 44 * scale + i * lineHeight
+    );
+  });
+
+  drawWatermark(ctx, canvas);
+}
+
+// Badge "RALENTI" en haut, pour que le spectateur comprenne que la vidéo
+// n'a pas bugué et qu'on lui rejoue volontairement le moment clé.
+function drawSlowMotionBadge(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+  const w = canvas.width;
+  const scale = w / 400;
+  const text = "RALENTI · MOMENT CLÉ";
+  const font = `700 ${9 * scale}px sans-serif`;
+  ctx.font = font;
+  const paddingX = 12 * scale;
+  const badgeWidth = ctx.measureText(text).width + paddingX * 2;
+  const badgeHeight = 22 * scale;
+  const badgeX = (w - badgeWidth) / 2;
+  const badgeY = 16 * scale;
+
+  fillRoundedRect(ctx, badgeX, badgeY, badgeWidth, badgeHeight, badgeHeight / 2, "rgba(2,6,23,0.72)");
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#38bdf8";
+  ctx.font = font;
+  ctx.fillText(text, w / 2, badgeY + badgeHeight / 2);
+  ctx.textBaseline = "alphabetic";
+}
+
+// Joue un segment de la vidéo en appelant drawFrame à chaque image
+// réellement décodée. Extrait de la boucle principale pour être réutilisé
+// par le ralenti, avec les mêmes filets de sécurité (voir plus bas).
+async function playSegment({
+  video,
+  from,
+  to,
+  playbackRate = 1,
+  drawFrame,
+}: {
+  video: HTMLVideoElement;
+  from: number;
+  to: number;
+  playbackRate?: number;
+  drawFrame: (mediaTime: number) => void;
+}): Promise<void> {
+  const supportsFrameCallback =
+    typeof (video as VideoWithFrameCallback).requestVideoFrameCallback === "function";
+
+  await seekTo(video, from);
+  video.playbackRate = playbackRate;
+  await video.play();
+
+  await new Promise<void>((resolve) => {
+    function reachedEnd() {
+      return video.paused || video.ended || video.currentTime >= to;
+    }
+
+    // requestVideoFrameCallback ne se redéclenche que s'il existe une
+    // prochaine frame à présenter : si la vidéo atteint sa fin et se met en
+    // pause juste après avoir présenté l'avant-dernière image, il n'y a
+    // plus jamais de "prochaine frame" pour déclencher un dernier appel —
+    // la boucle attendrait alors indéfiniment un callback qui ne vient
+    // plus. Les événements 'ended'/'pause' du lecteur servent de filet, et
+    // un timeout de sécurité couvre tout autre blocage imprévu.
+    let settled = false;
+    function finish() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(safetyTimeout);
+      video.removeEventListener("ended", finish);
+      video.removeEventListener("pause", finish);
+      video.pause();
+      resolve();
+    }
+    const safetyTimeout = setTimeout(
+      finish,
+      Math.max(5000, ((to - from) * 1000 * 3) / playbackRate)
+    );
+    video.addEventListener("ended", finish);
+    video.addEventListener("pause", finish);
+
+    if (supportsFrameCallback) {
+      const videoWithCallback = video as Required<VideoWithFrameCallback>;
+      function onFrame(_now: number, metadata: { mediaTime: number }) {
+        if (settled || reachedEnd()) {
+          finish();
+          return;
+        }
+        drawFrame(metadata.mediaTime);
+        if (!settled) videoWithCallback.requestVideoFrameCallback(onFrame);
+      }
+      videoWithCallback.requestVideoFrameCallback(onFrame);
+    } else {
+      // rAF tourne sur l'horloge d'affichage, indépendante de la vidéo, et
+      // peut sauter des portions si le dessin prend du retard — repli
+      // uniquement, quand requestVideoFrameCallback n'existe pas.
+      function loop() {
+        if (settled || reachedEnd()) {
+          finish();
+          return;
+        }
+        drawFrame(video.currentTime);
+        if (!settled) requestAnimationFrame(loop);
+      }
+      loop();
+    }
+  });
+
+  video.playbackRate = 1;
+}
+
 export async function recordAnnotatedVideo({
   video,
   canvas,
@@ -536,6 +787,7 @@ export async function recordAnnotatedVideo({
   holdStartSeconds,
   holdEndSeconds,
   holdDurationSeconds,
+  weakPointCue,
   onProgress,
 }: {
   video: HTMLVideoElement;
@@ -565,6 +817,9 @@ export async function recordAnnotatedVideo({
   // Durée finale du hold (secondes) — affichée sur l'écran de révélation
   // à la fin de la vidéo, sous le score final.
   holdDurationSeconds?: number | null;
+  // Conseil affiché pendant le ralenti sur le point faible (typiquement la
+  // première recommandation de l'analyse).
+  weakPointCue?: string | null;
   onProgress?: (percent: number) => void;
 }): Promise<Blob> {
   const hudHoldStart = holdStartSeconds ?? rangeStart;
@@ -600,20 +855,6 @@ export async function recordAnnotatedVideo({
     recorder.onerror = (e) => reject(e);
   });
 
-  // Piloté par requestVideoFrameCallback plutôt que par seek manuel ou par
-  // requestAnimationFrame : seeker image par image s'est révélé bien pire
-  // (chercher une position précise force le navigateur à redécoder depuis
-  // l'image-clé précédente, ce qui peut coûter largement plus qu'un cycle
-  // d'image selon la vidéo — d'où le rendu au ralenti observé). rAF seul a
-  // le défaut inverse : il tourne sur l'horloge d'affichage, indépendante
-  // de la vidéo, et peut donc sauter des portions de la source si le dessin
-  // prend du retard. requestVideoFrameCallback se déclenche exactement une
-  // fois par frame vidéo réellement décodée pendant une lecture normale —
-  // aucun seek, aucune horloge indépendante, la durée de sortie suit
-  // naturellement la vraie durée de lecture.
-  const supportsFrameCallback =
-    typeof (video as VideoWithFrameCallback).requestVideoFrameCallback === "function";
-
   video.currentTime = rangeStart;
   await seekTo(video, rangeStart);
   // Timeslice de 1s : sans argument, MediaRecorder n'encode et ne livre
@@ -623,7 +864,6 @@ export async function recordAnnotatedVideo({
   // l'enregistrement (visible dans la progression 0-99%), et il ne reste
   // au stop() que le dernier fragment (~1s) à finaliser.
   recorder.start(1000);
-  await video.play();
 
   // Repli tant qu'aucune frame n'a encore été traitée (ou si une frame n'a
   // pas de landmarks détectés) : le score final sert de valeur de départ,
@@ -631,26 +871,30 @@ export async function recordAnnotatedVideo({
   let liveScores = scores;
   let liveGlobalScoreValue = globalScoreValue;
 
-  await new Promise<void>((resolve) => {
-    function drawFrame(mediaTime: number) {
+  function landmarksAt(progress: number): NormalizedLandmark[] | undefined {
+    if (!landmarksFrames) {
+      return landmarker?.detectForVideo(video, performance.now()).landmarks[0];
+    }
+    const frameIndex = Math.min(
+      landmarksFrames.length - 1,
+      Math.max(0, Math.floor(progress * landmarksFrames.length))
+    );
+    return landmarksFrames[frameIndex];
+  }
+
+  // --- Passe 1 : la figure, annotée en direct ---
+  await playSegment({
+    video,
+    from: rangeStart,
+    to: rangeEnd,
+    drawFrame(mediaTime) {
       const elapsed = mediaTime - rangeStart;
       const progress = Math.min(1, Math.max(0, elapsed / (rangeEnd - rangeStart)));
-      // Plafonné à 99 : la dernière frame dessinée n'est pas encore la
-      // vidéo finale, il reste l'assemblage du fichier par le navigateur
-      // (recorder.stop() + flush) une fois la boucle de dessin terminée.
-      // 100% n'est envoyé qu'une fois ce fichier réellement prêt, plus bas.
-      onProgress?.(Math.min(99, Math.round(progress * 100)));
+      // Plafonné à 90 : après cette passe il reste le ralenti et l'écran
+      // final. 100% n'est envoyé qu'une fois le fichier réellement prêt.
+      onProgress?.(Math.min(90, Math.round(progress * 90)));
 
-      let landmarks: NormalizedLandmark[] | undefined;
-      if (landmarksFrames) {
-        const frameIndex = Math.min(
-          landmarksFrames.length - 1,
-          Math.max(0, Math.floor(progress * landmarksFrames.length))
-        );
-        landmarks = landmarksFrames[frameIndex];
-      } else {
-        landmarks = landmarker?.detectForVideo(video, performance.now()).landmarks[0];
-      }
+      const landmarks = landmarksAt(progress);
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       if (landmarks) {
@@ -693,60 +937,81 @@ export async function recordAnnotatedVideo({
         globalScoreValue: liveGlobalScoreValue,
         scores: liveScores,
       });
-    }
-
-    function finishedRange() {
-      return video.paused || video.ended || video.currentTime >= rangeEnd;
-    }
-
-    // requestVideoFrameCallback ne se redéclenche que s'il existe une
-    // prochaine frame à présenter : si la vidéo atteint sa fin et se met en
-    // pause juste après avoir présenté l'avant-dernière image, il n'y a
-    // plus jamais de "prochaine frame" pour déclencher un dernier appel —
-    // la boucle attendrait alors indéfiniment un callback qui ne vient
-    // plus, sans jamais résoudre l'export. Les événements 'ended'/'pause'
-    // du lecteur servent de filet pour terminer proprement dans ce cas, et
-    // un timeout de sécurité couvre tout autre blocage imprévu.
-    let settled = false;
-    function finish() {
-      if (settled) return;
-      settled = true;
-      clearTimeout(safetyTimeout);
-      video.removeEventListener("ended", finish);
-      video.removeEventListener("pause", finish);
-      video.pause();
-      resolve();
-    }
-    const safetyTimeout = setTimeout(
-      finish,
-      Math.max(5000, (rangeEnd - rangeStart) * 1000 * 3)
-    );
-    video.addEventListener("ended", finish);
-    video.addEventListener("pause", finish);
-
-    if (supportsFrameCallback) {
-      const videoWithCallback = video as Required<VideoWithFrameCallback>;
-      function onFrame(_now: number, metadata: { mediaTime: number }) {
-        if (settled || finishedRange()) {
-          finish();
-          return;
-        }
-        drawFrame(metadata.mediaTime);
-        if (!settled) videoWithCallback.requestVideoFrameCallback(onFrame);
-      }
-      videoWithCallback.requestVideoFrameCallback(onFrame);
-    } else {
-      function loop() {
-        if (settled || finishedRange()) {
-          finish();
-          return;
-        }
-        drawFrame(video.currentTime);
-        if (!settled) requestAnimationFrame(loop);
-      }
-      loop();
-    }
+    },
   });
+
+  // --- Passe 2 : ralenti sur le pire moment du critère le plus faible ---
+  // C'est le cœur du coaching : au lieu d'annoncer "coudes 3.5/10", on
+  // rejoue au ralenti l'instant précis où c'était le pire, articulations
+  // fautives entourées, avec le conseil de correction.
+  const weakest = scores.length > 0
+    ? scores.reduce((worst, s) => (s.score < worst.score ? s : worst))
+    : null;
+
+  if (weakest && landmarksFrames && landmarksFrames.length > 0) {
+    const total = landmarksFrames.length;
+    const span = rangeEnd - rangeStart;
+    const timeAt = (i: number) => rangeStart + (i / total) * span;
+
+    // Cherché uniquement dans la fenêtre du hold : une frame de mise en
+    // place ou de sortie serait toujours "la pire" sans rien apprendre.
+    let worstIndex = -1;
+    let worstScore = Infinity;
+    for (let i = 0; i < total; i++) {
+      const t = timeAt(i);
+      if (t < hudHoldStart || t > hudHoldEnd) continue;
+      const frameScore = scoreAngles(computeAngles(landmarksFrames[i]), progression).find(
+        (s) => s.critere === weakest.critere
+      );
+      if (frameScore && frameScore.score < worstScore) {
+        worstScore = frameScore.score;
+        worstIndex = i;
+      }
+    }
+
+    if (worstIndex >= 0) {
+      const worstTime = timeAt(worstIndex);
+      const replayFrom = Math.max(rangeStart, worstTime - 0.5);
+      const replayTo = Math.min(rangeEnd, worstTime + 0.5);
+      const replayStartedAt = performance.now();
+
+      await playSegment({
+        video,
+        from: replayFrom,
+        to: replayTo,
+        // 0.25x : ~1s de vidéo étalée sur ~4s, assez lent pour voir le
+        // défaut sans casser le rythme de la vidéo publiée.
+        playbackRate: 0.25,
+        drawFrame(mediaTime) {
+          const progress = Math.min(
+            1,
+            Math.max(0, (mediaTime - rangeStart) / span)
+          );
+          const landmarks = landmarksAt(progress);
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          if (landmarks) {
+            // Squelette volontairement atténué ici : l'attention doit aller
+            // aux anneaux du point faible, pas au tracé complet.
+            drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
+              color: "rgba(34,211,238,0.35)",
+              lineWidth: 2,
+            });
+          }
+
+          drawSlowMotionBadge(ctx, canvas);
+          drawWeakPointOverlay(ctx, canvas, {
+            landmarks,
+            critere: weakest.critere,
+            score: worstScore,
+            cue: weakPointCue ?? null,
+            phase: ((performance.now() - replayStartedAt) / 900) % 1,
+          });
+        },
+      });
+    }
+  }
+  onProgress?.(95);
 
   // Écran de révélation du score final, apposé après la fin du hold plutôt
   // que de couper directement sur la dernière frame (sortie de figure) —
