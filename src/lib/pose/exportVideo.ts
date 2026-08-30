@@ -317,7 +317,9 @@ function drawOutro(
   ctx.fillRect(0, 0, w, h);
 
   const cardWidth = Math.min(w - 48 * scale, 240 * scale);
-  const cardHeight = 210 * scale;
+  // Hauteur adaptée à ce qu'on affiche : plus courte quand il n'y a pas
+  // de hold à montrer, pour ne pas laisser un grand vide sous le score.
+  const cardHeight = (holdDurationSeconds !== null ? 232 : 168) * scale;
   const cardX = (w - cardWidth) / 2;
   const cardY = (h - cardHeight) / 2;
   const centerX = w / 2;
@@ -331,15 +333,21 @@ function drawOutro(
   ctx.strokeStyle = tierColor;
   ctx.stroke();
 
-  ctx.textAlign = "center";
+  // Layout vertical : positions en Y calculées par rapport au haut de la
+  // carte, chaque ligne re-force textAlign="center" (drawMixedText remet
+  // à "left" après chaque appel, sinon les fillText suivants seraient
+  // décalés vers la droite malgré le centerX passé en x).
   ctx.textBaseline = "alphabetic";
+
+  ctx.textAlign = "center";
   ctx.fillStyle = "#f8fafc";
   ctx.font = `700 ${14 * scale}px sans-serif`;
-  ctx.fillText(figureLabel, centerX, cardY + 34 * scale);
+  ctx.fillText(figureLabel, centerX, cardY + 36 * scale);
 
+  ctx.textAlign = "center";
   ctx.fillStyle = "#94a3b8";
   ctx.font = `700 ${10 * scale}px sans-serif`;
-  ctx.fillText("SCORE FINAL", centerX, cardY + 52 * scale);
+  ctx.fillText("SCORE FINAL", centerX, cardY + 56 * scale);
 
   drawMixedText(
     ctx,
@@ -348,7 +356,7 @@ function drawOutro(
       { text: "/10", font: `700 ${18 * scale}px sans-serif`, color: tierColor },
     ],
     centerX,
-    cardY + 116 * scale,
+    cardY + 118 * scale,
     "center"
   );
 
@@ -356,17 +364,18 @@ function drawOutro(
   // qui comptent (qualité + durée) en un coup d'œil. Ne s'affiche pas si
   // aucun hold stable n'a été détecté, pour ne pas mentir avec un 0.0s.
   if (holdDurationSeconds !== null) {
-    const separatorY = cardY + 140 * scale;
+    const separatorY = cardY + 144 * scale;
     ctx.strokeStyle = "rgba(148,163,184,0.25)";
     ctx.lineWidth = 1 * scale;
     ctx.beginPath();
-    ctx.moveTo(cardX + 24 * scale, separatorY);
-    ctx.lineTo(cardX + cardWidth - 24 * scale, separatorY);
+    ctx.moveTo(cardX + 32 * scale, separatorY);
+    ctx.lineTo(cardX + cardWidth - 32 * scale, separatorY);
     ctx.stroke();
 
+    ctx.textAlign = "center";
     ctx.fillStyle = "#94a3b8";
     ctx.font = `700 ${9 * scale}px sans-serif`;
-    ctx.fillText("HOLD TENU", centerX, cardY + 158 * scale);
+    ctx.fillText("HOLD TENU", centerX, cardY + 168 * scale);
 
     drawMixedText(
       ctx,
@@ -375,11 +384,12 @@ function drawOutro(
         { text: "s", font: `600 ${12 * scale}px sans-serif`, color: "#38bdf8" },
       ],
       centerX,
-      cardY + 185 * scale,
+      cardY + 198 * scale,
       "center"
     );
   }
 
+  ctx.textAlign = "center";
   ctx.fillStyle = "#475569";
   ctx.font = `700 ${9 * scale}px sans-serif`;
   ctx.fillText("CALISIQ", centerX, cardY + cardHeight - 14 * scale);
