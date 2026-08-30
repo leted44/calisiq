@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis";
 import { downloadBlob } from "@/lib/pose/exportVideo";
+import { compressVideoSegment } from "@/lib/video/compress";
 import type { PoseAngles } from "@/lib/pose/angles";
 import type { Progression } from "@/lib/pose/grid";
 import CaptureTipsModal, { shouldSkipTips } from "./CaptureTipsModal";
@@ -300,6 +301,8 @@ export default function AnalysisForm() {
   const [liveAngles, setLiveAngles] = useState<PoseAngles | null>(null);
   const [result, setResult] = useState<PoseAnalysisResult | null>(null);
   const [saving, setSaving] = useState(false);
+  const [compressing, setCompressing] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState(0);
   const [saveError, setSaveError] = useState<string | null>(null);
   // L'enregistrement dans l'historique/la progression est désormais un
   // choix explicite (bouton), plus une sauvegarde automatique après
@@ -587,15 +590,51 @@ export default function AnalysisForm() {
       return;
     }
 
-    const extension = file.name.split(".").pop() ?? "mp4";
+    // On ne conserve que le segment analysé, ré-encodé à 1080p : téléverser
+    // le clip d'origine en entier faisait dépasser la limite de 50 Mo par
+    // fichier pour des vidéos dont le passage utile pèse quelques Mo, et
+    // consommait le quota de stockage (1 Go) bien plus vite que nécessaire.
+    let uploadFile = file;
+    // Bornes à enregistrer : après découpe, le segment commence à 0. Sans
+    // cette remise à zéro, la ré-analyse depuis l'historique chercherait
+    // aux positions de la vidéo d'origine, en dehors du fichier stocké.
+    let storedTrimStart = trimStart;
+    let storedTrimEnd = trimEnd;
+
+    setCompressing(true);
+    setCompressionProgress(0);
+    try {
+      const compressed = await compressVideoSegment({
+        file,
+        rangeStart: trimStart,
+        rangeEnd: trimEnd,
+        onProgress: setCompressionProgress,
+      });
+      // Un ré-encodage plus lourd que l'original n'apporte rien : ça arrive
+      // sur une vidéo déjà très compressée dont on garde presque tout.
+      if (compressed && compressed.compressedBytes < compressed.originalBytes) {
+        uploadFile = compressed.file;
+        storedTrimStart = 0;
+        storedTrimEnd = trimEnd - trimStart;
+      }
+    } catch {
+      // Compression impossible (codec indisponible, vidéo illisible) : on
+      // téléverse le fichier d'origine plutôt que de bloquer l'utilisateur.
+    } finally {
+      setCompressing(false);
+    }
+
+    const extension = uploadFile.name.split(".").pop() ?? "mp4";
     const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
 
-    const { error: uploadError } = await supabase.storage.from("videos").upload(path, file);
+    const { error: uploadError } = await supabase.storage
+      .from("videos")
+      .upload(path, uploadFile);
     if (uploadError) {
       const isSizeError = /maximum allowed size/i.test(uploadError.message);
       setSaveError(
         isSizeError
-          ? "Vidéo non sauvegardée : elle dépasse la limite de stockage actuelle (50 Mo)."
+          ? "Vidéo non sauvegardée : même après découpe, elle dépasse la limite de 50 Mo. Réduis la durée du segment analysé."
           : uploadError.message
       );
       setSaving(false);
@@ -609,8 +648,8 @@ export default function AnalysisForm() {
         video_url: path,
         progression,
         status: analysisResult.ok ? "done" : "error",
-        trim_start: trimStart,
-        trim_end: trimEnd,
+        trim_start: storedTrimStart,
+        trim_end: storedTrimEnd,
         hold_duration_seconds: analysisResult.ok
           ? analysisResult.holdDurationSeconds
           : null,
@@ -928,8 +967,8 @@ export default function AnalysisForm() {
             Vidéo
           </p>
           <p className="text-xs text-slate-500">
-            MP4, MOV, WebM · vidéo sauvegardée dans l&apos;historique si elle
-            fait moins de 50 Mo
+            MP4, MOV, WebM · seul le segment que tu analyses est conservé dans
+            l&apos;historique, allégé automatiquement
           </p>
           <div className="grid grid-cols-2 gap-3">
             <button
@@ -1221,7 +1260,11 @@ export default function AnalysisForm() {
               disabled={saving}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)] disabled:opacity-50"
             >
-              {saving ? "Enregistrement..." : "Enregistrer cette figure"}
+              {compressing
+                ? `Préparation de la vidéo... ${compressionProgress}%`
+                : saving
+                ? "Enregistrement..."
+                : "Enregistrer cette figure"}
             </button>
           )}
 

@@ -19,6 +19,7 @@ import {
 } from "./recommendations";
 import type { Progression } from "./grid";
 import { drawAngleLabels } from "./canvasHud";
+import { seekTo } from "@/lib/video/playback";
 
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
@@ -49,16 +50,6 @@ export function getLandmarker() {
   return sharedLandmarkerPromise;
 }
 
-export function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
-  return new Promise((resolve) => {
-    function onSeeked() {
-      video.removeEventListener("seeked", onSeeked);
-      resolve();
-    }
-    video.addEventListener("seeked", onSeeked);
-    video.currentTime = time;
-  });
-}
 
 export type PoseAnalysisResult =
   | {

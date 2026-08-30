@@ -4,7 +4,8 @@ import {
   type NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
 import { scoreAngles, globalScore, type CriterionScore } from "./scoring";
-import { getLandmarker, seekTo } from "./runAnalysis";
+import { getLandmarker } from "./runAnalysis";
+import { seekTo, playSegment } from "@/lib/video/playback";
 import { computeAngles } from "./angles";
 import { drawAngleLabels } from "./canvasHud";
 import { buildTargetPose, type TargetPose } from "./targetPose";
@@ -15,14 +16,6 @@ const EXPORT_FPS = 30;
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
-// requestVideoFrameCallback n'est pas encore dans tous les lib.dom.d.ts —
-// typé ici a minima plutôt que d'élargir le lib cible du projet pour ça.
-type VideoWithFrameCallback = HTMLVideoElement & {
-  requestVideoFrameCallback?: (
-    callback: (now: number, metadata: { mediaTime: number }) => void
-  ) => number;
-};
 
 // Taille max de sortie, alignée sur ce que consomment réellement Instagram/
 // TikTok (1080x1920 en portrait) — exporter en UHD natif (souvent 2160x3840
@@ -780,88 +773,6 @@ function drawSlowMotionBadge(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEl
   ctx.font = font;
   ctx.fillText(text, w / 2, badgeY + badgeHeight / 2);
   ctx.textBaseline = "alphabetic";
-}
-
-// Joue un segment de la vidéo en appelant drawFrame à chaque image
-// réellement décodée. Extrait de la boucle principale pour être réutilisé
-// par le ralenti, avec les mêmes filets de sécurité (voir plus bas).
-async function playSegment({
-  video,
-  from,
-  to,
-  playbackRate = 1,
-  drawFrame,
-}: {
-  video: HTMLVideoElement;
-  from: number;
-  to: number;
-  playbackRate?: number;
-  drawFrame: (mediaTime: number) => void;
-}): Promise<void> {
-  const supportsFrameCallback =
-    typeof (video as VideoWithFrameCallback).requestVideoFrameCallback === "function";
-
-  await seekTo(video, from);
-  video.playbackRate = playbackRate;
-  await video.play();
-
-  await new Promise<void>((resolve) => {
-    function reachedEnd() {
-      return video.paused || video.ended || video.currentTime >= to;
-    }
-
-    // requestVideoFrameCallback ne se redéclenche que s'il existe une
-    // prochaine frame à présenter : si la vidéo atteint sa fin et se met en
-    // pause juste après avoir présenté l'avant-dernière image, il n'y a
-    // plus jamais de "prochaine frame" pour déclencher un dernier appel —
-    // la boucle attendrait alors indéfiniment un callback qui ne vient
-    // plus. Les événements 'ended'/'pause' du lecteur servent de filet, et
-    // un timeout de sécurité couvre tout autre blocage imprévu.
-    let settled = false;
-    function finish() {
-      if (settled) return;
-      settled = true;
-      clearTimeout(safetyTimeout);
-      video.removeEventListener("ended", finish);
-      video.removeEventListener("pause", finish);
-      video.pause();
-      resolve();
-    }
-    const safetyTimeout = setTimeout(
-      finish,
-      Math.max(5000, ((to - from) * 1000 * 3) / playbackRate)
-    );
-    video.addEventListener("ended", finish);
-    video.addEventListener("pause", finish);
-
-    if (supportsFrameCallback) {
-      const videoWithCallback = video as Required<VideoWithFrameCallback>;
-      function onFrame(_now: number, metadata: { mediaTime: number }) {
-        if (settled || reachedEnd()) {
-          finish();
-          return;
-        }
-        drawFrame(metadata.mediaTime);
-        if (!settled) videoWithCallback.requestVideoFrameCallback(onFrame);
-      }
-      videoWithCallback.requestVideoFrameCallback(onFrame);
-    } else {
-      // rAF tourne sur l'horloge d'affichage, indépendante de la vidéo, et
-      // peut sauter des portions si le dessin prend du retard — repli
-      // uniquement, quand requestVideoFrameCallback n'existe pas.
-      function loop() {
-        if (settled || reachedEnd()) {
-          finish();
-          return;
-        }
-        drawFrame(video.currentTime);
-        if (!settled) requestAnimationFrame(loop);
-      }
-      loop();
-    }
-  });
-
-  video.playbackRate = 1;
 }
 
 export async function recordAnnotatedVideo({
