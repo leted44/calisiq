@@ -844,8 +844,27 @@ export async function recordAnnotatedVideo({
     25_000_000,
     Math.max(6_000_000, Math.round(canvas.width * canvas.height * 9))
   );
-  const canvasStream = canvas.captureStream(EXPORT_FPS);
-  const recorder = new MediaRecorder(canvasStream, { mimeType, videoBitsPerSecond });
+  // Capture pilotée explicitement (frameRate 0 + requestFrame) plutôt
+  // qu'automatique : en mode automatique, le navigateur décide seul qu'une
+  // image est "nouvelle" en détectant que le canvas a changé, et cesse
+  // d'alimenter le flux dès qu'il estime qu'il ne se passe plus rien. Entre
+  // deux phases (fin de la figure, ralenti, écran final) le rendu marque
+  // des pauses, et le flux se tarissait — la vidéo exportée s'arrêtait à
+  // la fin de la première phase. En signalant nous-mêmes chaque image
+  // dessinée, aucune phase ne peut plus être omise.
+  const canvasStream = canvas.captureStream(0);
+  const captureTrack = canvasStream.getVideoTracks()[0] as MediaStreamTrack & {
+    requestFrame?: () => void;
+  };
+  const supportsManualCapture = typeof captureTrack?.requestFrame === "function";
+  // Repli sur la capture automatique si requestFrame n'existe pas : mieux
+  // vaut le comportement imparfait que pas de vidéo du tout.
+  const stream = supportsManualCapture ? canvasStream : canvas.captureStream(EXPORT_FPS);
+  const commitFrame = supportsManualCapture
+    ? () => captureTrack.requestFrame!()
+    : () => {};
+
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond });
   const chunks: Blob[] = [];
   recorder.ondataavailable = (e) => {
     if (e.data.size > 0) chunks.push(e.data);
@@ -938,6 +957,7 @@ export async function recordAnnotatedVideo({
         globalScoreValue: liveGlobalScoreValue,
         scores: liveScores,
       });
+      commitFrame();
     },
   });
 
@@ -990,7 +1010,14 @@ export async function recordAnnotatedVideo({
       // la phase d'entrée dans la figure, exactement ce qu'on cherche à
       // ne pas montrer comme "erreur".
       const replayFrom = Math.max(hudHoldStart, worstTime - 0.5);
-      const replayTo = Math.min(hudHoldEnd, worstTime + 0.5);
+      // Au moins 0.4s de matière, quitte à mordre en dehors de la fenêtre
+      // du hold : sur un hold très court, borner des deux côtés pouvait
+      // produire un intervalle vide, et le ralenti était alors sauté sans
+      // que rien ne le signale.
+      const replayTo = Math.max(
+        replayFrom + 0.4,
+        Math.min(hudHoldEnd, worstTime + 0.5)
+      );
       const replayStartedAt = performance.now();
 
       await playSegment({
@@ -1035,6 +1062,7 @@ export async function recordAnnotatedVideo({
             cue: weakPointCue ?? null,
             phase,
           });
+          commitFrame();
         },
       });
     }
@@ -1044,9 +1072,12 @@ export async function recordAnnotatedVideo({
   // Écran de révélation du score final, apposé après la fin du hold plutôt
   // que de couper directement sur la dernière frame (sortie de figure) —
   // fondu d'apparition sur les ~600 premières ms, puis tenu à l'écran.
-  const OUTRO_STEP_MS = 100;
-  const OUTRO_STEPS = 20;
-  const OUTRO_FADE_STEPS = 6;
+  // ~25 images/seconde plutôt que 10 : le fondu d'apparition est plus
+  // fluide, et surtout la phase produit assez d'images pour peser dans le
+  // fichier final au lieu de passer pour un gel d'image.
+  const OUTRO_STEP_MS = 40;
+  const OUTRO_STEPS = 60;
+  const OUTRO_FADE_STEPS = 15;
   for (let i = 0; i < OUTRO_STEPS; i++) {
     const cardOpacity = Math.min(1, (i + 1) / OUTRO_FADE_STEPS);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -1057,6 +1088,7 @@ export async function recordAnnotatedVideo({
       scores,
       cardOpacity,
     });
+    commitFrame();
     await sleep(OUTRO_STEP_MS);
   }
 
