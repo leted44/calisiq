@@ -57,6 +57,7 @@ async function pickCodec(
         width,
         height,
         bitrate,
+        avc: { format: "avc" },
       });
       if (support.supported) return codec;
     } catch {
@@ -67,20 +68,28 @@ async function pickCodec(
 }
 
 // Vérifie que ce navigateur encode réellement ce canvas avec cette config,
-// sur un encodeur jetable. isConfigSupported() est déclaratif et se trompe :
-// il a annoncé "supporté" sur des configurations que l'encodeur matériel
-// refusait ensuite image par image. Sans cette vérification, l'échec ne se
-// voyait qu'à la toute fin, une fois toutes les images perdues.
+// sur un encodeur jetable.
+//
+// Deux raisons de ne pas se fier à isConfigSupported() seul. Il est
+// déclaratif et annonce "supporté" des configurations que l'encodeur
+// matériel refuse ensuite image par image. Et surtout, il ne dit rien de
+// la `decoderConfig` : le muxer en a besoin pour écrire l'en-tête MP4
+// (description du codec, espace colorimétrique), et un encodeur peut
+// produire des images tout en ne la fournissant jamais — c'est exactement
+// ce qui faisait échouer l'export à la toute fin, une fois toutes les
+// images déjà perdues.
 async function canActuallyEncode(
   canvas: HTMLCanvasElement,
   config: VideoEncoderConfig
 ): Promise<boolean> {
-  let chunks = 0;
+  let usable = false;
   let failed = false;
   try {
     const probe = new VideoEncoder({
-      output: () => {
-        chunks += 1;
+      output: (_chunk, meta) => {
+        // `description` est le bloc avcC dont le muxer a besoin ; sans lui
+        // le fichier produit serait illisible.
+        if (meta?.decoderConfig?.description) usable = true;
       },
       error: () => {
         failed = true;
@@ -95,7 +104,7 @@ async function canActuallyEncode(
   } catch {
     return false;
   }
-  return chunks > 0 && !failed;
+  return usable && !failed;
 }
 
 async function createWebCodecsWriter(
@@ -114,7 +123,17 @@ async function createWebCodecsWriter(
   const codec = await pickCodec(width, height, bitrate);
   if (!codec) return null;
 
-  const config: VideoEncoderConfig = { codec, width, height, bitrate };
+  const config: VideoEncoderConfig = {
+    codec,
+    width,
+    height,
+    bitrate,
+    // Format "avc" explicite : en annexb, le navigateur ne fournit pas de
+    // `description` dans la decoderConfig, et le muxer ne peut alors pas
+    // écrire l'en-tête MP4. La valeur par défaut varie selon l'encodeur
+    // retenu (matériel ou logiciel), donc on ne la laisse pas au hasard.
+    avc: { format: "avc" },
+  };
   if (!(await canActuallyEncode(canvas, config))) return null;
 
   const muxer = new Muxer({
@@ -127,9 +146,11 @@ async function createWebCodecsWriter(
 
   let failure: Error | null = null;
   let chunkCount = 0;
+  let gotDecoderConfig = false;
   const encoder = new VideoEncoder({
     output: (chunk, meta) => {
       chunkCount += 1;
+      if (meta?.decoderConfig?.description) gotDecoderConfig = true;
       muxer.addVideoChunk(chunk, meta);
     },
     error: (e) => {
@@ -171,11 +192,14 @@ async function createWebCodecsWriter(
       await encoder.flush();
       encoder.close();
       if (failure) throw failure;
-      // Sans la moindre image encodée, le muxer échouerait sur une erreur
-      // interne obscure ("colorSpace of null") : on préfère un message qui
-      // dit ce qui s'est passé.
+      // Sans image encodée, ou sans description du codec, le muxer
+      // échouerait sur une erreur interne obscure ("colorSpace of null").
+      // On préfère un message qui dit ce qui s'est réellement passé.
       if (chunkCount === 0) {
         throw new Error("Aucune image n'a pu être encodée.");
+      }
+      if (!gotDecoderConfig) {
+        throw new Error("Encodeur vidéo incomplet sur cet appareil.");
       }
       muxer.finalize();
       const { buffer } = muxer.target as ArrayBufferTarget;
