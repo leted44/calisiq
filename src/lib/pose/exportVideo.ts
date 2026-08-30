@@ -298,6 +298,7 @@ function drawOutro(
     figureLabel,
     globalScoreValue,
     holdDurationSeconds,
+    scores,
     cardOpacity,
   }: {
     figureLabel: string;
@@ -305,6 +306,9 @@ function drawOutro(
     // Durée réelle du hold à afficher à côté du score final ; null si la
     // détection n'a rien identifié de stable (voir hold-window plus haut).
     holdDurationSeconds: number | null;
+    // Détail par critère (mêmes labels/couleurs que le HUD en direct) —
+    // affiché en dernier bloc pour rappeler d'où vient le score final.
+    scores: CriterionScore[];
     cardOpacity: number;
   }
 ) {
@@ -316,10 +320,27 @@ function drawOutro(
   ctx.fillStyle = "rgba(2,6,23,0.72)";
   ctx.fillRect(0, 0, w, h);
 
-  const cardWidth = Math.min(w - 48 * scale, 240 * scale);
-  // Hauteur adaptée à ce qu'on affiche : plus courte quand il n'y a pas
-  // de hold à montrer, pour ne pas laisser un grand vide sous le score.
-  const cardHeight = (holdDurationSeconds !== null ? 232 : 168) * scale;
+  // Hauteurs de chaque section, empilées : plus simple à faire évoluer
+  // que des offsets Y absolus (ajouter/retirer un bloc ne casse plus
+  // tout le reste).
+  const cardWidth = Math.min(w - 32 * scale, 280 * scale);
+  const cardPaddingX = 20 * scale;
+  const titleSectionHeight = 44 * scale;
+  const scoreSectionHeight = 78 * scale;
+  const holdSectionHeight = holdDurationSeconds !== null ? 62 * scale : 0;
+  const detailRowHeight = 20 * scale;
+  const detailSectionHeight =
+    scores.length > 0
+      ? 18 * scale + scores.length * detailRowHeight + 8 * scale
+      : 0;
+  const brandSectionHeight = 22 * scale;
+  const cardHeight =
+    titleSectionHeight +
+    scoreSectionHeight +
+    holdSectionHeight +
+    detailSectionHeight +
+    brandSectionHeight;
+
   const cardX = (w - cardWidth) / 2;
   const cardY = (h - cardHeight) / 2;
   const centerX = w / 2;
@@ -333,38 +354,42 @@ function drawOutro(
   ctx.strokeStyle = tierColor;
   ctx.stroke();
 
-  // Layout vertical : positions en Y calculées par rapport au haut de la
-  // carte, chaque ligne re-force textAlign="center" (drawMixedText remet
-  // à "left" après chaque appel, sinon les fillText suivants seraient
-  // décalés vers la droite malgré le centerX passé en x).
   ctx.textBaseline = "alphabetic";
+  // drawMixedText remet ctx.textAlign à "left" à chaque appel, donc on
+  // re-force explicitement l'alignement voulu avant chaque fillText.
+  let cursorY = cardY;
 
+  // --- Section 1 : nom de la figure ---
+  cursorY += 30 * scale;
   ctx.textAlign = "center";
   ctx.fillStyle = "#f8fafc";
   ctx.font = `700 ${14 * scale}px sans-serif`;
-  ctx.fillText(figureLabel, centerX, cardY + 36 * scale);
+  ctx.fillText(figureLabel, centerX, cursorY);
+  cursorY += (titleSectionHeight - 30 * scale);
 
+  // --- Section 2 : score final ---
+  cursorY += 16 * scale;
   ctx.textAlign = "center";
   ctx.fillStyle = "#94a3b8";
   ctx.font = `700 ${10 * scale}px sans-serif`;
-  ctx.fillText("SCORE FINAL", centerX, cardY + 56 * scale);
+  ctx.fillText("SCORE FINAL", centerX, cursorY);
 
+  cursorY += 46 * scale;
   drawMixedText(
     ctx,
     [
-      { text: globalScoreValue.toFixed(1), font: `800 ${46 * scale}px sans-serif`, color: tierColor },
-      { text: "/10", font: `700 ${18 * scale}px sans-serif`, color: tierColor },
+      { text: globalScoreValue.toFixed(1), font: `800 ${40 * scale}px sans-serif`, color: tierColor },
+      { text: "/10", font: `700 ${16 * scale}px sans-serif`, color: tierColor },
     ],
     centerX,
-    cardY + 118 * scale,
+    cursorY,
     "center"
   );
+  cursorY += scoreSectionHeight - 62 * scale;
 
-  // Bloc HOLD sous le score final : donne au spectateur les deux chiffres
-  // qui comptent (qualité + durée) en un coup d'œil. Ne s'affiche pas si
-  // aucun hold stable n'a été détecté, pour ne pas mentir avec un 0.0s.
+  // --- Section 3 : hold tenu (masquée si aucun hold détecté) ---
   if (holdDurationSeconds !== null) {
-    const separatorY = cardY + 144 * scale;
+    const separatorY = cursorY + 8 * scale;
     ctx.strokeStyle = "rgba(148,163,184,0.25)";
     ctx.lineWidth = 1 * scale;
     ctx.beginPath();
@@ -372,27 +397,82 @@ function drawOutro(
     ctx.lineTo(cardX + cardWidth - 32 * scale, separatorY);
     ctx.stroke();
 
+    cursorY += 26 * scale;
     ctx.textAlign = "center";
     ctx.fillStyle = "#94a3b8";
     ctx.font = `700 ${9 * scale}px sans-serif`;
-    ctx.fillText("HOLD TENU", centerX, cardY + 168 * scale);
+    ctx.fillText("HOLD TENU", centerX, cursorY);
 
+    cursorY += 24 * scale;
     drawMixedText(
       ctx,
       [
-        { text: holdDurationSeconds.toFixed(1), font: `700 ${24 * scale}px sans-serif`, color: "#38bdf8" },
-        { text: "s", font: `600 ${12 * scale}px sans-serif`, color: "#38bdf8" },
+        { text: holdDurationSeconds.toFixed(1), font: `700 ${22 * scale}px sans-serif`, color: "#38bdf8" },
+        { text: "s", font: `600 ${11 * scale}px sans-serif`, color: "#38bdf8" },
       ],
       centerX,
-      cardY + 198 * scale,
+      cursorY,
       "center"
     );
+    cursorY += holdSectionHeight - 58 * scale;
   }
 
+  // --- Section 4 : détail par critère (identique au HUD en direct) ---
+  if (scores.length > 0) {
+    const separatorY = cursorY + 4 * scale;
+    ctx.strokeStyle = "rgba(148,163,184,0.25)";
+    ctx.lineWidth = 1 * scale;
+    ctx.beginPath();
+    ctx.moveTo(cardX + 32 * scale, separatorY);
+    ctx.lineTo(cardX + cardWidth - 32 * scale, separatorY);
+    ctx.stroke();
+
+    const labelWidth = 66 * scale;
+    const valueWidth = 40 * scale;
+    const barGap = 8 * scale;
+    const barX = cardX + cardPaddingX + labelWidth + barGap;
+    const barWidth = cardWidth - cardPaddingX * 2 - labelWidth - valueWidth - barGap * 2;
+    const barHeight = 5 * scale;
+
+    cursorY += 18 * scale;
+    scores.forEach((s) => {
+      const rowCenterY = cursorY + detailRowHeight / 2;
+      const textY = rowCenterY + 3 * scale;
+      const barY = rowCenterY - barHeight / 2;
+      const fillColor = scoreColor(s.score);
+
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#e2e8f0";
+      ctx.font = `600 ${9 * scale}px sans-serif`;
+      ctx.fillText(CRITERE_LABELS[s.critere], cardX + cardPaddingX, textY);
+
+      fillRoundedRect(ctx, barX, barY, barWidth, barHeight, barHeight / 2, "rgba(148,163,184,0.25)");
+      const filledWidth = Math.max(
+        barHeight,
+        (Math.max(0, Math.min(10, s.score)) / 10) * barWidth
+      );
+      fillRoundedRect(ctx, barX, barY, filledWidth, barHeight, barHeight / 2, fillColor);
+
+      drawMixedText(
+        ctx,
+        [
+          { text: s.score.toFixed(1), font: `700 ${9 * scale}px sans-serif`, color: fillColor },
+        ],
+        cardX + cardWidth - cardPaddingX,
+        textY,
+        "right"
+      );
+
+      cursorY += detailRowHeight;
+    });
+    cursorY += 8 * scale;
+  }
+
+  // --- Section 5 : marque ---
   ctx.textAlign = "center";
   ctx.fillStyle = "#475569";
   ctx.font = `700 ${9 * scale}px sans-serif`;
-  ctx.fillText("CALISIQ", centerX, cardY + cardHeight - 14 * scale);
+  ctx.fillText("CALISIQ", centerX, cardY + cardHeight - 12 * scale);
 
   ctx.globalAlpha = 1;
 }
@@ -635,6 +715,7 @@ export async function recordAnnotatedVideo({
       figureLabel,
       globalScoreValue,
       holdDurationSeconds: holdDurationSeconds ?? null,
+      scores,
       cardOpacity,
     });
     await sleep(OUTRO_STEP_MS);
