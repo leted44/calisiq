@@ -28,11 +28,26 @@ const RECORDER_MIME_TYPES = [
   "video/webm",
 ];
 
+// ~9 bits/pixel/frame à 30 images/s : nettement au-dessus du débit par
+// défaut du navigateur, pour un rendu net et publiable plutôt que
+// compressé. Recalculé après un éventuel redimensionnement, sinon une
+// vidéo réduite garderait le débit d'une 1080p et pèserait pour rien.
+export function bitrateFor(width: number, height: number): number {
+  return Math.min(25_000_000, Math.max(4_000_000, Math.round(width * height * 9)));
+}
+
 export type VideoWriter = {
   /** Enregistre l'état actuel du canvas comme une image de la vidéo. */
   addFrame: () => void;
   /** Termine l'encodage et renvoie le fichier final. */
   finish: () => Promise<Blob>;
+  /**
+   * false quand on a dû retomber sur MediaRecorder, dont l'en-tête déclare
+   * une durée fausse. Remonté jusqu'à l'interface pour prévenir que
+   * l'import réseau risque d'être tronqué, au lieu de laisser
+   * l'utilisateur le découvrir sur Instagram.
+   */
+  writesCorrectDuration: boolean;
 };
 
 function pickRecorderMimeType(): string {
@@ -163,6 +178,8 @@ async function createWebCodecsWriter(
   let frameCount = 0;
 
   return {
+    writesCorrectDuration: true,
+
     addFrame() {
       if (failure || encoder.state !== "configured") return;
       // addFrame est appelée depuis un callback du navigateur
@@ -237,6 +254,7 @@ function createRecorderWriter(
   recorder.start(1000);
 
   return {
+    writesCorrectDuration: false,
     addFrame() {
       if (manual) track.requestFrame!();
     },
@@ -247,15 +265,46 @@ function createRecorderWriter(
   };
 }
 
+// Redimensionne le canvas en conservant les proportions, côté le plus long
+// plafonné à maxDimension, dimensions forcées paires (exigence H.264).
+function resizeCanvas(canvas: HTMLCanvasElement, maxDimension: number) {
+  const longest = Math.max(canvas.width, canvas.height);
+  if (longest <= maxDimension) return;
+  const scale = maxDimension / longest;
+  const toEven = (v: number) => Math.max(2, Math.round((v * scale) / 2) * 2);
+  const width = toEven(canvas.width);
+  const height = toEven(canvas.height);
+  canvas.width = width;
+  canvas.height = height;
+}
+
 export async function createVideoWriter(
   canvas: HTMLCanvasElement,
-  bitrate: number,
   // Force la voie MediaRecorder. Utilisé pour la seconde tentative quand
   // l'encodage WebCodecs a échoué : mieux vaut une vidéo dont la durée
   // déclarée est imparfaite que pas de vidéo du tout.
   forceRecorder = false
 ): Promise<VideoWriter> {
-  if (forceRecorder) return createRecorderWriter(canvas, bitrate);
-  const webCodecs = await createWebCodecsWriter(canvas, bitrate).catch(() => null);
-  return webCodecs ?? createRecorderWriter(canvas, bitrate);
+  if (forceRecorder) {
+    return createRecorderWriter(canvas, bitrateFor(canvas.width, canvas.height));
+  }
+
+  // Les encodeurs matériels Android refusent fréquemment le 1080x1920 en
+  // portrait, alors qu'ils acceptent la même image en plus petit. On tente
+  // donc des tailles décroissantes avant de renoncer à WebCodecs : une
+  // vidéo 720p avec une durée correcte est bien plus utile qu'une 1080p
+  // qu'Instagram n'importe qu'au tiers.
+  //
+  // Le canvas vient d'être créé pour l'export et rien n'y est encore
+  // dessiné : le redimensionner ici est sans effet de bord.
+  for (const maxDimension of [Infinity, 720, 540]) {
+    resizeCanvas(canvas, maxDimension);
+    const writer = await createWebCodecsWriter(
+      canvas,
+      bitrateFor(canvas.width, canvas.height)
+    ).catch(() => null);
+    if (writer) return writer;
+  }
+
+  return createRecorderWriter(canvas, bitrateFor(canvas.width, canvas.height));
 }

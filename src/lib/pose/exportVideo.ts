@@ -805,7 +805,7 @@ export async function recordAnnotatedVideo({
   // tentative automatique quand l'encodage moderne a échoué.
   forceLegacyEncoder?: boolean;
   onProgress?: (percent: number) => void;
-}): Promise<Blob> {
+}): Promise<{ blob: Blob; writesCorrectDuration: boolean }> {
   const hudHoldStart = holdStartSeconds ?? rangeStart;
   const hudHoldEnd = holdEndSeconds ?? rangeEnd;
   const landmarker = landmarksFrames ? null : await getLandmarker();
@@ -824,17 +824,15 @@ export async function recordAnnotatedVideo({
   const ctx: CanvasRenderingContext2D = context2d;
   const drawingUtils = new DrawingUtils(ctx);
 
-  // ~9 bits/pixel/frame à 30fps : nettement au-dessus du bitrate par défaut
-  // du navigateur, pour un rendu net et publiable plutôt que compressé.
-  const bitrate = Math.min(
-    25_000_000,
-    Math.max(6_000_000, Math.round(canvas.width * canvas.height * 9))
-  );
   // Encode via WebCodecs quand c'est possible, sinon MediaRecorder (voir
-  // writer.ts) : la sortie de MediaRecorder déclarait une durée fausse dans
-  // son en-tête, et les importeurs stricts comme Instagram s'arrêtaient à
+  // writer.ts) : la sortie de MediaRecorder déclare une durée fausse dans
+  // son en-tête, et les importeurs stricts comme Instagram s'arrêtent à
   // cette durée au lieu de lire la vidéo entière.
-  const writer = await createVideoWriter(canvas, bitrate, forceLegacyEncoder);
+  //
+  // Attention : cet appel peut réduire la taille du canvas si l'encodeur de
+  // l'appareil refuse la résolution d'origine. Tout le dessin qui suit lit
+  // canvas.width/height à chaque image, donc s'adapte de lui-même.
+  const writer = await createVideoWriter(canvas, forceLegacyEncoder);
   const commitFrame = () => writer.addFrame();
 
   video.currentTime = rangeStart;
@@ -1050,7 +1048,7 @@ export async function recordAnnotatedVideo({
   video.pause();
   const blob = await writer.finish();
   onProgress?.(100);
-  return blob;
+  return { blob, writesCorrectDuration: writer.writesCorrectDuration };
 }
 
 export function downloadBlob(blob: Blob, filename: string) {

@@ -84,7 +84,7 @@ export default function ExportVideoButton({
     setError(null);
     setNotice(null);
 
-    async function render(forceLegacyEncoder: boolean): Promise<Blob> {
+    async function render(forceLegacyEncoder: boolean) {
       const canvas = document.createElement("canvas");
       return recordAnnotatedVideo({
         video: video!,
@@ -111,14 +111,19 @@ export default function ExportVideoButton({
       // du matériel du téléphone. S'il échoue pour une raison qu'on ne
       // peut pas anticiper, on refait l'export avec l'ancienne méthode
       // plutôt que de laisser l'utilisateur sans vidéo.
-      let blob: Blob;
+      let result: Awaited<ReturnType<typeof render>>;
       try {
-        blob = await render(false);
+        result = await render(false);
       } catch {
         setProgress(0);
-        blob = await render(true);
+        result = await render(true);
+      }
+      const { blob } = result;
+      // Prévenir explicitement plutôt que de laisser l'utilisateur
+      // découvrir la troncature une fois sur Instagram.
+      if (!result.writesCorrectDuration) {
         setNotice(
-          "Export réalisé en mode compatible. Si l'import réseau ne prend qu'une partie de la vidéo, signale-le."
+          "Mode compatible : la durée annoncée du fichier est incomplète, Instagram risque de n'importer que le début. Signale-le-moi si c'est le cas."
         );
       }
       const extension = blob.type.includes("mp4") ? "mp4" : "webm";
