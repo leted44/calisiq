@@ -284,6 +284,52 @@ function drawHud(
       "right"
     );
   });
+
+  // --- Filigrane de marque, coin haut-droit ---
+  // Présent sur chaque frame : c'est le levier de croissance organique de
+  // l'app (toute vidéo republiée sur Instagram/TikTok porte la marque).
+  // À rendre désactivable quand l'offre payante existera.
+  drawWatermark(ctx, canvas);
+}
+
+// Filigrane discret : point cyan + "CALISIQ", volontairement léger pour
+// ne pas parasiter la vidéo tout en restant lisible après la
+// recompression des réseaux sociaux.
+function drawWatermark(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+  const w = canvas.width;
+  const scale = w / 400;
+  const margin = 16 * scale;
+  const text = "CALISIQ";
+  const font = `700 ${9 * scale}px sans-serif`;
+  const dotRadius = 2.5 * scale;
+  const gap = 5 * scale;
+
+  ctx.font = font;
+  const textWidth = ctx.measureText(text).width;
+  const rightEdge = w - margin;
+  const dotX = rightEdge - textWidth - gap - dotRadius;
+  const centerY = margin + 9 * scale;
+
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+
+  // Halo léger pour rester lisible sur un fond clair comme sur un fond
+  // sombre, sans avoir à poser un rectangle opaque.
+  ctx.shadowColor = "rgba(2,6,23,0.9)";
+  ctx.shadowBlur = 4 * scale;
+
+  ctx.beginPath();
+  ctx.arc(dotX, centerY - 3 * scale, dotRadius, 0, Math.PI * 2);
+  ctx.fillStyle = "#22d3ee";
+  ctx.fill();
+
+  ctx.textAlign = "right";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = font;
+  ctx.fillText(text, rightEdge, centerY);
+
+  ctx.restore();
 }
 
 // Écran de révélation apposé après la fin du hold : un vrai moment de

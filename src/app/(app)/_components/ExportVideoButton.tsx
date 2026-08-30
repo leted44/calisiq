@@ -122,31 +122,49 @@ export default function ExportVideoButton({
     }
   }
 
-  async function handleShare() {
-    try {
-      const { blob, filename } = await generate();
-      const file = new File([blob], filename, { type: blob.type });
+  // Tente le partage natif SANS aucun await préalable : le navigateur exige
+  // que navigator.share() parte directement du clic (transient activation).
+  // Le moindre await avant l'appel, même sur une valeur déjà en cache, fait
+  // perdre ce "geste utilisateur" et provoque un NotAllowedError.
+  function shareNow(blob: Blob, filename: string): boolean {
+    const file = new File([blob], filename, { type: blob.type });
+    if (!navigator.canShare?.({ files: [file] })) return false;
 
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `${figureLabel} · ${globalScoreValue.toFixed(1)}/10`,
-          text: `${figureLabel} analysée avec CalisIQ : ${globalScoreValue.toFixed(1)}/10`,
-        });
-        return;
-      }
+    navigator
+      .share({
+        files: [file],
+        title: `${figureLabel} · ${globalScoreValue.toFixed(1)}/10`,
+        text: `${figureLabel} analysée avec CalisIQ : ${globalScoreValue.toFixed(1)}/10`,
+      })
+      .catch((err: Error) => {
+        // Fermer la fenêtre de partage n'est pas une erreur à signaler.
+        if (err.name === "AbortError") return;
+        setError("Partage impossible : " + err.message);
+      });
+    return true;
+  }
 
-      // Partage natif indisponible (surtout sur desktop) : on ne laisse
-      // pas l'utilisateur sans rien, on bascule sur le téléchargement.
-      downloadBlob(blob, filename);
+  function handleShare() {
+    if (validCache) {
+      if (shareNow(validCache.blob, validCache.filename)) return;
+      downloadBlob(validCache.blob, validCache.filename);
       setNotice(
         "Le partage direct n'est pas disponible sur ce navigateur, la vidéo a été téléchargée."
       );
-    } catch (err) {
-      // L'utilisateur qui ferme la fenêtre de partage n'est pas une erreur.
-      if ((err as Error).name === "AbortError") return;
-      setError("Partage impossible : " + (err as Error).message);
+      return;
     }
+
+    // Pas encore de vidéo : on la génère d'abord. Le geste utilisateur ne
+    // survivra pas à la génération, donc on ne tente pas de partager dans
+    // la foulée — on invite à retoucher le bouton, qui partagera alors
+    // instantanément depuis le cache.
+    generate()
+      .then(() => {
+        setNotice("Vidéo prête. Appuie à nouveau sur Partager.");
+      })
+      .catch((err: Error) => {
+        setError("Export impossible : " + err.message);
+      });
   }
 
   const busy = recording;
@@ -196,7 +214,7 @@ export default function ExportVideoButton({
             disabled={busy}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/5 py-2.5 text-sm font-medium text-cyan-200 transition-colors hover:border-cyan-400/50 hover:bg-cyan-500/10 disabled:opacity-60"
           >
-            Partager sur mes réseaux
+            {validCache ? "Partager maintenant" : "Partager sur mes réseaux"}
           </button>
         </div>
 
