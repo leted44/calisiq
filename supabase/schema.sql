@@ -38,7 +38,8 @@ create table sessions (
   trim_start numeric, -- secondes, début du segment à analyser (choisi par l'utilisateur)
   trim_end numeric, -- secondes, fin du segment à analyser
   hold_duration_seconds numeric, -- durée du hold détecté (fenêtre stable), en secondes
-  performed_at timestamptz -- date réelle de la figure (import uniquement) ; à défaut, retomber sur created_at
+  performed_at timestamptz, -- date réelle de la figure (import uniquement) ; à défaut, retomber sur created_at
+  is_reference boolean not null default false -- point de départ "avant" de la figure, jamais purgé (voir migration 20260830120000)
 );
 
 create table scores (

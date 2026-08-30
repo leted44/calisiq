@@ -5,6 +5,7 @@ import type { Progression } from "@/lib/pose/grid";
 import { PROGRESSION_LABELS } from "@/lib/pose/report";
 import VideoPoseOverlay from "../../_components/VideoPoseOverlay";
 import DeleteSessionButton from "../../_components/DeleteSessionButton";
+import ReferenceSessionToggle from "../../_components/ReferenceSessionToggle";
 import { ChangeVideoIcon } from "@/components/icons";
 
 export default async function SessionDetailPage({
@@ -18,7 +19,7 @@ export default async function SessionDetailPage({
   const { data: session } = await supabase
     .from("sessions")
     .select(
-      "id, progression, status, video_url, created_at, performed_at, trim_start, trim_end, hold_duration_seconds, scores(critere, score, valeur_mesuree, valeur_cible), recommendations(exercice, raison)"
+      "id, progression, status, video_url, created_at, performed_at, trim_start, trim_end, hold_duration_seconds, is_reference, scores(critere, score, valeur_mesuree, valeur_cible), recommendations(exercice, raison)"
     )
     .eq("id", id)
     .single();
@@ -107,6 +108,13 @@ export default async function SessionDetailPage({
             Vidéo introuvable.
           </p>
         )}
+      </div>
+
+      <div className="w-full max-w-md pb-4">
+        <ReferenceSessionToggle
+          sessionId={session.id}
+          isReference={session.is_reference ?? false}
+        />
       </div>
     </div>
   );

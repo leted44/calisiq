@@ -20,7 +20,7 @@ export default async function HistoriquePage() {
   const { data: sessions } = await supabase
     .from("sessions")
     .select(
-      "id, progression, status, created_at, performed_at, hold_duration_seconds, scores(score)"
+      "id, progression, status, created_at, performed_at, hold_duration_seconds, is_reference, scores(score)"
     )
     .order("created_at", { ascending: false });
 
@@ -58,8 +58,13 @@ export default async function HistoriquePage() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-white">
+                <p className="flex items-center gap-1.5 font-medium text-white">
                   {PROGRESSION_LABELS[session.progression] ?? session.progression}
+                  {session.is_reference && (
+                    <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                      Référence
+                    </span>
+                  )}
                 </p>
                 <p className="text-xs text-slate-500">
                   {session.performed_at
