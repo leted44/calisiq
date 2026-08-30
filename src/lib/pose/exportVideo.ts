@@ -674,7 +674,7 @@ function drawWeakPointOverlay(
 function drawSlowMotionBadge(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
   const w = canvas.width;
   const scale = w / 400;
-  const text = "RALENTI · MOMENT CLÉ";
+  const text = "RALENTI · À CORRIGER";
   const font = `700 ${9 * scale}px sans-serif`;
   ctx.font = font;
   const paddingX = 12 * scale;
@@ -940,10 +940,12 @@ export async function recordAnnotatedVideo({
     },
   });
 
-  // --- Passe 2 : ralenti sur le pire moment du critère le plus faible ---
-  // C'est le cœur du coaching : au lieu d'annoncer "coudes 3.5/10", on
-  // rejoue au ralenti l'instant précis où c'était le pire, articulations
-  // fautives entourées, avec le conseil de correction.
+  // --- Passe 2 : ralenti sur la position la mieux tenue ---
+  // On rejoue le moment où la figure est le mieux exécutée, en y pointant
+  // le critère le plus faible. Viser au contraire la frame la PIRE (version
+  // précédente) posait deux problèmes : par définition c'est un cas isolé,
+  // donc souvent un raté ponctuel de détection plutôt qu'un vrai défaut, et
+  // ce n'est pas représentatif de la technique réellement tenue.
   const weakest = scores.length > 0
     ? scores.reduce((worst, s) => (s.score < worst.score ? s : worst))
     : null;
@@ -953,42 +955,32 @@ export async function recordAnnotatedVideo({
     const span = rangeEnd - rangeStart;
     const timeAt = (i: number) => rangeStart + (i / total) * span;
 
-    // Identifier "la personne est vraiment dans la figure" à partir de la
-    // fenêtre de hold ne marche pas : son seuil de mouvement est
-    // volontairement permissif (pour ne pas rater les holds tremblants de
-    // fatigue), donc elle englobe largement l'entrée et la sortie de
-    // figure. Rogner ses bords ne suffisait pas non plus.
-    // Le score global par frame est un signal bien plus direct : il est
-    // mauvais tant que le corps n'est pas placé, et atteint son plateau
-    // pendant la position tenue.
-    const candidates: { index: number; global: number; weak: number }[] = [];
+    // Le score global par frame indique directement quand le corps est en
+    // position : il reste mauvais pendant la mise en place et atteint son
+    // plateau une fois la figure tenue. Son maximum est donc le meilleur
+    // instant à montrer. (La fenêtre de hold ne suffirait pas : son seuil
+    // de mouvement est volontairement permissif pour ne pas rater les
+    // holds tremblants, donc elle englobe l'entrée et la sortie.)
+    let bestIndex = -1;
+    let bestGlobal = -Infinity;
     for (let i = 0; i < total; i++) {
       const t = timeAt(i);
       if (t < hudHoldStart || t > hudHoldEnd) continue;
-      const frameScores = scoreAngles(computeAngles(landmarksFrames[i]), progression);
-      const weakScore = frameScores.find((s) => s.critere === weakest.critere);
-      if (!weakScore) continue;
-      candidates.push({
-        index: i,
-        global: globalScore(frameScores),
-        weak: weakScore.score,
-      });
+      const frameGlobal = globalScore(
+        scoreAngles(computeAngles(landmarksFrames[i]), progression)
+      );
+      if (frameGlobal > bestGlobal) {
+        bestGlobal = frameGlobal;
+        bestIndex = i;
+      }
     }
 
-    let worstIndex = -1;
-    let worstScore = Infinity;
-    if (candidates.length > 0) {
-      const bestGlobal = Math.max(...candidates.map((c) => c.global));
-      // 85% du meilleur score global : assez large pour couvrir toute la
-      // durée réelle du hold (le score fluctue pendant l'effort), assez
-      // strict pour écarter l'entrée et la sortie, où le corps n'est pas
-      // encore — ou n'est plus — dans la position évaluée.
-      const inPosition = candidates.filter((c) => c.global >= bestGlobal * 0.85);
-      const pool = inPosition.length > 0 ? inPosition : candidates;
-      const worst = pool.reduce((w, c) => (c.weak < w.weak ? c : w));
-      worstIndex = worst.index;
-      worstScore = worst.weak;
-    }
+    const worstIndex = bestIndex;
+    // Score affiché : celui du rapport final (médiane sur tout le hold),
+    // pas la valeur de cette frame précise — pour rester cohérent avec le
+    // HUD et l'écran de fin, et éviter d'annoncer deux chiffres différents
+    // pour le même critère dans la même vidéo.
+    const worstScore = weakest.score;
 
     if (worstIndex >= 0) {
       const worstTime = timeAt(worstIndex);
