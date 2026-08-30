@@ -247,6 +247,21 @@ export default function ProgressionDashboard({
         </div>
       )}
 
+      {current.points.length >= 2 && (
+        <Link
+          href={`/comparaison/${current.variation}`}
+          className="flex items-center justify-between rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-4 py-3 transition-colors hover:border-cyan-400/50"
+        >
+          <div>
+            <p className="text-sm font-semibold text-white">Avant / Après</p>
+            <p className="text-[11px] text-slate-400">
+              Ta référence face à ta dernière analyse
+            </p>
+          </div>
+          <TrendUpIcon className="h-5 w-5 text-cyan-400" />
+        </Link>
+      )}
+
       {variations.length > 1 && (
         <div data-tour="progression-variation-selector">
           <p className="mb-1.5 text-[10px] uppercase tracking-wide text-slate-500">
