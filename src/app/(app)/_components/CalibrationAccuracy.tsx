@@ -14,6 +14,11 @@ export type CalibrationSampleRow = {
   shoulder_protraction: number | null;
   pelvis_deviation: number | null;
   pelvis_sag_sign: number | null;
+  // Ajoutés avec la Single Leg Front Lever : null sur tous les
+  // échantillons enregistrés avant (voir migration 20260901).
+  torso_angle_from_horizontal: number | null;
+  straightest_knee_angle: number | null;
+  straightest_leg_hip_angle: number | null;
 };
 
 type SampleComparison = {
@@ -45,6 +50,12 @@ function computedScore(sample: CalibrationSampleRow): number | null {
     kneeAngle: sample.knee_angle ?? NaN,
     shoulderFlexionAngle: sample.shoulder_flexion_angle ?? NaN,
     bodyLineAngleFromHorizontal: sample.body_line_angle_from_horizontal ?? NaN,
+    // NaN quand l'échantillon est antérieur à ces mesures : scoreAngles
+    // produit alors un score NaN, filtré juste en dessous, plutôt que de
+    // noter la figure sur une valeur inventée.
+    torsoAngleFromHorizontal: sample.torso_angle_from_horizontal ?? NaN,
+    straightestKneeAngle: sample.straightest_knee_angle ?? NaN,
+    straightestLegHipAngle: sample.straightest_leg_hip_angle ?? NaN,
     shoulderProtraction: sample.shoulder_protraction ?? NaN,
     pelvisDeviation: sample.pelvis_deviation ?? NaN,
     pelvisSagSign: sample.pelvis_sag_sign ?? 0,

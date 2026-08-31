@@ -45,7 +45,9 @@ import {
 type Figure = "planche" | "handstand" | "front_lever";
 type ExerciseType = "hold" | "press" | "push_up";
 type HandstandVariation = "handstand_push_up" | "one_arm_handstand";
-type FrontLeverPlaceholderVariation = "one_leg_front_lever" | "one_arm_front_lever";
+// one_leg_front_lever a rejoint Progression (grid.ts) le 2026-09-01, il
+// n'est donc plus un simple libellé sans scoring.
+type FrontLeverPlaceholderVariation = "one_arm_front_lever";
 type Variation = Progression | HandstandVariation | FrontLeverPlaceholderVariation;
 
 const FIGURES: {
@@ -148,6 +150,14 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       Icon: AdvancedTuckFrontLeverIcon,
       available: true,
     },
+    // Ordre de difficulté croissante : la Single Leg se situe entre
+    // l'advanced tuck et le straddle.
+    {
+      value: "one_leg_front_lever",
+      label: "Single Leg",
+      Icon: OneLegFrontLeverIcon,
+      available: true,
+    },
     {
       value: "straddle_front_lever",
       label: "Straddle",
@@ -160,12 +170,6 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       Icon: FullFrontLeverIcon,
       available: true,
       image: "/figures/full-front-lever.png",
-    },
-    {
-      value: "one_leg_front_lever",
-      label: "One Leg",
-      Icon: OneLegFrontLeverIcon,
-      available: false,
     },
     {
       value: "one_arm_front_lever",

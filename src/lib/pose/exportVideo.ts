@@ -31,6 +31,9 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   knee_angle: "Genoux",
   elbow_angle: "Coudes",
   body_line_angle: "Axe",
+  torso_angle: "Tronc",
+  straightest_knee_angle: "Jambe tendue",
+  straightest_leg_hip_angle: "Hanche (jambe tendue)",
 };
 
 // Palette feu tricolore, saturée pour un rendu net en incrustation vidéo
@@ -507,6 +510,9 @@ const CRITERION_LANDMARKS: Record<CriterionScore["critere"], number[]> = {
   knee_angle: [25, 26],
   elbow_angle: [13, 14],
   body_line_angle: [11, 23, 27],
+  torso_angle: [11, 23],
+  straightest_knee_angle: [25, 26],
+  straightest_leg_hip_angle: [23, 24],
 };
 
 // Découpe un texte en lignes qui tiennent dans maxWidth (le canvas n'a

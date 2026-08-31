@@ -20,6 +20,7 @@ const VARIATIONS = [
   { value: "one_arm_handstand", label: "One Arm Handstand", figure: "handstand" },
   { value: "tuck_front_lever", label: "Tuck Front Lever", figure: "front_lever" },
   { value: "advanced_tuck_front_lever", label: "Advanced Tuck Front Lever", figure: "front_lever" },
+  { value: "one_leg_front_lever", label: "Single Leg Front Lever", figure: "front_lever" },
   { value: "straddle_front_lever", label: "Straddle Front Lever", figure: "front_lever" },
   { value: "full_front_lever", label: "Full Front Lever", figure: "front_lever" },
 ] as const;
@@ -302,6 +303,9 @@ export default function CalibrationForm() {
       shoulder_protraction: result.summaryAngles.shoulderProtraction,
       pelvis_deviation: result.summaryAngles.pelvisDeviation,
       pelvis_sag_sign: result.summaryAngles.pelvisSagSign,
+      torso_angle_from_horizontal: result.summaryAngles.torsoAngleFromHorizontal,
+      straightest_knee_angle: result.summaryAngles.straightestKneeAngle,
+      straightest_leg_hip_angle: result.summaryAngles.straightestLegHipAngle,
       user_rating: ratingValue,
       notes: notes || null,
       media_type: mediaKind ?? "video",

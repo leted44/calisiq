@@ -77,6 +77,9 @@ create table calibration_samples (
   shoulder_protraction numeric,
   pelvis_deviation numeric,
   pelvis_sag_sign numeric,
+  torso_angle_from_horizontal numeric, -- tronc seul, valide sur figures asymétriques (voir migration 20260901090000)
+  straightest_knee_angle numeric,
+  straightest_leg_hip_angle numeric,
   user_rating numeric not null,
   notes text,
   media_type text not null default 'video' check (media_type in ('video', 'photo'))

@@ -67,6 +67,7 @@ export type Progression =
   | "handstand"
   | "tuck_front_lever"
   | "advanced_tuck_front_lever"
+  | "one_leg_front_lever"
   | "straddle_front_lever"
   | "full_front_lever";
 
@@ -75,9 +76,23 @@ type ShoulderProtractionThreshold = Threshold & { mode: "minimum" | "band" };
 
 export type ProgressionThresholds = {
   body_line_angle_from_horizontal?: Threshold;
+  // Tronc seul (épaule -> hanche). Utilisé quand la ligne épaule-cheville
+  // n'a pas de sens : figures à une jambe, où les deux chevilles sont dans
+  // des positions différentes.
+  torso_angle?: Threshold;
   elbow_angle: Threshold;
-  hip_angle: Threshold;
+  // Optionnel : sur une figure asymétrique, la moyenne gauche/droite mélange
+  // une jambe tendue et une jambe repliée et ne décrit ni l'une ni l'autre.
+  // L'inclure quand même avec une tolérance énorme reviendrait à ajouter un
+  // critère toujours proche de 10, qui gonflerait la note globale sans rien
+  // mesurer.
+  hip_angle?: Threshold;
   knee_angle?: Threshold;
+  // Genou et hanche de la jambe la plus tendue. Sur une figure à une
+  // jambe, les moyennes gauche/droite ci-dessus mélangent la jambe tendue
+  // et la jambe repliée, et ne décrivent aucune des deux.
+  straightest_knee_angle?: Threshold;
+  straightest_leg_hip_angle?: Threshold;
   shoulder_protraction?: ShoulderProtractionThreshold;
   shoulder_flexion?: Threshold;
   pelvis_deviation?: Threshold;
@@ -144,6 +159,27 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   advanced_tuck_front_lever: {
     elbow_angle: { target: 176, tolerance: 20 },
     hip_angle: { target: 120, tolerance: 35 },
+  },
+  // Single Leg Front Lever : une jambe tendue, l'autre repliée. Ajouté le
+  // 2026-09-01. Figure ASYMÉTRIQUE, donc notée différemment des autres :
+  // les critères moyennés gauche/droite (hip_angle, knee_angle) et la
+  // ligne épaule-cheville n'ont ici aucun sens, puisqu'ils mélangent une
+  // jambe tendue et une jambe repliée. On note donc le tronc seul et la
+  // jambe tendue isolément.
+  //
+  // Seuils raisonnés (DRAFT, confiance faible) comme le reste du front
+  // lever : difficulté située entre l'advanced tuck et le straddle, d'où
+  // un corps attendu proche de l'horizontale mais avec plus de tolérance
+  // qu'en straddle.
+  one_leg_front_lever: {
+    torso_angle: { target: 5, tolerance: 12 },
+    elbow_angle: { target: 178, tolerance: 16 },
+    // Volontairement pas de hip_angle ni de knee_angle : ce sont des
+    // moyennes gauche/droite, sans signification quand une jambe est
+    // tendue et l'autre repliée. Remplacés par les deux critères
+    // ci-dessous, qui isolent la jambe tendue.
+    straightest_knee_angle: { target: 180, tolerance: 14 },
+    straightest_leg_hip_angle: { target: 170, tolerance: 20 },
   },
   straddle_front_lever: {
     body_line_angle_from_horizontal: { target: 6, tolerance: 8 },

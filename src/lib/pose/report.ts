@@ -8,6 +8,7 @@ export const PROGRESSION_LABELS: Record<string, string> = {
   handstand: "Handstand",
   tuck_front_lever: "Tuck front lever",
   advanced_tuck_front_lever: "Advanced tuck front lever",
+  one_leg_front_lever: "Single leg front lever",
   straddle_front_lever: "Straddle front lever",
   full_front_lever: "Full front lever",
 };
@@ -27,6 +28,7 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   one_arm_handstand: [],
   tuck_front_lever: [],
   advanced_tuck_front_lever: [],
+  one_leg_front_lever: [],
   straddle_front_lever: [],
   full_front_lever: [],
 };
@@ -49,6 +51,12 @@ export const CRITERE_DEFINITIONS: Record<CriterionScore["critere"], string> = {
     "Écart du bassin par rapport à la ligne droite épaule-cheville. Détecte un bassin qui tombe (sag) ou remonte (pike).",
   body_line_angle:
     "Angle du corps entier (épaule-cheville) par rapport à l'horizontale. Mesure si le corps est bien aligné pour la progression visée.",
+  torso_angle:
+    "Angle du tronc seul (épaule-hanche) par rapport à l'horizontale. Utilisé sur les figures où les deux jambes ne sont pas dans la même position, où la ligne épaule-cheville n'aurait pas de sens.",
+  straightest_knee_angle:
+    "Angle du genou de la jambe la plus tendue. Sur une figure à une jambe, c'est elle qui porte la difficulté ; la moyenne des deux jambes ne décrirait ni l'une ni l'autre.",
+  straightest_leg_hip_angle:
+    "Angle épaule-hanche-genou du côté de la jambe tendue. Mesure si cette jambe prolonge bien le tronc plutôt que de se replier vers le buste.",
 };
 
 export type ScoreTier = "optimal" | "bon" | "faible";

@@ -513,6 +513,76 @@ const FRONT_LEVER_EXERCISE_MAP: Record<string, TieredRecommendations> = {
       },
     ],
   },
+  // Critères propres aux figures asymétriques (single leg front lever) :
+  // le tronc et la jambe tendue sont notés séparément, puisque les moyennes
+  // gauche/droite n'ont pas de sens quand les deux jambes diffèrent.
+  torso_angle: {
+    faible: [
+      {
+        exercice: "Tuck front lever hold, cue « poitrine ouverte, hanches au niveau des épaules »",
+        raison:
+          "Le tronc n'est pas assez horizontal — c'est la base de la figure, avant même la position des jambes.",
+      },
+      {
+        exercice: "Ice cream makers (rowing excentrique bras tendus)",
+        raison: "Développe la force de traction nécessaire pour tenir le tronc à l'horizontale.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Même position, cue « monter légèrement la poitrine » en fin de hold",
+        raison: "Le tronc est presque à l'horizontale — un ajustement fin suffit.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Tronc déjà bien horizontal — travaille plutôt la durée du hold",
+        raison: "Rien à corriger sur l'alignement du tronc.",
+      },
+    ],
+  },
+  straightest_knee_angle: {
+    faible: [
+      {
+        exercice: "Étirements ischio-jambiers + cue « pointe de pied active » sur la jambe tendue",
+        raison:
+          "La jambe censée être tendue reste fléchie, ce qui raccourcit le levier et fausse la difficulté réelle de la figure.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue « verrouiller le genou » dès la sortie de traction",
+        raison: "Le fléchissement résiduel est faible — un cue actif suffit à finir de tendre.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Jambe tendue déjà bien verrouillée — rien à ajouter sur ce point",
+        raison: "La ligne de la jambe est nette sur tout le hold.",
+      },
+    ],
+  },
+  straightest_leg_hip_angle: {
+    faible: [
+      {
+        exercice: "Tuck front lever hold, cue « pousser le talon de la jambe tendue loin derrière »",
+        raison:
+          "La jambe tendue reste repliée vers le buste au lieu de prolonger le tronc — le levier est donc plus court que la figure ne le laisse croire.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Même position, cue « allonger la hanche » sur la jambe tendue",
+        raison: "L'ouverture est presque complète — un cue de fin d'amplitude referme l'écart.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Hanche de la jambe tendue déjà bien ouverte — travaille la durée",
+        raison: "Rien à corriger sur l'alignement de cette jambe.",
+      },
+    ],
+  },
   body_line_angle: {
     faible: [
       {

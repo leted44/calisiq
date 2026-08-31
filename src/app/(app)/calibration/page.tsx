@@ -26,6 +26,7 @@ const ALL_VARIATIONS = [
   "one_arm_handstand",
   "tuck_front_lever",
   "advanced_tuck_front_lever",
+  "one_leg_front_lever",
   "straddle_front_lever",
   "full_front_lever",
 ];
@@ -54,7 +55,7 @@ export default async function CalibrationPage() {
   const { data: samples } = await supabase
     .from("calibration_samples")
     .select(
-      "variation, user_rating, media_type, elbow_angle, hip_angle, knee_angle, shoulder_flexion_angle, body_line_angle_from_horizontal, shoulder_protraction, pelvis_deviation, pelvis_sag_sign"
+      "variation, user_rating, media_type, elbow_angle, hip_angle, knee_angle, shoulder_flexion_angle, body_line_angle_from_horizontal, shoulder_protraction, pelvis_deviation, pelvis_sag_sign, torso_angle_from_horizontal, straightest_knee_angle, straightest_leg_hip_angle"
     )
     .order("created_at");
 

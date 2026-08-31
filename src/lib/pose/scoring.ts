@@ -9,7 +9,10 @@ export type CriterionScore = {
     | "hip_angle"
     | "knee_angle"
     | "elbow_angle"
-    | "body_line_angle";
+    | "body_line_angle"
+    | "torso_angle"
+    | "straightest_knee_angle"
+    | "straightest_leg_hip_angle";
   score: number;
   valeurMesuree: number;
   valeurCible: number;
@@ -99,8 +102,8 @@ export function scoreAngles(
     });
   }
 
-  scores.push(
-    {
+  if (grid.hip_angle) {
+    scores.push({
       critere: "hip_angle",
       score: scoreFromThreshold(
         angles.hipAngle,
@@ -109,18 +112,58 @@ export function scoreAngles(
       ),
       valeurMesuree: angles.hipAngle,
       valeurCible: grid.hip_angle.target,
-    },
-    {
-      critere: "elbow_angle",
+    });
+  }
+
+  scores.push({
+    critere: "elbow_angle",
+    score: scoreFromThreshold(
+      angles.elbowAngle,
+      grid.elbow_angle.target,
+      grid.elbow_angle.tolerance
+    ),
+    valeurMesuree: angles.elbowAngle,
+    valeurCible: grid.elbow_angle.target,
+  });
+
+  if (grid.torso_angle) {
+    scores.push({
+      critere: "torso_angle",
       score: scoreFromThreshold(
-        angles.elbowAngle,
-        grid.elbow_angle.target,
-        grid.elbow_angle.tolerance
+        angles.torsoAngleFromHorizontal,
+        grid.torso_angle.target,
+        grid.torso_angle.tolerance
       ),
-      valeurMesuree: angles.elbowAngle,
-      valeurCible: grid.elbow_angle.target,
-    }
-  );
+      valeurMesuree: angles.torsoAngleFromHorizontal,
+      valeurCible: grid.torso_angle.target,
+    });
+  }
+
+  if (grid.straightest_knee_angle) {
+    scores.push({
+      critere: "straightest_knee_angle",
+      score: scoreFromThreshold(
+        angles.straightestKneeAngle,
+        grid.straightest_knee_angle.target,
+        grid.straightest_knee_angle.tolerance
+      ),
+      valeurMesuree: angles.straightestKneeAngle,
+      valeurCible: grid.straightest_knee_angle.target,
+    });
+  }
+
+  if (grid.straightest_leg_hip_angle) {
+    scores.push({
+      critere: "straightest_leg_hip_angle",
+      score: scoreFromThreshold(
+        angles.straightestLegHipAngle,
+        grid.straightest_leg_hip_angle.target,
+        grid.straightest_leg_hip_angle.tolerance
+      ),
+      valeurMesuree: angles.straightestLegHipAngle,
+      valeurCible: grid.straightest_leg_hip_angle.target,
+    });
+  }
 
   if (grid.body_line_angle_from_horizontal) {
     scores.push({

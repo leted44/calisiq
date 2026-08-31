@@ -39,7 +39,7 @@ scoring.
 |---|---|---|
 | Planche (tuck, advanced tuck, straddle, full) | Actif | Recalibré sur échantillons réels notés |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
-| Front Lever (tuck → full) | **Actif, seuils DRAFT** | Entièrement raisonnés, recalibration en cours |
+| Front Lever (tuck → single leg → straddle → full) | **Actif, seuils DRAFT** | Entièrement raisonnés, recalibration en cours |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
 
 Le Front Lever a été réactivé le 2026-08-31 à la demande de l'utilisateur,
@@ -93,6 +93,17 @@ MediaRecorder écrit une durée de piste média erronée qui rend la vidéo non
 navigable et fait tronquer les importeurs stricts comme Instagram. Repli
 sur MediaRecorder si l'encodeur de l'appareil refuse, avec réparation de la
 durée directement dans le fichier (`src/lib/video/fixMp4Duration.ts`).
+
+**Figures asymétriques.** La Single Leg Front Lever (ajoutée le
+2026-09-01) a une jambe tendue et une repliée. Or `hip_angle` et
+`knee_angle` sont des moyennes pondérées gauche/droite, et
+`body_line_angle_from_horizontal` part du milieu des deux chevilles : sur
+une figure asymétrique, ces trois mesures décrivent un corps qui n'existe
+pas. Trois mesures ont donc été ajoutées dans `angles.ts` —
+`torsoAngleFromHorizontal` (tronc seul, valide quelles que soient les
+jambes), `straightestKneeAngle` et `straightestLegHipAngle` (jambe la plus
+tendue, celle qui porte la difficulté). Toute future figure asymétrique
+doit être notée sur ces critères, pas sur les moyennes.
 
 **Rôle admin en base, pas en dur.** Le drapeau `is_admin` vit sur
 `profiles`, ce qui évite de coder une adresse e-mail dans le dépôt et

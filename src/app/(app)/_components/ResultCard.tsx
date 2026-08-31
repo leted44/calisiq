@@ -22,6 +22,9 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   knee_angle: "Genoux",
   elbow_angle: "Coudes",
   body_line_angle: "Axe du corps",
+  torso_angle: "Tronc",
+  straightest_knee_angle: "Jambe tendue",
+  straightest_leg_hip_angle: "Hanche jambe tendue",
 };
 
 // Titres plus descriptifs pour la vue "Détail par catégorie" — les labels
@@ -34,6 +37,9 @@ const CRITERE_DETAIL_TITLES: Record<CriterionScore["critere"], string> = {
   knee_angle: "Extension des jambes",
   elbow_angle: "Verrouillage des coudes",
   body_line_angle: "Alignement du corps",
+  torso_angle: "Alignement du tronc",
+  straightest_knee_angle: "Extension de la jambe tendue",
+  straightest_leg_hip_angle: "Ouverture de hanche (jambe tendue)",
 };
 
 // Mots-clés techniques associés à chaque critère, purement indicatifs (pas
@@ -46,6 +52,9 @@ const CRITERE_TAGS: Record<CriterionScore["critere"], string[]> = {
   knee_angle: ["Jambes tendues", "Genoux"],
   elbow_angle: ["Verrouillage", "Triceps"],
   body_line_angle: ["Ligne droite", "Axe"],
+  torso_angle: ["Tronc", "Horizontale"],
+  straightest_knee_angle: ["Jambe tendue", "Genou"],
+  straightest_leg_hip_angle: ["Ouverture", "Jambe tendue"],
 };
 
 const TIER_HEX: Record<ScoreTier, string> = {

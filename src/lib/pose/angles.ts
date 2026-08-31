@@ -43,6 +43,19 @@ export type PoseAngles = {
   // handstand — bras bien overhead, "oreilles cachées par les épaules")
   shoulderFlexionAngle: number;
   bodyLineAngleFromHorizontal: number;
+  // Angle du TRONC seul (épaule -> hanche) par rapport à l'horizontale.
+  // Contrairement à bodyLineAngleFromHorizontal, qui va jusqu'aux
+  // chevilles, celui-ci garde un sens quelle que soit la position des
+  // jambes : indispensable pour les figures asymétriques (single leg) et
+  // repliées (tuck), où la ligne épaule-cheville ne veut rien dire.
+  torsoAngleFromHorizontal: number;
+  // Angle du genou de la jambe la PLUS TENDUE, et angle de hanche du même
+  // côté. Les valeurs moyennées ci-dessus supposent les deux jambes dans
+  // la même position ; sur une figure à une jambe, elles donnent une
+  // moyenne entre une jambe tendue et une repliée, qui ne correspond à
+  // aucune des deux. Ces champs isolent la jambe qui porte la difficulté.
+  straightestKneeAngle: number;
+  straightestLegHipAngle: number;
   // Écart horizontal épaules/poignets, normalisé par la longueur du tronc
   // (0 = épaules au-dessus des poignets, plus c'est grand plus les épaules sont avancées)
   shoulderProtraction: number;
@@ -194,6 +207,21 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
   // 90 = vertical, peu importe le sens dans lequel la figure est orientée.
   const bodyLineAngleFromHorizontal = Math.min(rawAngle, 180 - rawAngle);
 
+  // Même repliement sur [0, 90] pour le tronc seul (épaule -> hanche).
+  const torsoRaw = Math.abs(
+    (Math.atan2(midHip.y - midShoulder.y, midHip.x - midShoulder.x) * 180) /
+      Math.PI
+  );
+  const torsoAngleFromHorizontal = Math.min(torsoRaw, 180 - torsoRaw);
+
+  // Jambe la plus tendue = genou le plus proche de 180°. Sur une figure
+  // symétrique les deux côtés se valent et le choix est sans conséquence ;
+  // sur une figure à une jambe, c'est la jambe tendue qui porte la
+  // difficulté et qu'il faut noter.
+  const leftIsStraighter = leftKneeAngle >= rightKneeAngle;
+  const straightestKneeAngle = leftIsStraighter ? leftKneeAngle : rightKneeAngle;
+  const straightestLegHipAngle = leftIsStraighter ? leftHipAngle : rightHipAngle;
+
   const torsoLength = Math.hypot(
     midHip.x - midShoulder.x,
     midHip.y - midShoulder.y
@@ -272,6 +300,9 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
       rightShoulderFlexionConfidence
     ),
     bodyLineAngleFromHorizontal,
+    torsoAngleFromHorizontal,
+    straightestKneeAngle,
+    straightestLegHipAngle,
     shoulderProtraction,
     pelvisDeviation,
     pelvisSagSign,
@@ -369,6 +400,11 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
     bodyLineAngleFromHorizontal: median(
       frames.map((f) => f.bodyLineAngleFromHorizontal)
     ),
+    torsoAngleFromHorizontal: median(
+      frames.map((f) => f.torsoAngleFromHorizontal)
+    ),
+    straightestKneeAngle: median(frames.map((f) => f.straightestKneeAngle)),
+    straightestLegHipAngle: median(frames.map((f) => f.straightestLegHipAngle)),
     shoulderProtraction: median(frames.map((f) => f.shoulderProtraction)),
     pelvisDeviation: median(frames.map((f) => f.pelvisDeviation)),
     pelvisSagSign: median(frames.map((f) => f.pelvisSagSign)),

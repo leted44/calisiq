@@ -125,20 +125,25 @@ export function buildTargetPose(
   }
 
   // --- Jambes ---
-  const targetKnee = placeJoint(
-    targetHip,
-    shoulder,
-    thighLength,
-    grid.hip_angle.target,
-    knee
-  );
+  // Sur une figure asymétrique (single leg), la grille n'a pas de hip_angle
+  // ni de knee_angle moyennés — ils n'y auraient pas de sens. On utilise
+  // alors les cibles de la jambe tendue, et à défaut l'angle réellement
+  // observé, pour ne jamais dessiner un fantôme au hasard.
+  const hipTarget =
+    grid.hip_angle?.target ??
+    grid.straightest_leg_hip_angle?.target ??
+    angleBetween(shoulder, hip, knee);
+  const kneeTarget =
+    grid.knee_angle?.target ??
+    grid.straightest_knee_angle?.target ??
+    angleBetween(targetHip, knee, ankle);
+
+  const targetKnee = placeJoint(targetHip, shoulder, thighLength, hipTarget, knee);
   const targetAnkle = placeJoint(
     targetKnee,
     targetHip,
     shinLength,
-    // Pas de cible de genou en tuck (genoux fléchis = technique correcte) :
-    // on conserve alors l'angle réellement observé.
-    grid.knee_angle?.target ?? angleBetween(targetHip, knee, ankle),
+    kneeTarget,
     ankle
   );
 
