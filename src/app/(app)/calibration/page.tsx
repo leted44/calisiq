@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PROGRESSION_LABELS, CALIBRATED_CRITERIA } from "@/lib/pose/report";
 import CalibrationForm from "./CalibrationForm";
+import ResyncScoresButton from "../_components/ResyncScoresButton";
 
 const CRITERE_LABELS: Record<string, string> = {
   shoulder_protraction: "protraction",
@@ -70,6 +71,10 @@ export default async function CalibrationPage() {
           Outil interne : mesure les angles réels d&apos;une figure et
           enregistre un échantillon avec ta propre note.
         </p>
+      </div>
+
+      <div className="w-full max-w-md">
+        <ResyncScoresButton />
       </div>
 
       <div className="w-full max-w-md space-y-2">
