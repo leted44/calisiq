@@ -519,67 +519,111 @@ export default function CalibrationForm() {
             {(() => {
               const grid = SCORING_GRID[variation as Progression];
               const a = result.summaryAngles;
+
+              // Séparer les critères notés de ceux qui ne le sont pas pour
+              // cette variation. Tout mélanger laissait croire à un bug
+              // (« pourquoi le genou n'a pas de cible ? ») alors que ces
+              // exclusions sont délibérées et documentées dans grid.ts :
+              // en tuck les genoux sont pliés par construction, la ligne
+              // épaule-cheville n'a pas de sens jambes repliées, etc.
+              const rows = [
+                {
+                  label: "Coude",
+                  value: a.elbowAngle,
+                  t: grid?.elbow_angle,
+                },
+                {
+                  label: "Hanche",
+                  value: a.hipAngle,
+                  t: grid?.hip_angle,
+                },
+                {
+                  label: "Genou",
+                  value: a.kneeAngle,
+                  t: grid?.knee_angle,
+                },
+                {
+                  label: "Ligne de corps (vs horizontale)",
+                  value: a.bodyLineAngleFromHorizontal,
+                  t: grid?.body_line_angle_from_horizontal,
+                },
+                {
+                  label: "Ouverture épaule (hanche-épaule-poignet)",
+                  value: a.shoulderFlexionAngle,
+                  t: grid?.shoulder_flexion,
+                },
+                {
+                  label: "Protraction épaules",
+                  value: a.shoulderProtraction,
+                  t: grid?.shoulder_protraction,
+                  unit: "",
+                  decimals: 3,
+                },
+                {
+                  label: "Déviation bassin",
+                  value: a.pelvisDeviation,
+                  t: grid?.pelvis_deviation,
+                  unit: "",
+                  decimals: 3,
+                },
+                {
+                  label: "Signe sag/pike bassin",
+                  value: a.pelvisSagSign,
+                  t: undefined,
+                  unit: "",
+                  decimals: 3,
+                },
+              ];
+
+              const scored = rows.filter((r) => r.t);
+              const unscored = rows.filter((r) => !r.t);
+
               return (
-                <dl className="space-y-1.5 text-sm">
-                  <AngleRow
-                    label="Coude"
-                    value={a.elbowAngle}
-                    target={grid?.elbow_angle.target}
-                    tolerance={grid?.elbow_angle.tolerance}
-                  />
-                  <AngleRow
-                    label="Hanche"
-                    value={a.hipAngle}
-                    target={grid?.hip_angle.target}
-                    tolerance={grid?.hip_angle.tolerance}
-                  />
-                  <AngleRow
-                    label="Genou"
-                    value={a.kneeAngle}
-                    target={grid?.knee_angle?.target}
-                    tolerance={grid?.knee_angle?.tolerance}
-                  />
-                  <AngleRow
-                    label="Ligne de corps (vs horizontale)"
-                    value={a.bodyLineAngleFromHorizontal}
-                    target={grid?.body_line_angle_from_horizontal?.target}
-                    tolerance={grid?.body_line_angle_from_horizontal?.tolerance}
-                  />
-                  <AngleRow
-                    label="Ouverture épaule (hanche-épaule-poignet)"
-                    value={a.shoulderFlexionAngle}
-                    target={grid?.shoulder_flexion?.target}
-                    tolerance={grid?.shoulder_flexion?.tolerance}
-                  />
-                  <AngleRow
-                    label="Protraction épaules"
-                    value={a.shoulderProtraction}
-                    target={grid?.shoulder_protraction?.target}
-                    tolerance={grid?.shoulder_protraction?.tolerance}
-                    unit=""
-                    decimals={3}
-                  />
-                  <AngleRow
-                    label="Déviation bassin"
-                    value={a.pelvisDeviation}
-                    target={grid?.pelvis_deviation?.target}
-                    tolerance={grid?.pelvis_deviation?.tolerance}
-                    unit=""
-                    decimals={3}
-                  />
-                  <AngleRow
-                    label="Signe sag/pike bassin"
-                    value={a.pelvisSagSign}
-                    unit=""
-                    decimals={3}
-                  />
-                </dl>
+                <div className="space-y-3">
+                  {scored.length > 0 && (
+                    <dl className="space-y-1.5 text-sm">
+                      {scored.map((r) => (
+                        <AngleRow
+                          key={r.label}
+                          label={r.label}
+                          value={r.value}
+                          target={r.t!.target}
+                          tolerance={r.t!.tolerance}
+                          unit={r.unit}
+                          decimals={r.decimals}
+                        />
+                      ))}
+                    </dl>
+                  )}
+
+                  {unscored.length > 0 && (
+                    <div className="space-y-1.5 border-t border-slate-800 pt-3">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-600">
+                        Mesuré mais non noté pour cette variation
+                      </p>
+                      <dl className="space-y-1.5 text-sm opacity-60">
+                        {unscored.map((r) => (
+                          <AngleRow
+                            key={r.label}
+                            label={r.label}
+                            value={r.value}
+                            unit={r.unit}
+                            decimals={r.decimals}
+                          />
+                        ))}
+                      </dl>
+                    </div>
+                  )}
+                </div>
               );
             })()}
             <p className="pt-1 text-[11px] leading-relaxed text-slate-600">
-              Une cible absente signifie que ce critère n&apos;est pas noté pour
-              cette variation. La couleur indique l&apos;écart rapporté à la
-              tolérance du critère, pas en degrés bruts.
+              Les critères non notés sont exclus volontairement pour cette
+              variation (genoux pliés en tuck, ligne de corps sans objet jambes
+              repliées…). Leurs mesures sont quand même enregistrées, pour
+              pouvoir les exploiter si un critère est ajouté plus tard. La
+              couleur indique l&apos;écart rapporté à la tolérance du critère,
+              pas en degrés bruts.
             </p>
           </div>
 
