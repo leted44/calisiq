@@ -74,6 +74,10 @@ export type PoseAnalysisResult =
       // l'export vidéo annotée pour éviter de refaire tourner l'inférence
       // pose (coûteuse) une seconde fois image par image.
       landmarksFrames: NormalizedLandmark[][];
+      // Instant vidéo de chaque entrée de landmarksFrames. Permet à
+      // l'export de retrouver le bon squelette par le temps plutôt qu'en
+      // supposant un espacement régulier entre les images analysées.
+      landmarksTimes: number[];
     }
   | {
       ok: false;
@@ -115,6 +119,8 @@ export async function runPoseAnalysis({
   const drawingUtils = new DrawingUtils(ctx);
 
   const frames: NormalizedLandmark[][] = [];
+  // Instant vidéo de chaque entrée de `frames`, même longueur, même ordre.
+  const frameTimes: number[] = [];
   const angles: PoseAngles[] = [];
   let attempted = 0;
 
@@ -149,10 +155,19 @@ export async function runPoseAnalysis({
       }
 
       const result = landmarker.detectForVideo(video, performance.now());
+      // Instant réel de la vidéo au moment de la détection. Cette boucle
+      // tourne sur requestAnimationFrame pendant une lecture en temps réel,
+      // donc les images ne sont PAS capturées à intervalles réguliers : la
+      // cadence varie selon la charge de l'inférence. Sans cet horodatage,
+      // l'export qui repositionne les squelettes ne peut que supposer un
+      // espacement uniforme, d'où un décalage progressif entre le corps et
+      // son squelette.
+      const frameTime = video.currentTime;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (const landmarks of result.landmarks) {
         frames.push(landmarks);
+        frameTimes.push(frameTime);
         const a = computeAngles(landmarks);
         angles.push(a);
         onLiveAngles?.(a);
@@ -186,15 +201,19 @@ export async function runPoseAnalysis({
   // retombe sur la vidéo entière (voir angles.ts) — dans ce cas la "durée"
   // ne correspond à aucun hold réel, mieux vaut ne rien afficher que de
   // faire croire que la figure a été tenue pendant tout le clip.
-  const holdDurationSeconds = window.detected
-    ? ((window.end - window.start + 1) / frames.length) * (end - start)
-    : null;
-  const holdStartSeconds = window.detected
-    ? start + (window.start / frames.length) * (end - start)
-    : null;
+  //
+  // Bornes lues sur les instants réellement horodatés plutôt que déduites
+  // d'une règle de trois sur l'indice : les images d'analyse n'étant pas
+  // capturées à intervalles réguliers, la conversion proportionnelle
+  // décalait le début et la fin du hold, et faussait donc sa durée.
+  const holdStartSeconds = window.detected ? frameTimes[window.start] : null;
   const holdEndSeconds = window.detected
-    ? start + ((window.end + 1) / frames.length) * (end - start)
+    ? frameTimes[Math.min(window.end, frameTimes.length - 1)]
     : null;
+  const holdDurationSeconds =
+    holdStartSeconds !== null && holdEndSeconds !== null
+      ? Math.max(0, holdEndSeconds - holdStartSeconds)
+      : null;
 
   const warningParts: string[] = [];
   if (detectionRate < 0.5) {
@@ -247,6 +266,7 @@ export async function runPoseAnalysis({
       recommendations: [],
       representativeFrameDataUrl,
       landmarksFrames: frames,
+      landmarksTimes: frameTimes,
     };
   }
 
@@ -288,6 +308,7 @@ export async function runPoseAnalysis({
     recommendations,
     representativeFrameDataUrl,
     landmarksFrames: frames,
+    landmarksTimes: frameTimes,
   };
 }
 
@@ -344,6 +365,7 @@ export async function measureImage(
     recommendations: [],
     representativeFrameDataUrl,
     landmarksFrames: [landmarks],
+    landmarksTimes: [0],
   };
 }
 

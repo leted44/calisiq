@@ -30,6 +30,7 @@ export default function ExportVideoButton({
   rangeStart,
   rangeEnd,
   landmarksFrames,
+  landmarksTimes,
   holdStartSeconds,
   holdEndSeconds,
   holdDurationSeconds,
@@ -43,6 +44,7 @@ export default function ExportVideoButton({
   rangeStart?: number;
   rangeEnd?: number;
   landmarksFrames?: NormalizedLandmark[][];
+  landmarksTimes?: number[];
   holdStartSeconds?: number | null;
   holdEndSeconds?: number | null;
   holdDurationSeconds?: number | null;
@@ -52,7 +54,6 @@ export default function ExportVideoButton({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [retrying, setRetrying] = useState(false);
 
   // La vidéo générée est mise en cache pour que le partage juste après un
   // téléchargement soit instantané — indispensable pour le partage natif
@@ -97,6 +98,7 @@ export default function ExportVideoButton({
         scores,
         progression,
         landmarksFrames,
+        landmarksTimes,
         holdStartSeconds,
         holdEndSeconds,
         holdDurationSeconds,
@@ -107,31 +109,19 @@ export default function ExportVideoButton({
     }
 
     try {
-      // L'encodage moderne donne un fichier dont la durée déclarée est
-      // correcte (indispensable pour l'import Instagram), mais il dépend
-      // du matériel du téléphone. S'il échoue pour une raison qu'on ne
-      // peut pas anticiper, on refait l'export avec l'ancienne méthode
-      // plutôt que de laisser l'utilisateur sans vidéo.
-      let result: Awaited<ReturnType<typeof render>>;
-      try {
-        result = await render(false);
-      } catch {
-        // Sans ce signal, la seconde passe passe pour un bug : l'utilisateur
-        // voit une barre de progression repartir de zéro sans explication.
-        setRetrying(true);
-        setProgress(0);
-        try {
-          result = await render(true);
-        } finally {
-          setRetrying(false);
-        }
-      }
+      // Une seule passe, jamais de reprise automatique : voir deux barres
+      // de progression s'enchaîner donne l'impression d'un bug. La
+      // vérification préalable de l'encodeur (writer.ts) écarte désormais
+      // les appareils incapables avant de commencer, et un échec est
+      // retenu pour la session, donc un nouvel appui repart directement
+      // sur la voie qui fonctionne.
+      const result = await render(false);
       const { blob } = result;
       // Prévenir explicitement plutôt que de laisser l'utilisateur
       // découvrir la troncature une fois sur Instagram.
       if (!result.writesCorrectDuration) {
         setNotice(
-          "Mode compatible : la durée annoncée du fichier est incomplète, Instagram risque de n'importer que le début. Signale-le-moi si c'est le cas."
+          "Durée du fichier non réparable sur cet appareil : un réseau social risque de n'importer que le début. Signale-le-moi si c'est le cas."
         );
       }
       const extension = blob.type.includes("mp4") ? "mp4" : "webm";
@@ -155,11 +145,6 @@ export default function ExportVideoButton({
     }
   }
 
-  // Ouvre la fenêtre de partage du système (WhatsApp, Instagram, TikTok,
-  // Gmail...). Appelée SANS aucun await préalable : le navigateur exige que
-  // navigator.share() parte directement du clic. Le moindre await avant,
-  // même sur une valeur déjà en cache, consomme le "geste utilisateur" et
-  // fait échouer l'appel avec Permission denied.
   // Ouvre la fenêtre de partage du système (WhatsApp, Instagram, TikTok,
   // Gmail...) à partir d'une vidéo déjà en cache, SANS aucun await
   // préalable : le navigateur exige que navigator.share() parte
@@ -250,7 +235,7 @@ export default function ExportVideoButton({
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 py-3 text-sm font-semibold text-white shadow-[0_0_24px_-4px_rgba(34,211,238,0.6)] transition-opacity disabled:opacity-60"
           >
             {busy
-              ? `${retrying ? "Nouvelle tentative" : "Génération"}... ${progress}%`
+              ? `Génération... ${progress}%`
               : "Partager sur mes réseaux"}
           </button>
 

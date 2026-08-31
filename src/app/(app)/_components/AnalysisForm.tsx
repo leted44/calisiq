@@ -1302,6 +1302,7 @@ export default function AnalysisForm() {
               rangeStart={trimStart}
               rangeEnd={trimEnd}
               landmarksFrames={result.landmarksFrames}
+              landmarksTimes={result.landmarksTimes}
               holdStartSeconds={result.holdStartSeconds}
               holdEndSeconds={result.holdEndSeconds}
               holdDurationSeconds={result.holdDurationSeconds}

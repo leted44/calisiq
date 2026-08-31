@@ -94,6 +94,12 @@ async function pickCodec(
 // produire des images tout en ne la fournissant jamais — c'est exactement
 // ce qui faisait échouer l'export à la toute fin, une fois toutes les
 // images déjà perdues.
+// Nombre d'images du test. Une seule ne suffisait pas : l'encodeur
+// acceptait la première puis échouait en cours d'export, ce qui obligeait
+// à tout refaire. Une vingtaine d'images suffit à révéler les encodeurs
+// qui lâchent sous charge, pour moins d'une seconde de vérification.
+const PROBE_FRAME_COUNT = 20;
+
 async function canActuallyEncode(
   canvas: HTMLCanvasElement,
   config: VideoEncoderConfig
@@ -112,10 +118,21 @@ async function canActuallyEncode(
       },
     });
     probe.configure(config);
-    const frame = new VideoFrame(canvas, { timestamp: 0 });
-    probe.encode(frame, { keyFrame: true });
-    frame.close();
-    await probe.flush();
+
+    for (let i = 0; i < PROBE_FRAME_COUNT && !failed; i++) {
+      if (probe.state !== "configured") {
+        failed = true;
+        break;
+      }
+      const frame = new VideoFrame(canvas, { timestamp: i * 33_333 });
+      probe.encode(frame, { keyFrame: i === 0 });
+      frame.close();
+      // Laisse l'encodeur respirer plutôt que d'empiler d'un coup : c'est
+      // la saturation de sa file d'attente qui le faisait échouer.
+      if (probe.encodeQueueSize > 8) await probe.flush();
+    }
+
+    if (!failed) await probe.flush();
     probe.close();
   } catch {
     return false;
@@ -218,14 +235,23 @@ async function createWebCodecsWriter(
     async finish() {
       await encoder.flush();
       encoder.close();
-      if (failure) throw failure;
+      // Tout échec ici est définitif pour cette session : les images sont
+      // déjà consommées, et refaire l'export sur le même encodeur
+      // échouerait pareil. On le retient pour que la tentative suivante
+      // parte directement sur la voie qui fonctionne.
+      if (failure) {
+        markWebCodecsFailed();
+        throw failure;
+      }
       // Sans image encodée, ou sans description du codec, le muxer
       // échouerait sur une erreur interne obscure ("colorSpace of null").
       // On préfère un message qui dit ce qui s'est réellement passé.
       if (chunkCount === 0) {
+        markWebCodecsFailed();
         throw new Error("Aucune image n'a pu être encodée.");
       }
       if (!gotDecoderConfig) {
+        markWebCodecsFailed();
         throw new Error("Encodeur vidéo incomplet sur cet appareil.");
       }
       muxer.finalize();
@@ -297,14 +323,22 @@ function resizeCanvas(canvas: HTMLCanvasElement, maxDimension: number) {
   canvas.height = height;
 }
 
+// Un échec de WebCodecs en cours d'export est retenu pour la durée de la
+// session : inutile de refaire la vérification à chaque export sur un
+// appareil dont on sait déjà que l'encodeur ne tient pas la charge.
+let webCodecsFailedThisSession = false;
+
+export function markWebCodecsFailed() {
+  webCodecsFailedThisSession = true;
+}
+
 export async function createVideoWriter(
   canvas: HTMLCanvasElement,
-  // Force la voie MediaRecorder. Utilisé pour la seconde tentative quand
-  // l'encodage WebCodecs a échoué : mieux vaut une vidéo dont la durée
-  // déclarée est imparfaite que pas de vidéo du tout.
+  // Force la voie MediaRecorder. Mieux vaut une vidéo dont la durée
+  // déclarée doit être réparée que pas de vidéo du tout.
   forceRecorder = false
 ): Promise<VideoWriter> {
-  if (forceRecorder) {
+  if (forceRecorder || webCodecsFailedThisSession) {
     return createRecorderWriter(canvas, bitrateFor(canvas.width, canvas.height));
   }
 

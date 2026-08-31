@@ -764,6 +764,7 @@ export async function recordAnnotatedVideo({
   scores,
   progression,
   landmarksFrames,
+  landmarksTimes,
   holdStartSeconds,
   holdEndSeconds,
   holdDurationSeconds,
@@ -790,6 +791,8 @@ export async function recordAnnotatedVideo({
   // (ex. export depuis un rapport d'historique sans ré-analyse récente),
   // on retombe sur une détection en direct, plus lente mais fonctionnelle.
   landmarksFrames?: NormalizedLandmark[][];
+  // Instant vidéo de chaque squelette, aligné sur landmarksFrames.
+  landmarksTimes?: number[];
   // Bornes réelles du hold détecté (référentiel vidéo entière). Si absentes
   // (repli historique sans ré-analyse), le chrono du HUD couvre toute la
   // plage exportée comme avant, faute de mieux.
@@ -844,15 +847,50 @@ export async function recordAnnotatedVideo({
   let liveScores = scores;
   let liveGlobalScoreValue = globalScoreValue;
 
-  function landmarksAt(progress: number): NormalizedLandmark[] | undefined {
+  // Recherche du squelette correspondant à un instant donné.
+  //
+  // Auparavant l'indice était déduit d'une simple règle de trois sur la
+  // progression, ce qui suppose que les images analysées sont espacées
+  // régulièrement. Elles ne le sont pas : l'analyse tourne sur
+  // requestAnimationFrame pendant une lecture en temps réel, et sa cadence
+  // varie avec la charge de l'inférence. D'où un squelette qui dérivait
+  // progressivement par rapport au corps.
+  //
+  // On cherche donc l'image horodatée la plus proche. Recherche
+  // dichotomique parce que la fonction est appelée à chaque image de
+  // l'export, sur des tableaux de plusieurs centaines d'entrées.
+  function landmarksAtTime(mediaTime: number): NormalizedLandmark[] | undefined {
     if (!landmarksFrames) {
       return landmarker?.detectForVideo(video, performance.now()).landmarks[0];
     }
-    const frameIndex = Math.min(
-      landmarksFrames.length - 1,
-      Math.max(0, Math.floor(progress * landmarksFrames.length))
-    );
-    return landmarksFrames[frameIndex];
+    if (landmarksFrames.length === 0) return undefined;
+    // Horodatage absent (analyse antérieure à son introduction) : repli sur
+    // l'ancien comportement proportionnel, imparfait mais fonctionnel.
+    if (!landmarksTimes || landmarksTimes.length !== landmarksFrames.length) {
+      const progress = (mediaTime - rangeStart) / (rangeEnd - rangeStart);
+      const index = Math.min(
+        landmarksFrames.length - 1,
+        Math.max(0, Math.floor(progress * landmarksFrames.length))
+      );
+      return landmarksFrames[index];
+    }
+
+    let low = 0;
+    let high = landmarksTimes.length - 1;
+    while (low < high) {
+      const mid = (low + high) >> 1;
+      if (landmarksTimes[mid] < mediaTime) low = mid + 1;
+      else high = mid;
+    }
+    // Entre deux images encadrantes, garder la plus proche dans le temps.
+    if (
+      low > 0 &&
+      Math.abs(landmarksTimes[low - 1] - mediaTime) <
+        Math.abs(landmarksTimes[low] - mediaTime)
+    ) {
+      low -= 1;
+    }
+    return landmarksFrames[low];
   }
 
   // --- Passe 1 : la figure, annotée en direct ---
@@ -867,7 +905,7 @@ export async function recordAnnotatedVideo({
       // final. 100% n'est envoyé qu'une fois le fichier réellement prêt.
       onProgress?.(Math.min(90, Math.round(progress * 90)));
 
-      const landmarks = landmarksAt(progress);
+      const landmarks = landmarksAtTime(mediaTime);
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       if (landmarks) {
@@ -981,11 +1019,7 @@ export async function recordAnnotatedVideo({
         // défaut sans casser le rythme de la vidéo publiée.
         playbackRate: 0.25,
         drawFrame(mediaTime) {
-          const progress = Math.min(
-            1,
-            Math.max(0, (mediaTime - rangeStart) / span)
-          );
-          const landmarks = landmarksAt(progress);
+          const landmarks = landmarksAtTime(mediaTime);
 
           const phase = ((performance.now() - replayStartedAt) / 900) % 1;
 
