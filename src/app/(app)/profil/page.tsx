@@ -150,6 +150,21 @@ export default async function ProfilPage() {
           </Link>
         )}
 
+        {profile?.is_admin && (
+          <Link
+            href="/calibration"
+            className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4 transition-colors hover:border-cyan-800"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-cyan-400">
+              <RulerIcon className="h-4 w-4" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-white">Calibration</p>
+              <p className="text-xs text-slate-500">Mesurer et noter des figures</p>
+            </div>
+          </Link>
+        )}
+
         <LogoutButton />
       </div>
     </div>

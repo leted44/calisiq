@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PROGRESSION_LABELS, CALIBRATED_CRITERIA } from "@/lib/pose/report";
 import CalibrationForm from "./CalibrationForm";
@@ -33,6 +34,19 @@ const EXTRA_LABELS: Record<string, string> = {
 
 export default async function CalibrationPage() {
   const supabase = await createClient();
+
+  // Outil interne : réservé au compte administrateur. Le drapeau vit sur
+  // profiles plutôt qu'une adresse codée en dur, donc il se donne ou se
+  // retire depuis Supabase sans redéploiement (voir migration
+  // 20260830180000).
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("is_admin").eq("id", user.id).single()
+    : { data: null };
+
+  if (!profile?.is_admin) notFound();
 
   const { data: samples } = await supabase
     .from("calibration_samples")
