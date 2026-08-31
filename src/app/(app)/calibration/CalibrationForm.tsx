@@ -60,6 +60,61 @@ function scoreColor(score: number): string {
   return "text-orange-400";
 }
 
+// Une ligne du tableau des angles : valeur mesurée, et cible de la
+// variation sélectionnée quand elle existe. Sans la cible, un angle brut
+// ne dit rien — 84° de hanche est excellent en tuck et catastrophique en
+// full, et c'est précisément ce qu'on cherche à juger en calibration.
+function AngleRow({
+  label,
+  value,
+  target,
+  tolerance,
+  unit = "°",
+  decimals = 1,
+}: {
+  label: string;
+  value: number;
+  target?: number;
+  tolerance?: number;
+  unit?: string;
+  decimals?: number;
+}) {
+  // Écart rapporté à la tolérance du critère plutôt qu'en valeur absolue :
+  // 5° d'écart sur un critère toléré à 20° n'a rien à voir avec 5° sur un
+  // critère toléré à 6°.
+  const ratio =
+    target !== undefined && tolerance
+      ? Math.abs(value - target) / tolerance
+      : null;
+  const color =
+    ratio === null
+      ? "text-white"
+      : ratio <= 0.5
+      ? "text-green-400"
+      : ratio <= 1
+      ? "text-cyan-400"
+      : "text-orange-400";
+
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-slate-400">{label}</dt>
+      <dd className="whitespace-nowrap font-mono">
+        <span className={color}>
+          {value.toFixed(decimals)}
+          {unit}
+        </span>
+        {target !== undefined && (
+          <span className="text-slate-600">
+            {" / "}
+            {target.toFixed(decimals)}
+            {unit}
+          </span>
+        )}
+      </dd>
+    </div>
+  );
+}
+
 export default function CalibrationForm() {
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -262,6 +317,20 @@ export default function CalibrationForm() {
     setSaved(true);
   }
 
+  // Rouvre la notation sur la MÊME mesure, pour l'enregistrer sous une
+  // autre variation. On ne remet à zéro que la note et le commentaire :
+  // le média, l'analyse et les angles restent en place, il n'y a donc ni
+  // réimport ni réanalyse.
+  function handleRateAnotherVariation() {
+    setRating("");
+    setNotes("");
+    setSaved(false);
+    setError(null);
+  }
+
+  const currentVariationLabel =
+    VARIATIONS.find((v) => v.value === variation)?.label ?? variation;
+
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
@@ -270,7 +339,14 @@ export default function CalibrationForm() {
         </label>
         <select
           value={variation}
-          onChange={(e) => setVariation(e.target.value as (typeof VARIATIONS)[number]["value"])}
+          onChange={(e) => {
+            setVariation(e.target.value as (typeof VARIATIONS)[number]["value"]);
+            // Changer de variation après un enregistrement rouvre
+            // directement la notation sur la même mesure : c'est
+            // exactement le geste "je note ce hold sous une autre
+            // catégorie", inutile d'exiger un clic de plus.
+            if (saved) handleRateAnotherVariation();
+          }}
           className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white outline-none focus:border-cyan-500"
         >
           {VARIATIONS.map((v) => (
@@ -432,59 +508,79 @@ export default function CalibrationForm() {
           )}
 
           <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Angles mesurés
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Angles mesurés
+              </p>
+              <p className="text-[10px] uppercase tracking-wide text-slate-600">
+                mesuré / cible
+              </p>
+            </div>
+            {(() => {
+              const grid = SCORING_GRID[variation as Progression];
+              const a = result.summaryAngles;
+              return (
+                <dl className="space-y-1.5 text-sm">
+                  <AngleRow
+                    label="Coude"
+                    value={a.elbowAngle}
+                    target={grid?.elbow_angle.target}
+                    tolerance={grid?.elbow_angle.tolerance}
+                  />
+                  <AngleRow
+                    label="Hanche"
+                    value={a.hipAngle}
+                    target={grid?.hip_angle.target}
+                    tolerance={grid?.hip_angle.tolerance}
+                  />
+                  <AngleRow
+                    label="Genou"
+                    value={a.kneeAngle}
+                    target={grid?.knee_angle?.target}
+                    tolerance={grid?.knee_angle?.tolerance}
+                  />
+                  <AngleRow
+                    label="Ligne de corps (vs horizontale)"
+                    value={a.bodyLineAngleFromHorizontal}
+                    target={grid?.body_line_angle_from_horizontal?.target}
+                    tolerance={grid?.body_line_angle_from_horizontal?.tolerance}
+                  />
+                  <AngleRow
+                    label="Ouverture épaule (hanche-épaule-poignet)"
+                    value={a.shoulderFlexionAngle}
+                    target={grid?.shoulder_flexion?.target}
+                    tolerance={grid?.shoulder_flexion?.tolerance}
+                  />
+                  <AngleRow
+                    label="Protraction épaules"
+                    value={a.shoulderProtraction}
+                    target={grid?.shoulder_protraction?.target}
+                    tolerance={grid?.shoulder_protraction?.tolerance}
+                    unit=""
+                    decimals={3}
+                  />
+                  <AngleRow
+                    label="Déviation bassin"
+                    value={a.pelvisDeviation}
+                    target={grid?.pelvis_deviation?.target}
+                    tolerance={grid?.pelvis_deviation?.tolerance}
+                    unit=""
+                    decimals={3}
+                  />
+                  <AngleRow
+                    label="Signe sag/pike bassin"
+                    value={a.pelvisSagSign}
+                    unit=""
+                    decimals={3}
+                  />
+                </dl>
+              );
+            })()}
+            <p className="pt-1 text-[11px] leading-relaxed text-slate-600">
+              Une cible absente signifie que ce critère n&apos;est pas noté pour
+              cette variation. La couleur indique l&apos;écart rapporté à la
+              tolérance du critère, pas en degrés bruts.
             </p>
-            <dl className="space-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-slate-400">Coude</dt>
-                <dd className="font-mono text-white">
-                  {result.summaryAngles.elbowAngle.toFixed(1)}°
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-400">Hanche</dt>
-                <dd className="font-mono text-white">
-                  {result.summaryAngles.hipAngle.toFixed(1)}°
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-400">Genou</dt>
-                <dd className="font-mono text-white">
-                  {result.summaryAngles.kneeAngle.toFixed(1)}°
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-400">Ligne de corps (vs horizontale)</dt>
-                <dd className="font-mono text-white">
-                  {result.summaryAngles.bodyLineAngleFromHorizontal.toFixed(1)}°
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-400">Ouverture épaule (hanche-épaule-poignet)</dt>
-                <dd className="font-mono text-white">
-                  {result.summaryAngles.shoulderFlexionAngle.toFixed(1)}°
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-400">Protraction épaules</dt>
-                <dd className="font-mono text-white">
-                  {result.summaryAngles.shoulderProtraction.toFixed(3)}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-400">Déviation bassin</dt>
-                <dd className="font-mono text-white">
-                  {result.summaryAngles.pelvisDeviation.toFixed(3)}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-slate-400">Signe sag/pike bassin</dt>
-                <dd className="font-mono text-white">
-                  {result.summaryAngles.pelvisSagSign.toFixed(3)}
-                </dd>
-              </div>
-            </dl>
           </div>
 
           {result.representativeFrameDataUrl && (
@@ -577,8 +673,33 @@ export default function CalibrationForm() {
           ) : (
             <div className="space-y-3">
               <p className="rounded-lg bg-green-500/10 p-3 text-sm text-green-400">
-                Échantillon enregistré.
+                Échantillon enregistré pour {currentVariationLabel}.
               </p>
+
+              {/* Une même exécution peut légitimement être notée sous
+                  plusieurs variations : un hold jugé 8/10 en tuck vaut
+                  bien moins en full, puisque les cibles diffèrent. La
+                  mesure étant indépendante de la variation (analyse lancée
+                  avec progression: null), on peut renoter sans réimporter
+                  ni réanalyser. */}
+              <div className="space-y-2 rounded-xl border border-cyan-900/50 bg-cyan-500/5 p-3">
+                <p className="text-sm font-medium text-cyan-300">
+                  Noter la même mesure sous une autre variation
+                </p>
+                <p className="text-[11px] leading-relaxed text-slate-400">
+                  Les angles ne changent pas, seules les cibles et ta note
+                  changent. Choisis la variation ci-dessus, puis reprends la
+                  notation.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRateAnotherVariation}
+                  className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 text-sm font-medium text-white"
+                >
+                  Renoter cette mesure
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={handleReset}
