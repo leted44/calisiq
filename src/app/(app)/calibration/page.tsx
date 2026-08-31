@@ -55,7 +55,7 @@ export default async function CalibrationPage() {
   const { data: samples } = await supabase
     .from("calibration_samples")
     .select(
-      "variation, user_rating, media_type, elbow_angle, hip_angle, knee_angle, shoulder_flexion_angle, body_line_angle_from_horizontal, shoulder_protraction, pelvis_deviation, pelvis_sag_sign, torso_angle_from_horizontal, straightest_knee_angle, straightest_leg_hip_angle, bent_knee_angle"
+      "id, variation, user_rating, media_type, elbow_angle, hip_angle, knee_angle, shoulder_flexion_angle, body_line_angle_from_horizontal, shoulder_protraction, pelvis_deviation, pelvis_sag_sign, torso_angle_from_horizontal, straightest_knee_angle, straightest_leg_hip_angle, bent_knee_angle"
     )
     .order("created_at");
 

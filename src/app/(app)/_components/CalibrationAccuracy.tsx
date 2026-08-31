@@ -1,9 +1,16 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { TrashIcon } from "@/components/icons";
 import { scoreAngles, globalScore } from "@/lib/pose/scoring";
 import { SCORING_GRID, type Progression } from "@/lib/pose/grid";
 import { PROGRESSION_LABELS } from "@/lib/pose/report";
 import type { PoseAngles } from "@/lib/pose/angles";
 
 export type CalibrationSampleRow = {
+  id: string;
   variation: string;
   user_rating: number;
   elbow_angle: number | null;
@@ -23,11 +30,32 @@ export type CalibrationSampleRow = {
 };
 
 type SampleComparison = {
+  id: string;
   index: number;
   userRating: number;
   computed: number;
   gap: number;
+  incoherence: string | null;
 };
+
+// Un échantillon peut être mesuré correctement et rester inutilisable :
+// c'est le cas quand la position filmée n'est pas celle de la variation
+// choisie. Le garder revient à apprendre à la grille qu'une figure vaut
+// une autre, et ça se paye sur tous les scores suivants. On le signale
+// donc au lieu de le laisser peser en silence.
+function incoherenceOf(sample: CalibrationSampleRow): string | null {
+  if (sample.variation === "one_leg_front_lever") {
+    const bent = sample.bent_knee_angle;
+    const straight = sample.straightest_knee_angle;
+    if (bent !== null && bent > 150) {
+      return "les deux jambes sont tendues : c'est un full front lever";
+    }
+    if (straight !== null && straight < 120) {
+      return "les deux jambes sont repliées : c'est un tuck front lever";
+    }
+  }
+  return null;
+}
 
 type Comparison = {
   variation: string;
@@ -85,6 +113,52 @@ export default function CalibrationAccuracy({
 }: {
   samples: CalibrationSampleRow[];
 }) {
+  const router = useRouter();
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleDelete(sample: SampleComparison, label: string) {
+    const raison = sample.incoherence
+      ? `
+
+Motif détecté : ${sample.incoherence}.`
+      : "";
+    const question =
+      `Supprimer définitivement l'échantillon #${sample.index} de ${label} ` +
+      `(ta note ${sample.userRating.toFixed(1)}) ?${raison}
+
+` +
+      "Il ne comptera plus dans la calibration. C'est irréversible.";
+    if (!confirm(question)) return;
+
+    setDeleting(sample.id);
+    setError(null);
+    const supabase = createClient();
+    // .select() pour savoir ce qui a réellement été supprimé : la lecture
+    // des échantillons est ouverte à tous les comptes, mais l'écriture
+    // reste limitée aux lignes du compte connecté. Sans ce retour, la
+    // suppression d'un échantillon enregistré depuis un autre compte de
+    // test renverrait un succès sans rien supprimer.
+    const { data, error: deleteError } = await supabase
+      .from("calibration_samples")
+      .delete()
+      .eq("id", sample.id)
+      .select("id");
+    setDeleting(null);
+
+    if (deleteError) {
+      setError("Suppression impossible : " + deleteError.message);
+      return;
+    }
+    if (!data || data.length === 0) {
+      setError(
+        "Rien n'a été supprimé : cet échantillon a été enregistré depuis un autre compte. Reconnecte-toi avec ce compte pour le supprimer."
+      );
+      return;
+    }
+    router.refresh();
+  }
+
   const byVariation = new Map<string, SampleComparison[]>();
 
   for (const sample of samples) {
@@ -92,9 +166,11 @@ export default function CalibrationAccuracy({
     if (computed === null) continue;
     const list = byVariation.get(sample.variation) ?? [];
     list.push({
+      id: sample.id,
       index: list.length + 1,
       userRating: sample.user_rating,
       computed,
+      incoherence: incoherenceOf(sample),
       // Écart signé : positif = la grille est plus généreuse que toi.
       gap: computed - sample.user_rating,
     });
@@ -142,6 +218,12 @@ export default function CalibrationAccuracy({
         </p>
       </div>
 
+      {error && (
+        <p className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+          {error}
+        </p>
+      )}
+
       <div className="space-y-2">
         {comparisons.map((c) => (
           <div
@@ -157,31 +239,47 @@ export default function CalibrationAccuracy({
 
             <div className="divide-y divide-slate-800/70">
               {c.samples.map((s) => (
-                <div
-                  key={s.index}
-                  className="flex items-center gap-3 px-3.5 py-2 text-xs"
-                >
-                  <span className="w-6 shrink-0 text-slate-600">#{s.index}</span>
-                  <span className="flex-1 text-slate-400">
-                    ta note{" "}
-                    <span className="font-semibold text-slate-200">
-                      {s.userRating.toFixed(1)}
+                <div key={s.id} className="px-3.5 py-2">
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="w-6 shrink-0 text-slate-600">
+                      #{s.index}
                     </span>
-                  </span>
-                  <span className="flex-1 text-slate-400">
-                    grille{" "}
-                    <span className="font-semibold text-slate-200">
-                      {s.computed.toFixed(1)}
+                    <span className="flex-1 text-slate-400">
+                      ta note{" "}
+                      <span className="font-semibold text-slate-200">
+                        {s.userRating.toFixed(1)}
+                      </span>
                     </span>
-                  </span>
-                  <span
-                    className={`w-12 shrink-0 text-right font-semibold ${gapColor(
-                      Math.abs(s.gap)
-                    )}`}
-                  >
-                    {s.gap > 0 ? "+" : ""}
-                    {s.gap.toFixed(1)}
-                  </span>
+                    <span className="flex-1 text-slate-400">
+                      grille{" "}
+                      <span className="font-semibold text-slate-200">
+                        {s.computed.toFixed(1)}
+                      </span>
+                    </span>
+                    <span
+                      className={`w-12 shrink-0 text-right font-semibold ${gapColor(
+                        Math.abs(s.gap)
+                      )}`}
+                    >
+                      {s.gap > 0 ? "+" : ""}
+                      {s.gap.toFixed(1)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(s, c.label)}
+                      disabled={deleting !== null}
+                      aria-label={`Supprimer l'échantillon ${s.index}`}
+                      className="shrink-0 rounded-md p-1 text-slate-600 transition hover:bg-slate-800 hover:text-red-400 disabled:opacity-40"
+                    >
+                      <TrashIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  {s.incoherence && (
+                    <p className="mt-1 pl-9 text-[11px] leading-snug text-orange-400">
+                      Position incohérente avec la variation : {s.incoherence}.
+                      Cet échantillon fausse la calibration.
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
