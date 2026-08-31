@@ -7,6 +7,8 @@ import {
   measureImage,
   type PoseAnalysisResult,
 } from "@/lib/pose/runAnalysis";
+import { scoreAngles, globalScore } from "@/lib/pose/scoring";
+import { SCORING_GRID, type Progression } from "@/lib/pose/grid";
 
 const VARIATIONS = [
   { value: "tuck_planche", label: "Tuck Planche", figure: "planche" },
@@ -47,6 +49,15 @@ function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = (seconds % 60).toFixed(1).padStart(4, "0");
   return `${m}:${s}`;
+}
+
+// Même code couleur que le reste de l'app (ResultCard, export vidéo) : les
+// seuils de "bon"/"faible" doivent se lire pareil partout, pas différer
+// d'un écran à l'autre.
+function scoreColor(score: number): string {
+  if (score >= 8) return "text-green-400";
+  if (score >= 6) return "text-cyan-400";
+  return "text-orange-400";
 }
 
 export default function CalibrationForm() {
@@ -487,6 +498,38 @@ export default function CalibrationForm() {
 
           {!saved ? (
             <div className="space-y-3">
+              {(() => {
+                // Note que la grille ACTUELLE donnerait à cette mesure
+                // précise, affichée avant même que tu notes toi-même : la
+                // comparaison se fait dans le même geste, sans attendre le
+                // bloc récapitulatif de la page. Absent pour les variations
+                // sans grille (handstand_push_up, one_arm_handstand — pas
+                // encore implémentées).
+                const grid = SCORING_GRID[variation as Progression];
+                if (!grid) return null;
+                const scores = scoreAngles(
+                  result.summaryAngles,
+                  variation as Progression
+                );
+                const score = globalScore(scores);
+                return (
+                  <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 p-4">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        Note de la grille actuelle
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-slate-500">
+                        À comparer à la tienne, pas à recopier
+                      </p>
+                    </div>
+                    <p className={`text-2xl font-bold ${scoreColor(score)}`}>
+                      {score.toFixed(1)}
+                      <span className="text-sm font-normal text-slate-600">/10</span>
+                    </p>
+                  </div>
+                );
+              })()}
+
               <div className="space-y-1.5">
                 <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   Ta note (0-10)
