@@ -552,6 +552,29 @@ export default function CalibrationForm() {
                   value: a.bodyLineAngleFromHorizontal,
                   t: grid?.body_line_angle_from_horizontal,
                 },
+                // Mesures des figures asymétriques (single leg). Sans ces
+                // lignes, leurs critères étaient notés mais invisibles dans
+                // ce tableau, qui semblait alors n'en noter qu'un seul.
+                {
+                  label: "Tronc (vs horizontale)",
+                  value: a.torsoAngleFromHorizontal,
+                  t: grid?.torso_angle,
+                },
+                {
+                  label: "Genou — jambe tendue",
+                  value: a.straightestKneeAngle,
+                  t: grid?.straightest_knee_angle,
+                },
+                {
+                  label: "Hanche — jambe tendue",
+                  value: a.straightestLegHipAngle,
+                  t: grid?.straightest_leg_hip_angle,
+                },
+                {
+                  label: "Genou — jambe repliée",
+                  value: a.bentKneeAngle,
+                  t: grid?.bent_knee_angle,
+                },
                 {
                   label: "Ouverture épaule (hanche-épaule-poignet)",
                   value: a.shoulderFlexionAngle,
