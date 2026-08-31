@@ -182,9 +182,20 @@ async function createWebCodecsWriter(
   let gotDecoderConfig = false;
   const encoder = new VideoEncoder({
     output: (chunk, meta) => {
-      chunkCount += 1;
-      if (meta?.decoderConfig?.description) gotDecoderConfig = true;
-      muxer.addVideoChunk(chunk, meta);
+      // Ce callback est appelé par le navigateur : une exception qui s'en
+      // échappe est avalée sans jamais remonter. Sans ce try/catch, un
+      // refus du muxer passait inaperçu, les compteurs ci-dessous étaient
+      // quand même incrémentés, et l'échec ne se révélait qu'à la
+      // finalisation sous la forme d'une erreur interne incompréhensible.
+      try {
+        muxer.addVideoChunk(chunk, meta);
+        // Comptés seulement après acceptation effective : compter avant
+        // revenait à affirmer que le muxer avait reçu ce qu'il n'avait pas.
+        chunkCount += 1;
+        if (meta?.decoderConfig?.description) gotDecoderConfig = true;
+      } catch (e) {
+        failure = e as Error;
+      }
     },
     error: (e) => {
       failure = e;
@@ -254,7 +265,15 @@ async function createWebCodecsWriter(
         markWebCodecsFailed();
         throw new Error("Encodeur vidéo incomplet sur cet appareil.");
       }
-      muxer.finalize();
+      // Dernier filet : si la finalisation échoue malgré tout, on ne laisse
+      // pas remonter l'erreur interne du muxer, illisible pour
+      // l'utilisateur et sans indication de ce qu'il peut faire.
+      try {
+        muxer.finalize();
+      } catch {
+        markWebCodecsFailed();
+        throw new Error("Assemblage de la vidéo impossible sur cet appareil.");
+      }
       const { buffer } = muxer.target as ArrayBufferTarget;
       return new Blob([buffer], { type: "video/mp4" });
     },

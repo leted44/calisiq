@@ -136,12 +136,22 @@ export default function ExportVideoButton({
     }
   }
 
+  // Un échec de l'encodeur moderne est retenu par writer.ts pour toute la
+  // session : le prochain appui repartira donc directement sur l'autre
+  // méthode, sans réessayer ce qui vient d'échouer. On le dit plutôt que
+  // de laisser l'utilisateur devant une erreur sans issue.
+  function reportFailure(err: Error) {
+    setError(
+      `Export impossible (${err.message}). Appuie à nouveau : la génération utilisera une autre méthode.`
+    );
+  }
+
   async function handleDownload() {
     try {
       const { blob, filename } = await generate();
       downloadBlob(blob, filename);
     } catch (err) {
-      setError("Export impossible : " + (err as Error).message);
+      reportFailure(err as Error);
     }
   }
 
@@ -193,7 +203,7 @@ export default function ExportVideoButton({
         shareFromCache(blob, filename);
       })
       .catch((err: Error) => {
-        setError("Export impossible : " + err.message);
+        reportFailure(err);
       });
   }
 
