@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PROGRESSION_LABELS, CALIBRATED_CRITERIA } from "@/lib/pose/report";
 import CalibrationForm from "./CalibrationForm";
+import CalibrationAccuracy, {
+  type CalibrationSampleRow,
+} from "../_components/CalibrationAccuracy";
 import ResyncScoresButton from "../_components/ResyncScoresButton";
 
 const CRITERE_LABELS: Record<string, string> = {
@@ -51,7 +54,9 @@ export default async function CalibrationPage() {
 
   const { data: samples } = await supabase
     .from("calibration_samples")
-    .select("variation, user_rating, media_type")
+    .select(
+      "variation, user_rating, media_type, elbow_angle, hip_angle, knee_angle, shoulder_flexion_angle, body_line_angle_from_horizontal, shoulder_protraction, pelvis_deviation, pelvis_sag_sign"
+    )
     .order("created_at");
 
   type Sample = { rating: number; mediaType: string };
@@ -74,7 +79,7 @@ export default async function CalibrationPage() {
       </div>
 
       <div className="w-full max-w-md">
-        <ResyncScoresButton />
+        <CalibrationAccuracy samples={(samples ?? []) as CalibrationSampleRow[]} />
       </div>
 
       <div className="w-full max-w-md space-y-2">
@@ -148,6 +153,10 @@ export default async function CalibrationPage() {
 
       <div className="w-full max-w-md">
         <CalibrationForm />
+      </div>
+
+      <div className="w-full max-w-md pb-4">
+        <ResyncScoresButton />
       </div>
     </div>
   );
