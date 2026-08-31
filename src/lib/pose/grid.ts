@@ -107,12 +107,20 @@ export type ProgressionThresholds = {
 export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   tuck_planche: {
     elbow_angle: { target: 176, tolerance: 20 },
-    hip_angle: { target: 47, tolerance: 85 },
+    // Recalibré le 2026-09-01 sur 8 échantillons notés : tolérance 85 → 30.
+    // À 85 le critère ne mesurait plus rien (une full planche notée en tuck
+    // obtenait encore 7,4). Cible laissée à 47 : c'est la valeur des
+    // meilleurs essais et la définition du tuck. Erreur moyenne 1,73 → 1,20.
+    hip_angle: { target: 47, tolerance: 30 },
     shoulder_protraction: { target: 0.35, tolerance: 0.2, mode: "minimum" },
   },
   advanced_tuck_planche: {
     elbow_angle: { target: 176, tolerance: 20 },
-    hip_angle: { target: 110, tolerance: 30 },
+    // Recalibré le 2026-09-01 sur 15 échantillons notés (la variation la
+    // mieux fournie) : les essais bien notés se groupent entre 107 et 131,
+    // la cible passe donc de 110 à 119 et la tolérance se resserre à 25.
+    // Erreur moyenne 1,69 → 1,50.
+    hip_angle: { target: 119, tolerance: 25 },
     shoulder_protraction: { target: 0.5, tolerance: 0.2, mode: "minimum" },
   },
   straddle_planche: {

@@ -37,7 +37,8 @@ scoring.
 
 | Figure | Statut | Base des seuils |
 |---|---|---|
-| Planche (tuck, advanced tuck, straddle, full) | Actif | Recalibré sur échantillons réels notés |
+| Planche (tuck, advanced tuck, full) | Actif | Hanche recalibrée le 2026-09-01 sur 34 échantillons notés |
+| Straddle planche | Actif, seuils DRAFT | 3 échantillons seulement |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
 | Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
 | Single Leg Front Lever | **Actif, seuils DRAFT** | 4 échantillons seulement, dont 2 inexploitables |
@@ -55,6 +56,19 @@ tolérances sont bornées à 35°, au-delà desquelles un critère ne discrimine
 plus rien et disparaît de fait du barème. 5 échantillons par variation
 reste mince, et certains sont la même exécution notée sous des variations
 différentes : continuer à en ajouter et refaire le calcul.
+
+Passe de recalibration du 2026-09-01 sur l’ensemble des 75 échantillons :
+seule la hanche de la tuck planche (tolérance 85 vers 30, erreur 1,73 vers
+1,20) et celle de l’advanced tuck planche (cible 110 vers 119, tolérance 30
+vers 25, erreur 1,69 vers 1,50) ont bougé. Partout ailleurs l’optimiseur ne
+réduisait l’erreur qu’en élargissant les tolérances jusqu’à leur plafond, ce
+qui revient à cesser de mesurer. **Une recalibration ne doit jamais élargir
+une tolérance** : si le seul moyen de coller aux notes est de relâcher un
+critère, c’est qu’il manque une mesure, pas qu’un seuil est faux. L’erreur
+résiduelle sur la planche et le handstand (1,2 à 1,5) est concentrée sur des
+essais que les angles actuels ne distinguent pas : typiquement une figure
+d’une autre variation notée sévèrement, ou un dos arrondi que la grille ne
+voit pas.
 
 La Single Leg Front Lever n'a pas été recalibrée : 4 échantillons, dont 2
 antérieurs aux mesures asymétriques et donc inexploitables. Ses seuils
