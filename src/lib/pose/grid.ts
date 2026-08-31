@@ -140,10 +140,39 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     pelvis_deviation: { target: 0, tolerance: 0.12 },
   },
 
-  // Front Lever : ajouté le 2026-08-26, seuils entièrement raisonnés (DRAFT,
-  // confiance faible), aucun calibration_samples encore collecté pour cette
-  // famille de figures — à recalibrer dès que des échantillons réels sont
-  // disponibles, en suivant le même processus que pour la planche.
+  // Front Lever : ajouté le 2026-08-26 avec des seuils entièrement
+  // raisonnés, RECALIBRÉ le 2026-09-01 sur 20 échantillons réels notés par
+  // l'utilisateur (5 par variation), par minimisation de l'écart entre sa
+  // note et celle de la grille.
+  //
+  // Erreur moyenne avant -> après : tuck 0.60 -> 0.44, advanced tuck
+  // 1.19 -> 0.43, straddle 0.60 -> 0.28, full 0.72 -> 0.25.
+  //
+  // Deux règles suivies pendant l'ajustement, à reprendre pour toute
+  // future recalibration :
+  //
+  // 1. Les CIBLES de critères dont la valeur idéale est une évidence
+  //    biomécanique (coude et genou tendus = 180°) n'ont PAS été
+  //    ajustées, seule leur tolérance l'a été. Le solveur voulait ramener
+  //    la cible de coude à 158-167°, parce qu'aucun échantillon n'a le
+  //    bras parfaitement tendu — ce serait confondre ce que fait
+  //    l'utilisateur avec ce qu'il faut faire, et un bras verrouillé à
+  //    180° aurait alors été moins bien noté qu'un bras fléchi.
+  //    La tolérance, elle, exprime l'écart jugé acceptable : c'est bien
+  //    une donnée à calibrer, et l'utilisateur s'avère plus indulgent que
+  //    prévu sur le coude (jusqu'à 35° en advanced tuck et full).
+  //
+  // 2. Les tolérances sont bornées à 35° maximum. Sans borne, le solveur
+  //    élargit un critère jusqu'à le rendre toujours proche de 10 : il
+  //    disparaît alors du barème, ce qui réduit l'erreur sur ces quelques
+  //    échantillons mais supprime une mesure réelle.
+  //
+  // Réserve : 5 échantillons par variation restent peu, et plusieurs sont
+  // la même exécution notée sous des variations différentes. Ces seuils
+  // sont bien meilleurs que des valeurs devinées, pas encore solides.
+  //
+  // one_leg_front_lever N'A PAS été recalibré : 4 échantillons seulement,
+  // dont 2 antérieurs aux mesures asymétriques et donc inexploitables.
   //
   // Pas de critère d'épaule (protraction ou flexion) pour le front lever :
   // contrairement à la planche (poussée) ou au handstand (overhead), le
@@ -159,12 +188,12 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   // l'expérience de la Tuck Planche (cible réelle 47°, très loin d'une
   // estimation a priori) incite à la prudence ici.
   tuck_front_lever: {
-    elbow_angle: { target: 176, tolerance: 20 },
-    hip_angle: { target: 70, tolerance: 45 },
+    elbow_angle: { target: 176, tolerance: 18 },
+    hip_angle: { target: 62, tolerance: 45 },
   },
   advanced_tuck_front_lever: {
-    elbow_angle: { target: 176, tolerance: 20 },
-    hip_angle: { target: 120, tolerance: 35 },
+    elbow_angle: { target: 176, tolerance: 35 },
+    hip_angle: { target: 110, tolerance: 16 },
   },
   // Single Leg Front Lever : une jambe tendue, l'autre repliée. Ajouté le
   // 2026-09-01. Figure ASYMÉTRIQUE, donc notée différemment des autres :
@@ -193,15 +222,15 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     bent_knee_angle: { target: 80, tolerance: 40 },
   },
   straddle_front_lever: {
-    body_line_angle_from_horizontal: { target: 6, tolerance: 8 },
+    body_line_angle_from_horizontal: { target: 8, tolerance: 15 },
     elbow_angle: { target: 180, tolerance: 15 },
-    hip_angle: { target: 170, tolerance: 15 },
-    knee_angle: { target: 180, tolerance: 12 },
+    hip_angle: { target: 166, tolerance: 13 },
+    knee_angle: { target: 180, tolerance: 16 },
   },
   full_front_lever: {
-    body_line_angle_from_horizontal: { target: 0, tolerance: 12 },
-    elbow_angle: { target: 180, tolerance: 18 },
-    hip_angle: { target: 172, tolerance: 18 },
-    knee_angle: { target: 180, tolerance: 10 },
+    body_line_angle_from_horizontal: { target: 2, tolerance: 11 },
+    elbow_angle: { target: 180, tolerance: 35 },
+    hip_angle: { target: 178, tolerance: 10 },
+    knee_angle: { target: 180, tolerance: 19 },
   },
 };

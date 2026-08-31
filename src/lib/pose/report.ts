@@ -26,11 +26,11 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   handstand: ["hip_angle", "pelvis_deviation"],
   handstand_push_up: [],
   one_arm_handstand: [],
-  tuck_front_lever: [],
-  advanced_tuck_front_lever: [],
+  tuck_front_lever: ["elbow_angle", "hip_angle"],
+  advanced_tuck_front_lever: ["elbow_angle", "hip_angle"],
   one_leg_front_lever: [],
-  straddle_front_lever: [],
-  full_front_lever: [],
+  straddle_front_lever: ["elbow_angle", "hip_angle", "knee_angle", "body_line_angle"],
+  full_front_lever: ["elbow_angle", "hip_angle", "knee_angle", "body_line_angle"],
 };
 
 // Définition générique de ce que mesure chaque critère (indépendante du

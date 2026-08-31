@@ -1,6 +1,6 @@
 # CalisIQ — Spec projet pour Claude Code
 
-> Mise à jour : 2026-08-31. Ce document décrit les **décisions et le
+> Mise à jour : 2026-09-01. Ce document décrit les **décisions et le
 > contexte** ; il ne recopie plus les données qui vivent dans le code
 > (grille de scoring, schéma SQL), parce que toute duplication finit par
 > diverger. Voir les pointeurs « source de vérité » ci-dessous.
@@ -39,16 +39,27 @@ scoring.
 |---|---|---|
 | Planche (tuck, advanced tuck, straddle, full) | Actif | Recalibré sur échantillons réels notés |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
-| Front Lever (tuck → single leg → straddle → full) | **Actif, seuils DRAFT** | Entièrement raisonnés, recalibration en cours |
+| Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
+| Single Leg Front Lever | **Actif, seuils DRAFT** | 4 échantillons seulement, dont 2 inexploitables |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
 
-Le Front Lever a été réactivé le 2026-08-31 à la demande de l'utilisateur,
-qui a commencé à soumettre des échantillons via `/calibration`. Ses seuils
-restent DRAFT dans `grid.ts` : les scores affichés sont à prendre avec
-prudence tant qu'une recalibration réelle n'a pas été faite. Suivre l'écart
-entre note humaine et note de la grille dans le bloc « Justesse de la
-grille » de `/calibration`, et recalibrer dès qu'assez d'échantillons
-existent (même processus que pour la planche).
+Le Front Lever a été réactivé le 2026-08-31, puis recalibré le 2026-09-01
+sur les 20 échantillons notés via `/calibration` (5 par variation).
+L'écart moyen entre la note humaine et la note de la grille est passé de
+0.60/1.19/0.60/0.72 à 0.44/0.43/0.28/0.25 (tuck, advanced tuck, straddle,
+full). Deux règles ont encadré l'ajustement, et doivent l'encadrer aussi
+la prochaine fois : les cibles imposées par la biomécanique (coude et genou
+tendus à 180°) ne sont **pas** optimisées, seule leur tolérance l'est, sinon
+un geste parfait finirait moins bien noté qu'un geste moyen ; et les
+tolérances sont bornées à 35°, au-delà desquelles un critère ne discrimine
+plus rien et disparaît de fait du barème. 5 échantillons par variation
+reste mince, et certains sont la même exécution notée sous des variations
+différentes : continuer à en ajouter et refaire le calcul.
+
+La Single Leg Front Lever n'a pas été recalibrée : 4 échantillons, dont 2
+antérieurs aux mesures asymétriques et donc inexploitables. Ses seuils
+restent DRAFT. Suivre l'écart dans le bloc « Justesse de la grille » de
+`/calibration`.
 
 Vision plus long terme, hors scope : tractions, muscle-up. Ne pas
 commencer une nouvelle figure sans validation explicite.
@@ -124,8 +135,9 @@ permet de donner ou retirer le rôle sans redéploiement.
 - **50 Mo par fichier** : plafond du plan gratuit Supabase, non
   configurable. Le passage à 100 Mo suppose le plan Pro à 25 $/mois.
 - **1 Go de stockage total** sur le plan gratuit.
-- **Front lever non calibré** : ses scores, et donc le fantôme qui en
-  découle, sont approximatifs.
+- **Single leg front lever non calibrée** : ses scores, et donc le fantôme
+  qui en découle, sont approximatifs. Les autres variations de front lever
+  ont été recalibrées le 2026-09-01.
 - **Pas de multi-langue.** Français uniquement. L'anglais a été demandé
   mais reporté : environ 950 lignes de texte dans 46 fichiers, à faire
   quand on saura si l'audience est francophone ou internationale.
