@@ -309,7 +309,9 @@ export default function CalibrationForm() {
       bent_knee_angle: result.summaryAngles.bentKneeAngle,
       user_rating: ratingValue,
       notes: notes || null,
-      media_type: mediaKind ?? "video",
+      // En base la colonne n'accepte que 'video' ou 'photo' ; en interne
+      // l'état s'appelle "image" parce que c'est le type de l'élément HTML.
+      media_type: mediaKind === "image" ? "photo" : "video",
     });
 
     setSaving(false);
