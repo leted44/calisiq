@@ -25,7 +25,7 @@ export default function ResyncScoresButton() {
   async function handleResync() {
     if (
       !confirm(
-        "Recalculer les scores de toutes tes analyses avec la grille actuelle ? Les valeurs mesurées ne changent pas, seules les notes sont réécrites."
+        "Recalculer les notes des figures de ton Historique avec la grille actuelle ? Les angles mesurés ne changent pas, et les échantillons de calibration ne sont pas touchés."
       )
     ) {
       return;
@@ -139,11 +139,15 @@ export default function ResyncScoresButton() {
           Resynchroniser les scores
         </p>
         <p className="mt-1 text-xs leading-relaxed text-slate-400">
-          Réapplique la grille de seuils actuelle à toutes tes analyses déjà
-          enregistrées, sans re-analyser les vidéos : les angles mesurés sont
-          conservés, seules les notes sont recalculées. À lancer après avoir
-          recalibré une figure, pour que ton historique et tes courbes ne
-          mélangent pas deux barèmes.
+          Réapplique la grille de seuils actuelle aux figures de ton{" "}
+          <span className="font-medium text-slate-300">Historique</span>, sans
+          re-analyser les vidéos : les angles mesurés sont conservés, seules les
+          notes sont recalculées. À lancer après avoir recalibré une figure,
+          pour que ton historique et tes courbes ne mélangent pas deux barèmes.
+        </p>
+        <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">
+          Sans effet sur les échantillons de calibration ci-dessous, qui
+          conservent la note que tu leur as donnée à la main.
         </p>
       </div>
 
@@ -160,9 +164,9 @@ export default function ResyncScoresButton() {
       {report && (
         <div className="rounded-lg border border-cyan-900/50 bg-cyan-500/10 p-3 text-xs text-slate-300">
           <p className="font-medium text-cyan-300">
-            {report.sessionsUpdated} analyse
-            {report.sessionsUpdated > 1 ? "s" : ""} recalculée
-            {report.sessionsUpdated > 1 ? "s" : ""}
+            {report.sessionsUpdated} figure
+            {report.sessionsUpdated > 1 ? "s" : ""} de l&apos;historique
+            recalculée{report.sessionsUpdated > 1 ? "s" : ""}
           </p>
           {report.criteriaRemoved > 0 && (
             <p className="mt-1">
