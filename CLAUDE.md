@@ -39,13 +39,16 @@ scoring.
 |---|---|---|
 | Planche (tuck, advanced tuck, straddle, full) | Actif | Recalibré sur échantillons réels notés |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
-| Front Lever (tuck → full) | **En pause** | Seuils entièrement raisonnés, aucun échantillon collecté |
+| Front Lever (tuck → full) | **Actif, seuils DRAFT** | Entièrement raisonnés, recalibration en cours |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
 
-Le Front Lever est marqué « bientôt disponible » dans l'interface
-(`available: false` dans `AnalysisForm.tsx`). Il sera réactivé quand des
-`calibration_samples` existeront pour lui : afficher des scores non fiables
-serait pire que ne pas proposer la figure.
+Le Front Lever a été réactivé le 2026-08-31 à la demande de l'utilisateur,
+qui a commencé à soumettre des échantillons via `/calibration`. Ses seuils
+restent DRAFT dans `grid.ts` : les scores affichés sont à prendre avec
+prudence tant qu'une recalibration réelle n'a pas été faite. Suivre l'écart
+entre note humaine et note de la grille dans le bloc « Justesse de la
+grille » de `/calibration`, et recalibrer dès qu'assez d'échantillons
+existent (même processus que pour la planche).
 
 Vision plus long terme, hors scope : tractions, muscle-up. Ne pas
 commencer une nouvelle figure sans validation explicite.

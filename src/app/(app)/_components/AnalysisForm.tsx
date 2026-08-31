@@ -71,13 +71,15 @@ const FIGURES: {
   },
   {
     value: "front_lever",
-    // Mis en pause volontairement : les seuils de scoring du front lever
-    // sont entièrement raisonnés (voir grid.ts), aucun échantillon réel
-    // n'a encore été collecté pour les calibrer. Mieux vaut ne pas
-    // proposer la figure que d'afficher des scores non fiables. À
-    // réactiver dès que des calibration_samples existent.
+    // Réactivé le 2026-08-31 à la demande de l'utilisateur, qui a
+    // commencé à soumettre des échantillons via /calibration. Les seuils
+    // de grid.ts restent néanmoins DRAFT (entièrement raisonnés, pas
+    // encore recalibrés sur données réelles, voir le commentaire au-dessus
+    // de tuck_front_lever) : les scores affichés sont donc à prendre avec
+    // prudence tant que la recalibration n'a pas été faite. Suivre la
+    // justesse dans le bloc "Justesse de la grille" de /calibration.
     label: "Front Lever",
-    available: false,
+    available: true,
     Icon: FrontLeverFigureIcon,
     image: "/figures/full-front-lever.png",
   },
