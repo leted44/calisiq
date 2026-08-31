@@ -1,4 +1,5 @@
 import { Muxer, ArrayBufferTarget } from "mp4-muxer";
+import { withFixedDuration } from "./fixMp4Duration";
 
 // Écriture de la vidéo exportée.
 //
@@ -262,16 +263,25 @@ function createRecorderWriter(
 
   recorder.start(1000);
 
-  return {
+  const writer: VideoWriter = {
+    // Mis à jour dans finish() selon que la réparation a pu s'appliquer.
     writesCorrectDuration: false,
     addFrame() {
       if (manual) track.requestFrame!();
     },
     async finish() {
       recorder.stop();
-      return recorded;
+      const blob = await recorded;
+      // MediaRecorder écrit une durée de piste média erronée (valeur
+      // exprimée dans l'échelle du film au lieu de la sienne), ce qui rend
+      // la vidéo non navigable et fait tronquer les importeurs stricts.
+      // On la répare directement dans le fichier.
+      const repaired = await withFixedDuration(blob);
+      writer.writesCorrectDuration = repaired.fixed;
+      return repaired.blob;
     },
   };
+  return writer;
 }
 
 // Redimensionne le canvas en conservant les proportions, côté le plus long
