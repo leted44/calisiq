@@ -5,7 +5,6 @@ import CalibrationForm from "./CalibrationForm";
 import CalibrationAccuracy, {
   type CalibrationSampleRow,
 } from "../_components/CalibrationAccuracy";
-import ResyncScoresButton from "../_components/ResyncScoresButton";
 
 const CRITERE_LABELS: Record<string, string> = {
   shoulder_protraction: "protraction",
@@ -155,9 +154,6 @@ export default async function CalibrationPage() {
         <CalibrationForm />
       </div>
 
-      <div className="w-full max-w-md pb-4">
-        <ResyncScoresButton />
-      </div>
     </div>
   );
 }

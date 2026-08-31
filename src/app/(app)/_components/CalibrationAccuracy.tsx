@@ -16,13 +16,18 @@ export type CalibrationSampleRow = {
   pelvis_sag_sign: number | null;
 };
 
+type SampleComparison = {
+  index: number;
+  userRating: number;
+  computed: number;
+  gap: number;
+};
+
 type Comparison = {
   variation: string;
   label: string;
-  count: number;
-  meanGap: number;
   meanAbsoluteGap: number;
-  worstGap: number;
+  samples: SampleComparison[];
 };
 
 // Note que la grille actuelle donnerait à un échantillon, à partir des
@@ -67,26 +72,29 @@ export default function CalibrationAccuracy({
 }: {
   samples: CalibrationSampleRow[];
 }) {
-  const byVariation = new Map<string, number[]>();
+  const byVariation = new Map<string, SampleComparison[]>();
 
   for (const sample of samples) {
     const computed = computedScore(sample);
     if (computed === null) continue;
-    const gaps = byVariation.get(sample.variation) ?? [];
-    // Écart signé : positif = la grille est plus généreuse que toi.
-    gaps.push(computed - sample.user_rating);
-    byVariation.set(sample.variation, gaps);
+    const list = byVariation.get(sample.variation) ?? [];
+    list.push({
+      index: list.length + 1,
+      userRating: sample.user_rating,
+      computed,
+      // Écart signé : positif = la grille est plus généreuse que toi.
+      gap: computed - sample.user_rating,
+    });
+    byVariation.set(sample.variation, list);
   }
 
   const comparisons: Comparison[] = [...byVariation.entries()]
-    .map(([variation, gaps]) => ({
+    .map(([variation, list]) => ({
       variation,
       label: PROGRESSION_LABELS[variation] ?? variation,
-      count: gaps.length,
-      meanGap: gaps.reduce((a, b) => a + b, 0) / gaps.length,
+      samples: list,
       meanAbsoluteGap:
-        gaps.reduce((a, b) => a + Math.abs(b), 0) / gaps.length,
-      worstGap: gaps.reduce((a, b) => (Math.abs(b) > Math.abs(a) ? b : a), 0),
+        list.reduce((a, s) => a + Math.abs(s.gap), 0) / list.length,
     }))
     .sort((a, b) => b.meanAbsoluteGap - a.meanAbsoluteGap);
 
@@ -110,10 +118,10 @@ export default function CalibrationAccuracy({
 
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
         <p className="text-xs leading-relaxed text-slate-400">
-          Pour chaque figure, écart entre la note que tu as donnée à la main et
-          celle que la grille actuelle produirait à partir des angles mesurés.
-          Recalculé à chaque affichage, donc toujours à jour après un
-          changement de seuils.
+          Pour chaque échantillon que tu as soumis, ta note face à celle que la
+          grille actuelle produirait à partir des angles mesurés. Recalculé à
+          chaque affichage, donc toujours à jour après un changement de seuils :
+          modifie un seuil, recharge, tu vois immédiatement l&apos;effet.
         </p>
         <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">
           Un écart positif signifie que la grille note plus généreusement que
@@ -121,25 +129,48 @@ export default function CalibrationAccuracy({
         </p>
       </div>
 
-      <div className="divide-y divide-slate-800 rounded-xl border border-slate-800 bg-slate-900">
+      <div className="space-y-2">
         {comparisons.map((c) => (
-          <div key={c.variation} className="flex items-center gap-3 p-3.5">
-            <div className="flex-1">
+          <div
+            key={c.variation}
+            className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-3.5 py-2.5">
               <p className="text-sm font-medium text-white">{c.label}</p>
-              <p className="text-[11px] text-slate-500">
-                {c.count} échantillon{c.count > 1 ? "s" : ""} · pire écart{" "}
-                {c.worstGap > 0 ? "+" : ""}
-                {c.worstGap.toFixed(1)}
-              </p>
+              <span className={`text-xs font-semibold ${gapColor(c.meanAbsoluteGap)}`}>
+                écart moyen {c.meanAbsoluteGap.toFixed(1)}
+              </span>
             </div>
-            <div className="text-right">
-              <p className={`text-lg font-bold ${gapColor(c.meanAbsoluteGap)}`}>
-                {c.meanAbsoluteGap.toFixed(1)}
-              </p>
-              <p className="text-[10px] text-slate-500">
-                écart moyen · biais {c.meanGap > 0 ? "+" : ""}
-                {c.meanGap.toFixed(1)}
-              </p>
+
+            <div className="divide-y divide-slate-800/70">
+              {c.samples.map((s) => (
+                <div
+                  key={s.index}
+                  className="flex items-center gap-3 px-3.5 py-2 text-xs"
+                >
+                  <span className="w-6 shrink-0 text-slate-600">#{s.index}</span>
+                  <span className="flex-1 text-slate-400">
+                    ta note{" "}
+                    <span className="font-semibold text-slate-200">
+                      {s.userRating.toFixed(1)}
+                    </span>
+                  </span>
+                  <span className="flex-1 text-slate-400">
+                    grille{" "}
+                    <span className="font-semibold text-slate-200">
+                      {s.computed.toFixed(1)}
+                    </span>
+                  </span>
+                  <span
+                    className={`w-12 shrink-0 text-right font-semibold ${gapColor(
+                      Math.abs(s.gap)
+                    )}`}
+                  >
+                    {s.gap > 0 ? "+" : ""}
+                    {s.gap.toFixed(1)}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         ))}
