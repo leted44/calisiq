@@ -175,6 +175,12 @@ async function createWebCodecsWriter(
     // En-tête complet écrit en tête de fichier, avec la vraie durée : c'est
     // précisément ce qui manquait à la sortie de MediaRecorder.
     fastStart: "in-memory",
+    // Ramène la première image à l'instant zéro. Filet de sécurité en plus
+    // du chronomètre démarré à la première image (voir plus bas) : le
+    // muxer refuse une piste dont la première image n'est pas à 0, et cet
+    // écart peut aussi venir d'une image initiale sautée pour cause de
+    // file d'attente saturée.
+    firstTimestampBehavior: "offset",
   });
 
   let failure: Error | null = null;
@@ -203,7 +209,12 @@ async function createWebCodecsWriter(
   });
   encoder.configure(config);
 
-  const startedAt = performance.now();
+  // Démarré à la PREMIÈRE image réellement encodée, pas à la création de
+  // l'encodeur : entre les deux il y a le positionnement de la vidéo et son
+  // démarrage, soit un demi-seconde environ. La première image portait donc
+  // un horodatage non nul, que le muxer refuse ("first chunk must have a
+  // timestamp of 0").
+  let startedAt: number | null = null;
   let frameCount = 0;
 
   return {
@@ -230,7 +241,9 @@ async function createWebCodecsWriter(
         // d'images : les trois phases de l'export (figure, ralenti, écran
         // final) n'ont pas la même cadence de rendu, et c'est ce timing
         // réel qu'on veut restituer.
-        const timestamp = Math.round((performance.now() - startedAt) * 1000);
+        const now = performance.now();
+        if (startedAt === null) startedAt = now;
+        const timestamp = Math.round((now - startedAt) * 1000);
         const frame = new VideoFrame(canvas, { timestamp });
         // Image-clé périodique : sans ça, un fichier long devient
         // impossible à parcourir et certains lecteurs refusent de démarrer
