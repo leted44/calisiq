@@ -34,6 +34,7 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   torso_angle: "Tronc",
   straightest_knee_angle: "Jambe tendue",
   straightest_leg_hip_angle: "Hanche (jambe tendue)",
+  bent_knee_angle: "Jambe repliée",
 };
 
 // Palette feu tricolore, saturée pour un rendu net en incrustation vidéo
@@ -513,6 +514,7 @@ const CRITERION_LANDMARKS: Record<CriterionScore["critere"], number[]> = {
   torso_angle: [11, 23],
   straightest_knee_angle: [25, 26],
   straightest_leg_hip_angle: [23, 24],
+  bent_knee_angle: [25, 26],
 };
 
 // Découpe un texte en lignes qui tiennent dans maxWidth (le canvas n'a

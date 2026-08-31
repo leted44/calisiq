@@ -25,6 +25,7 @@ const CRITERION_TO_ANGLE: Record<CriterionScore["critere"], keyof PoseAngles> = 
   torso_angle: "torsoAngleFromHorizontal",
   straightest_knee_angle: "straightestKneeAngle",
   straightest_leg_hip_angle: "straightestLegHipAngle",
+  bent_knee_angle: "bentKneeAngle",
 };
 
 export type RescoreResult = {
@@ -52,6 +53,7 @@ export function rescoreFromStoredMeasures(
     torsoAngleFromHorizontal: NaN,
     straightestKneeAngle: NaN,
     straightestLegHipAngle: NaN,
+    bentKneeAngle: NaN,
     shoulderProtraction: NaN,
     pelvisDeviation: NaN,
     // Non stocké : sert uniquement à distinguer sag et pike pour le choix

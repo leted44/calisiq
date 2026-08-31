@@ -12,7 +12,8 @@ export type CriterionScore = {
     | "body_line_angle"
     | "torso_angle"
     | "straightest_knee_angle"
-    | "straightest_leg_hip_angle";
+    | "straightest_leg_hip_angle"
+    | "bent_knee_angle";
   score: number;
   valeurMesuree: number;
   valeurCible: number;
@@ -149,6 +150,19 @@ export function scoreAngles(
       ),
       valeurMesuree: angles.straightestKneeAngle,
       valeurCible: grid.straightest_knee_angle.target,
+    });
+  }
+
+  if (grid.bent_knee_angle) {
+    scores.push({
+      critere: "bent_knee_angle",
+      score: scoreFromThreshold(
+        angles.bentKneeAngle,
+        grid.bent_knee_angle.target,
+        grid.bent_knee_angle.tolerance
+      ),
+      valeurMesuree: angles.bentKneeAngle,
+      valeurCible: grid.bent_knee_angle.target,
     });
   }
 

@@ -80,6 +80,7 @@ create table calibration_samples (
   torso_angle_from_horizontal numeric, -- tronc seul, valide sur figures asymétriques (voir migration 20260901090000)
   straightest_knee_angle numeric,
   straightest_leg_hip_angle numeric,
+  bent_knee_angle numeric, -- genou de la jambe repliée : distingue une figure à une jambe d'une figure à deux jambes tendues
   user_rating numeric not null,
   notes text,
   media_type text not null default 'video' check (media_type in ('video', 'photo'))

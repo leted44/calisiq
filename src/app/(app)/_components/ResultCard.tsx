@@ -25,6 +25,7 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   torso_angle: "Tronc",
   straightest_knee_angle: "Jambe tendue",
   straightest_leg_hip_angle: "Hanche jambe tendue",
+  bent_knee_angle: "Jambe repliée",
 };
 
 // Titres plus descriptifs pour la vue "Détail par catégorie" — les labels
@@ -40,6 +41,7 @@ const CRITERE_DETAIL_TITLES: Record<CriterionScore["critere"], string> = {
   torso_angle: "Alignement du tronc",
   straightest_knee_angle: "Extension de la jambe tendue",
   straightest_leg_hip_angle: "Ouverture de hanche (jambe tendue)",
+  bent_knee_angle: "Repli de la jambe libre",
 };
 
 // Mots-clés techniques associés à chaque critère, purement indicatifs (pas
@@ -55,6 +57,7 @@ const CRITERE_TAGS: Record<CriterionScore["critere"], string[]> = {
   torso_angle: ["Tronc", "Horizontale"],
   straightest_knee_angle: ["Jambe tendue", "Genou"],
   straightest_leg_hip_angle: ["Ouverture", "Jambe tendue"],
+  bent_knee_angle: ["Jambe repliée", "Single leg"],
 };
 
 const TIER_HEX: Record<ScoreTier, string> = {

@@ -21,4 +21,5 @@
 alter table calibration_samples
   add column torso_angle_from_horizontal numeric,
   add column straightest_knee_angle numeric,
-  add column straightest_leg_hip_angle numeric;
+  add column straightest_leg_hip_angle numeric,
+  add column bent_knee_angle numeric;

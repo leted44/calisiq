@@ -56,6 +56,12 @@ export type PoseAngles = {
   // aucune des deux. Ces champs isolent la jambe qui porte la difficulté.
   straightestKneeAngle: number;
   straightestLegHipAngle: number;
+  // Genou de l'AUTRE jambe (la moins tendue). Indispensable pour les
+  // figures à une jambe : sans lui, une figure où les deux jambes sont
+  // tendues (full front lever) passerait pour une single leg parfaite,
+  // puisque la jambe la plus tendue y est irréprochable et que rien ne
+  // vérifierait que la seconde aurait dû être repliée.
+  bentKneeAngle: number;
   // Écart horizontal épaules/poignets, normalisé par la longueur du tronc
   // (0 = épaules au-dessus des poignets, plus c'est grand plus les épaules sont avancées)
   shoulderProtraction: number;
@@ -221,6 +227,7 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
   const leftIsStraighter = leftKneeAngle >= rightKneeAngle;
   const straightestKneeAngle = leftIsStraighter ? leftKneeAngle : rightKneeAngle;
   const straightestLegHipAngle = leftIsStraighter ? leftHipAngle : rightHipAngle;
+  const bentKneeAngle = leftIsStraighter ? rightKneeAngle : leftKneeAngle;
 
   const torsoLength = Math.hypot(
     midHip.x - midShoulder.x,
@@ -303,6 +310,7 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
     torsoAngleFromHorizontal,
     straightestKneeAngle,
     straightestLegHipAngle,
+    bentKneeAngle,
     shoulderProtraction,
     pelvisDeviation,
     pelvisSagSign,
@@ -405,6 +413,7 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
     ),
     straightestKneeAngle: median(frames.map((f) => f.straightestKneeAngle)),
     straightestLegHipAngle: median(frames.map((f) => f.straightestLegHipAngle)),
+    bentKneeAngle: median(frames.map((f) => f.bentKneeAngle)),
     shoulderProtraction: median(frames.map((f) => f.shoulderProtraction)),
     pelvisDeviation: median(frames.map((f) => f.pelvisDeviation)),
     pelvisSagSign: median(frames.map((f) => f.pelvisSagSign)),

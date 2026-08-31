@@ -19,6 +19,7 @@ export type CalibrationSampleRow = {
   torso_angle_from_horizontal: number | null;
   straightest_knee_angle: number | null;
   straightest_leg_hip_angle: number | null;
+  bent_knee_angle: number | null;
 };
 
 type SampleComparison = {
@@ -56,6 +57,7 @@ function computedScore(sample: CalibrationSampleRow): number | null {
     torsoAngleFromHorizontal: sample.torso_angle_from_horizontal ?? NaN,
     straightestKneeAngle: sample.straightest_knee_angle ?? NaN,
     straightestLegHipAngle: sample.straightest_leg_hip_angle ?? NaN,
+    bentKneeAngle: sample.bent_knee_angle ?? NaN,
     shoulderProtraction: sample.shoulder_protraction ?? NaN,
     pelvisDeviation: sample.pelvis_deviation ?? NaN,
     pelvisSagSign: sample.pelvis_sag_sign ?? 0,

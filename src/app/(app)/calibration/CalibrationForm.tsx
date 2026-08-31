@@ -306,6 +306,7 @@ export default function CalibrationForm() {
       torso_angle_from_horizontal: result.summaryAngles.torsoAngleFromHorizontal,
       straightest_knee_angle: result.summaryAngles.straightestKneeAngle,
       straightest_leg_hip_angle: result.summaryAngles.straightestLegHipAngle,
+      bent_knee_angle: result.summaryAngles.bentKneeAngle,
       user_rating: ratingValue,
       notes: notes || null,
       media_type: mediaKind ?? "video",

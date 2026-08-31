@@ -238,6 +238,18 @@ export async function runPoseAnalysis({
       "Une jambe peut être mal détectée ou superposée à l'autre sur cette vidéo — pour un straddle, filme légèrement de biais (pas totalement de face ni de profil) pour bien distinguer les deux jambes, sinon les angles genou et axe du corps peuvent être faussés."
     );
   }
+  // Figure à une jambe alors que les deux sont tendues : la personne
+  // exécute en réalité une variation plus difficile (full front lever).
+  // Le critère bent_knee_angle le sanctionne déjà, mais son effet est
+  // dilué par la moyenne des autres critères, tous excellents dans ce cas.
+  // Un score de 7/10 ne dirait pas à l'utilisateur qu'il s'est trompé de
+  // catégorie, et fausserait sa courbe de progression.
+  if (progression === "one_leg_front_lever" && median.bentKneeAngle > 150) {
+    warningParts.push(
+      "Les deux jambes sont tendues sur cette vidéo : c'est un Full Front Lever, pas un Single Leg. Change de variation pour obtenir un score juste — le Single Leg attend une jambe tendue et l'autre repliée."
+    );
+  }
+
   const warning = warningParts.length > 0 ? warningParts.join(" ") : null;
 
   const midIndex = Math.floor((window.start + window.end) / 2);

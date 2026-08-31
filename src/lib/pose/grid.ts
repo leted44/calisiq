@@ -93,6 +93,12 @@ export type ProgressionThresholds = {
   // et la jambe repliée, et ne décrivent aucune des deux.
   straightest_knee_angle?: Threshold;
   straightest_leg_hip_angle?: Threshold;
+  // Genou de la jambe qui doit être repliée. C'est ce critère qui
+  // distingue réellement une figure à une jambe d'une figure à deux jambes
+  // tendues : sans lui, un full front lever noté en single leg obtiendrait
+  // un score excellent, puisque sa jambe tendue est parfaite et que rien
+  // ne vérifierait la seconde.
+  bent_knee_angle?: Threshold;
   shoulder_protraction?: ShoulderProtractionThreshold;
   shoulder_flexion?: Threshold;
   pelvis_deviation?: Threshold;
@@ -180,6 +186,11 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     // ci-dessous, qui isolent la jambe tendue.
     straightest_knee_angle: { target: 180, tolerance: 14 },
     straightest_leg_hip_angle: { target: 170, tolerance: 20 },
+    // Tolérance large (les pratiquants replient plus ou moins la jambe
+    // libre), mais suffisante pour sanctionner une jambe restée tendue :
+    // à 179° l'écart vaut près de 2,5 fois la tolérance, ce qui fait
+    // tomber ce critère sous 1,5/10.
+    bent_knee_angle: { target: 80, tolerance: 40 },
   },
   straddle_front_lever: {
     body_line_angle_from_horizontal: { target: 6, tolerance: 8 },

@@ -57,6 +57,8 @@ export const CRITERE_DEFINITIONS: Record<CriterionScore["critere"], string> = {
     "Angle du genou de la jambe la plus tendue. Sur une figure à une jambe, c'est elle qui porte la difficulté ; la moyenne des deux jambes ne décrirait ni l'une ni l'autre.",
   straightest_leg_hip_angle:
     "Angle épaule-hanche-genou du côté de la jambe tendue. Mesure si cette jambe prolonge bien le tronc plutôt que de se replier vers le buste.",
+  bent_knee_angle:
+    "Angle du genou de la jambe qui doit rester repliée. C'est lui qui distingue une figure à une jambe d'une figure à deux jambes tendues : sans ce contrôle, une position plus difficile obtiendrait un score parfait dans la mauvaise catégorie.",
 };
 
 export type ScoreTier = "optimal" | "bon" | "faible";
