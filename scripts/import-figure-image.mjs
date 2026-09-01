@@ -14,17 +14,29 @@ import sharp from "sharp";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-// Les illustrations ne sont plus posées dans un carré. Un carré met le corps
-// à l'échelle sur sa plus grande dimension : un corps compact comme la tuck
-// planche le remplit, un corps allongé comme la full n'en occupe qu'une
-// bande et paraît deux fois plus petit dans la même grille. Et comme la
-// vignette affiche l'image en object-contain dans une boîte plus large que
-// haute, tout l'espace horizontal restant était perdu.
+// Toutes les illustrations sortent au même format, et le corps y est mis à
+// l'échelle sur son aire. Deux raisons.
 //
-// On cadre donc au plus juste sur le contenu, en gardant son rapport de
-// forme. Chaque figure remplit alors sa tuile, quelle que soit sa silhouette.
-const LONG_SIDE = 640; // plus grand côté de l'image produite
-const MARGIN_RATIO = 0.04; // marge autour du contenu, en fraction de ce côté
+// Le format d'abord : la vignette affiche l'image en object-contain, donc
+// c'est le cadre, pas le corps, qui décide de la taille à l'écran. Deux
+// cadres de proportions différentes se réajustent chacun à la tuile et toute
+// normalisation du corps est perdue. Un cadre commun est la condition pour
+// que les tailles soient comparables. Il reprend la proportion des tuiles,
+// trois pour deux, afin de ne pas gaspiller de place.
+//
+// L'échelle ensuite : ni la hauteur ni la longueur du corps ne conviennent.
+// Mises à l'échelle sur leur plus grande dimension, la tuck planche, ramassée,
+// remplissait le cadre pendant que la full, étirée, n'en occupait qu'une
+// bande. Mais c'est le même corps dans les deux cas, et de fait leur aire
+// projetée est identique à 5 % près sur les trois variations de planche.
+// C'est donc l'aire qu'on normalise : une figure repliée occupe naturellement
+// moins de longueur, sans paraître plus petite.
+const CANVAS_W = 960;
+const CANVAS_H = 640;
+// Aire visée pour le corps, en fraction de celle du cadre.
+const AREA_RATIO = 0.11;
+// Marge minimale conservée sur chaque bord.
+const MARGIN_RATIO = 0.05;
 const ALPHA_FLOOR = 30; // en dessous : fond, totalement transparent (le fond des
 // illustrations est un bleu nuit qui monte jusqu'à 25, pas un noir pur)
 const ALPHA_CEIL = 65; // au dessus : sujet, totalement opaque
@@ -154,12 +166,13 @@ for (let y = 0; y < H; y++) {
   for (let x = 0; x < W; x++) rgba[(y * W + x) * 4 + 3] = 0;
 }
 
-// Boîte englobante du corps, décor exclu : c'est elle qui fixe la marge, pour
-// que le personnage soit cadré de la même façon d'une figure à l'autre.
+// Boîte englobante et aire du corps, décor exclu.
 let x0 = W, x1 = 0, y0 = H, y1 = 0;
+let subjectArea = 0;
 for (let y = firstRow; y <= lastRow; y++) {
   for (let x = 0; x < W; x++) {
     if (subjectMask[y * W + x]) {
+      subjectArea++;
       if (x < x0) x0 = x;
       if (x > x1) x1 = x;
       if (y < y0) y0 = y;
@@ -171,39 +184,62 @@ for (let y = firstRow; y <= lastRow; y++) {
 const subjectW = x1 - x0 + 1;
 const subjectH = y1 - y0 + 1;
 
-// Le décor conservé est intégré au cadre s'il tient dans la marge. Au delà,
-// il est coupé : un reflet qui flotte loin sous le sujet étirerait le cadre
-// et rapetisserait d'autant le personnage, ce qui est précisément le défaut
-// qu'on corrige. La coupe tombe alors dans du fond, sans bord visible.
-const margin = Math.round(MARGIN_RATIO * Math.max(subjectW, subjectH));
-let cx0 = x0, cx1 = x1, cy0 = y0, cy1 = y1;
-for (let y = Math.max(0, y0 - margin); y <= Math.min(H - 1, y1 + margin); y++) {
-  for (let x = Math.max(0, x0 - margin); x <= Math.min(W - 1, x1 + margin); x++) {
-    if (rgba[(y * W + x) * 4 + 3] > 8) {
-      if (x < cx0) cx0 = x;
-      if (x > cx1) cx1 = x;
-      if (y < cy0) cy0 = y;
-      if (y > cy1) cy1 = y;
-    }
+// Échelle donnée par l'aire, puis bridée pour que le corps tienne dans le
+// cadre avec sa marge. Le bridage joue sur les figures très étirées, une full
+// planche par exemple : elles finissent un peu sous l'aire visée, faute de
+// place en largeur, ce qui est le prix à payer pour ne pas les rogner.
+const areaScale = Math.sqrt((AREA_RATIO * CANVAS_W * CANVAS_H) / subjectArea);
+const scale = Math.min(
+  areaScale,
+  (CANVAS_W * (1 - 2 * MARGIN_RATIO)) / subjectW,
+  (CANVAS_H * (1 - 2 * MARGIN_RATIO)) / subjectH
+);
+
+// Fenêtre découpée dans la source : le cadre ramené à l'échelle de
+// l'original, centré sur le corps. Le décor proche est donc conservé, et le
+// décor lointain coupé — mais à une distance où il n'en reste que du fond,
+// donc sans bord visible.
+const winW = Math.round(CANVAS_W / scale);
+const winH = Math.round(CANVAS_H / scale);
+const winLeft = Math.round((x0 + x1) / 2 - winW / 2);
+const winTop = Math.round((y0 + y1) / 2 - winH / 2);
+
+// Un élément de décor détaché qui ne tient pas entièrement dans le cadre est
+// retiré plutôt que rogné : un reflet coupé net par le bord bas se lit comme
+// un défaut de découpe, alors que son absence ne se remarque pas. Le corps,
+// lui, n'est jamais concerné, l'échelle ayant été bridée pour qu'il tienne.
+for (const b of bands) {
+  if (b === main) continue;
+  if (b.mass < main.mass * NOISE_BAND_RATIO) continue;
+  if (b.start >= winTop && b.end <= winTop + winH - 1) continue;
+  // On efface jusqu'au bord de l'image, pas seulement la bande : un reflet
+  // s'accompagne d'une frange trop diffuse pour former une bande à elle
+  // seule, et la laisser derrière rendrait un trait pâle en travers du cadre.
+  const from = b.start > main.end ? main.end + 1 : 0;
+  const to = b.start > main.end ? H - 1 : main.start - 1;
+  for (let y = from; y <= to; y++) {
+    for (let x = 0; x < W; x++) rgba[(y * W + x) * 4 + 3] = 0;
   }
 }
-cx0 = Math.max(0, cx0 - margin);
-cy0 = Math.max(0, cy0 - margin);
-cx1 = Math.min(W - 1, cx1 + margin);
-cy1 = Math.min(H - 1, cy1 + margin);
 
-const cropW = cx1 - cx0 + 1;
-const cropH = cy1 - cy0 + 1;
-const scale = LONG_SIDE / Math.max(cropW, cropH);
-const outW = Math.max(1, Math.round(cropW * scale));
-const outH = Math.max(1, Math.round(cropH * scale));
+// Recopie manuelle plutôt qu'un extract : la fenêtre peut déborder de la
+// source, et les pixels hors cadre doivent rester transparents.
+const windowBuf = Buffer.alloc(winW * winH * 4);
+for (let y = 0; y < winH; y++) {
+  const sy = winTop + y;
+  if (sy < 0 || sy >= H) continue;
+  for (let x = 0; x < winW; x++) {
+    const sx = winLeft + x;
+    if (sx < 0 || sx >= W) continue;
+    rgba.copy(windowBuf, (y * winW + x) * 4, (sy * W + sx) * 4, (sy * W + sx) * 4 + 4);
+  }
+}
 
-await sharp(rgba, { raw: { width: W, height: H, channels: 4 } })
-  .extract({ left: cx0, top: cy0, width: cropW, height: cropH })
-  .resize(outW, outH, { fit: "fill" })
+await sharp(windowBuf, { raw: { width: winW, height: winH, channels: 4 } })
+  .resize(CANVAS_W, CANVAS_H, { fit: "fill" })
   .png({ compressionLevel: 9 })
   .toFile(outPath);
 
 console.log(
-  `${outName} : source ${W}x${H}, corps ${subjectW}x${subjectH}, sortie ${outW}x${outH}`
+  `${outName} : corps ${subjectW}x${subjectH}, aire ${subjectArea}, échelle ${scale.toFixed(3)}${scale < areaScale ? ' (bridée par le cadre)' : ''}, rendu ${Math.round(subjectW * scale)}x${Math.round(subjectH * scale)} dans ${CANVAS_W}x${CANVAS_H}`
 );

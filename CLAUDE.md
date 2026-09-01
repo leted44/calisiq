@@ -183,18 +183,34 @@ plancher d'intensité, la brume vivant entre 30 et 120 quand le reflet monte
 de 150 à 250. Ne pas confondre les deux en retouchant le script : couper la
 brume au niveau du reflet effacerait aussi ce dernier.
 
-Le cadrage suit le rapport de forme du contenu, sans carré imposé. Un carré
-mettait le corps à l'échelle sur sa plus grande dimension : un corps compact
-comme la tuck planche le remplissait, un corps allongé comme la full n'en
-occupait qu'une bande et paraissait deux fois plus petit dans la même grille,
-pendant que l'`object-contain` de la vignette perdait tout l'espace
-horizontal restant. Chaque figure remplit désormais sa tuile.
+Toutes les illustrations sortent au **même format**, 960x640, et le corps y
+est mis à l'échelle sur son **aire**. Les deux vont ensemble et aucun des
+deux ne suffit seul.
 
-La marge, elle, se calcule sur le corps seul, décor exclu. Le décor proche
-est intégré au cadre, le décor lointain coupé : un reflet qui flotte loin
-sous le sujet étirerait le cadre et rapetisserait le personnage d'autant,
-soit exactement le défaut qu'on corrige. La coupe tombe alors dans du fond,
-sans bord visible.
+Le format d'abord : la vignette affiche l'image en `object-contain`, donc
+c'est le cadre et non le corps qui décide de la taille à l'écran. Deux cadres
+de proportions différentes se réajustent chacun à la tuile, et toute
+normalisation du corps est perdue en route. Un cadre commun est la condition
+pour que les tailles soient comparables ; il reprend la proportion des tuiles,
+trois pour deux.
+
+L'échelle ensuite : ni la hauteur ni la longueur du corps ne conviennent.
+Mises à l'échelle sur leur plus grande dimension, la tuck planche, ramassée,
+remplissait le cadre pendant que la full, étirée, n'en occupait qu'une bande
+et paraissait deux fois plus petite. C'est pourtant le même corps, et de fait
+son aire projetée est identique à 5 % près sur les trois variations de
+planche. C'est donc l'aire qui est normalisée : une figure repliée occupe
+naturellement moins de longueur sans paraître plus petite. L'échelle est
+ensuite bridée pour que le corps tienne dans le cadre, ce qui joue sur les
+silhouettes très étirées comme la full planche : elles finissent un peu sous
+l'aire visée, prix à payer pour ne pas les rogner.
+
+Le décor suit le cadre. Un élément détaché qui n'y tient pas entièrement est
+retiré, pas rogné : un reflet coupé net par le bord se lit comme un défaut de
+découpe alors que son absence passe inaperçue. Le retrait va jusqu'au bord de
+l'image et pas seulement jusqu'à la bande détectée, parce qu'un reflet
+s'accompagne d'une frange trop diffuse pour former une bande et qu'elle
+laisserait un trait pâle en travers du cadre.
 
 La séparation corps / décor repose sur le canal rouge, nul dans le décor et
 supérieur à 120 sur le corps. Deux exceptions à connaître avant d'y toucher :
