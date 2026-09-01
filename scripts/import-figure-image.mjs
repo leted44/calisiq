@@ -37,6 +37,18 @@ const CANVAS_H = 640;
 const AREA_RATIO = 0.11;
 // Marge minimale conservée sur chaque bord.
 const MARGIN_RATIO = 0.05;
+// Hauteur maximale du corps, en fraction du cadre.
+//
+// L'aire seule ne suffit pas à harmoniser une figure verticale avec des
+// figures horizontales. Le handstand a beau avoir la plus petite aire et la
+// plus courte étendue de toutes, il paraît le plus imposant : dans une tuile
+// plus large que haute, c'est la hauteur occupée que l'œil compare, et lui
+// seul touchait le haut et le bas du cadre. Ce plafond est donc un jugement
+// visuel, arbitré en comparant trois valeurs côte à côte sur la grille
+// réelle : à 0,90 il écrase la ligne, à 0,58 il devient insignifiant à côté
+// de la planche. Il ne concerne que les figures verticales, les autres
+// passent toutes sous ce seuil sans être touchées.
+const MAX_HEIGHT_RATIO = 0.72;
 const ALPHA_FLOOR = 30; // en dessous : fond, totalement transparent (le fond des
 // illustrations est un bleu nuit qui monte jusqu'à 25, pas un noir pur)
 const ALPHA_CEIL = 65; // au dessus : sujet, totalement opaque
@@ -192,7 +204,8 @@ const areaScale = Math.sqrt((AREA_RATIO * CANVAS_W * CANVAS_H) / subjectArea);
 const scale = Math.min(
   areaScale,
   (CANVAS_W * (1 - 2 * MARGIN_RATIO)) / subjectW,
-  (CANVAS_H * (1 - 2 * MARGIN_RATIO)) / subjectH
+  (CANVAS_H * (1 - 2 * MARGIN_RATIO)) / subjectH,
+  (CANVAS_H * MAX_HEIGHT_RATIO) / subjectH
 );
 
 // Fenêtre découpée dans la source : le cadre ramené à l'échelle de
