@@ -28,7 +28,7 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   one_arm_handstand: [],
   tuck_front_lever: ["elbow_angle", "hip_angle"],
   advanced_tuck_front_lever: ["elbow_angle", "hip_angle"],
-  one_leg_front_lever: [],
+  one_leg_front_lever: ["bent_knee_angle", "straightest_leg_hip_angle"],
   straddle_front_lever: ["elbow_angle", "hip_angle", "knee_angle", "body_line_angle"],
   full_front_lever: ["elbow_angle", "hip_angle", "knee_angle", "body_line_angle"],
 };

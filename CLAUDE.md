@@ -41,7 +41,7 @@ scoring.
 | Straddle planche | Actif, seuils DRAFT | 3 échantillons seulement |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
 | Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
-| Single Leg Front Lever | **Actif, seuils DRAFT** | 4 échantillons seulement, dont 2 inexploitables |
+| Single Leg Front Lever | Actif | Genou de la jambe libre calibré le 2026-09-01 sur 6 échantillons |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
 
 Le Front Lever a été réactivé le 2026-08-31, puis recalibré le 2026-09-01
@@ -79,10 +79,16 @@ utilisateur qui choisit la mauvaise catégorie. Ces échantillons ne sont
 donc pas des erreurs à supprimer, et ils tombent d’ailleurs parmi les mieux
 ajustés. Ne pas les écarter d’une recalibration.
 
-La Single Leg Front Lever n'a pas été recalibrée : 4 échantillons, dont 2
-antérieurs aux mesures asymétriques et donc inexploitables. Ses seuils
-restent DRAFT. Suivre l'écart dans le bloc « Justesse de la grille » de
-`/calibration`.
+**Critères à seuil plutôt qu’à bande.** Le genou de la jambe libre du
+single leg front lever a d’abord été noté comme une bande (80° ± 40) : la
+grille attendait un angle précis alors que la figure demande seulement que
+cette jambe reste repliée. Une jambe très repliée était donc pénalisée
+autant qu’une jambe tendue. Il est passé en mode `maximum` (10 sous 100°,
+décroissance jusqu’à 0 vers 160°), miroir du mode `minimum` déjà utilisé
+pour la protraction : erreur 0,89 → 0,63, et le même résultat pour tout
+seuil entre 90 et 120°, ce qui indique que c’était bien la forme du critère
+qui était fausse et pas sa valeur. Avant de retoucher un seuil, vérifier
+d’abord que le critère a la bonne forme.
 
 Vision plus long terme, hors scope : tractions, muscle-up. Ne pas
 commencer une nouvelle figure sans validation explicite.

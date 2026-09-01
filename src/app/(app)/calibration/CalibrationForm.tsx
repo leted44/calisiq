@@ -70,6 +70,7 @@ function AngleRow({
   value,
   target,
   tolerance,
+  mode,
   unit = "°",
   decimals = 1,
 }: {
@@ -77,16 +78,23 @@ function AngleRow({
   value: number;
   target?: number;
   tolerance?: number;
+  mode?: "minimum" | "maximum" | "band";
   unit?: string;
   decimals?: number;
 }) {
   // Écart rapporté à la tolérance du critère plutôt qu'en valeur absolue :
   // 5° d'écart sur un critère toléré à 20° n'a rien à voir avec 5° sur un
-  // critère toléré à 6°.
-  const ratio =
-    target !== undefined && tolerance
-      ? Math.abs(value - target) / tolerance
-      : null;
+  // critère toléré à 6°. Les critères à seuil ne comptent l'écart que du
+  // côté qui pose problème : dépasser le seuil d'une protraction ou rester
+  // en deçà d'un genou bien replié n'est pas un défaut, et l'afficher en
+  // orange laisserait croire l'inverse.
+  const signedGap =
+    mode === "minimum"
+      ? Math.max(0, (target ?? 0) - value)
+      : mode === "maximum"
+      ? Math.max(0, value - (target ?? 0))
+      : Math.abs(value - (target ?? 0));
+  const ratio = target !== undefined && tolerance ? signedGap / tolerance : null;
   const color =
     ratio === null
       ? "text-white"
@@ -107,6 +115,7 @@ function AngleRow({
         {target !== undefined && (
           <span className="text-slate-600">
             {" / "}
+            {mode === "minimum" ? "≥ " : mode === "maximum" ? "≤ " : ""}
             {target.toFixed(decimals)}
             {unit}
           </span>
@@ -619,6 +628,11 @@ export default function CalibrationForm() {
                           value={r.value}
                           target={r.t!.target}
                           tolerance={r.t!.tolerance}
+                          mode={
+                            "mode" in r.t!
+                              ? (r.t!.mode as "minimum" | "maximum" | "band")
+                              : undefined
+                          }
                           unit={r.unit}
                           decimals={r.decimals}
                         />

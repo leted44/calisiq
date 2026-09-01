@@ -73,6 +73,11 @@ export type Progression =
 
 type Threshold = { target: number; tolerance: number };
 type ShoulderProtractionThreshold = Threshold & { mode: "minimum" | "band" };
+// Seuil "maximum" : score plein tant que la mesure reste sous la cible,
+// pénalité seulement au-delà. Pour un critère où dépasser dans un sens est
+// un défaut mais rester en deçà n'en est pas un — le miroir du mode
+// "minimum" de la protraction.
+type MaximumThreshold = Threshold & { mode: "maximum" };
 
 export type ProgressionThresholds = {
   body_line_angle_from_horizontal?: Threshold;
@@ -98,7 +103,7 @@ export type ProgressionThresholds = {
   // tendues : sans lui, un full front lever noté en single leg obtiendrait
   // un score excellent, puisque sa jambe tendue est parfaite et que rien
   // ne vérifierait la seconde.
-  bent_knee_angle?: Threshold;
+  bent_knee_angle?: MaximumThreshold;
   shoulder_protraction?: ShoulderProtractionThreshold;
   shoulder_flexion?: Threshold;
   pelvis_deviation?: Threshold;
@@ -223,11 +228,15 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     // ci-dessous, qui isolent la jambe tendue.
     straightest_knee_angle: { target: 180, tolerance: 14 },
     straightest_leg_hip_angle: { target: 170, tolerance: 20 },
-    // Tolérance large (les pratiquants replient plus ou moins la jambe
-    // libre), mais suffisante pour sanctionner une jambe restée tendue :
-    // à 179° l'écart vaut près de 2,5 fois la tolérance, ce qui fait
-    // tomber ce critère sous 1,5/10.
-    bent_knee_angle: { target: 80, tolerance: 40 },
+    // Seuil maximum, pas une bande : la figure demande que cette jambe
+    // reste repliée, elle ne demande pas un angle précis. La replier
+    // davantage n'est pas un défaut, donc tout ce qui est sous 100° vaut
+    // 10, et la note ne tombe qu'à mesure que la jambe se tend (0 dès
+    // 160°, où il s'agit en fait d'un full front lever).
+    // Calibré le 2026-09-01 sur 6 échantillons : erreur 0,89 → 0,63, et
+    // le résultat est le même pour tout seuil entre 90 et 120°, signe que
+    // c'est bien la forme du critère qui était fausse, pas sa valeur.
+    bent_knee_angle: { target: 100, tolerance: 60, mode: "maximum" },
   },
   straddle_front_lever: {
     body_line_angle_from_horizontal: { target: 8, tolerance: 15 },

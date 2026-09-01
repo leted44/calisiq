@@ -31,6 +31,19 @@ function scoreFromThreshold(
   return 10 / (1 + ratio * ratio);
 }
 
+// Critère "seuil maximum" : score plein tant que la mesure reste sous le
+// seuil, décroissance linéaire au-delà (utilisé pour la jambe qui doit
+// rester repliée : la replier plus n'est jamais un défaut)
+function scoreFromMaximum(
+  measured: number,
+  maximum: number,
+  ramp: number
+): number {
+  if (measured <= maximum) return 10;
+  const excess = measured - maximum;
+  return Math.max(0, 10 * (1 - excess / ramp));
+}
+
 // Critère "seuil minimum" : score plein dès que la mesure atteint le seuil,
 // pas de pénalité au-delà (utilisé pour la protraction : plus n'est jamais pire)
 function scoreFromMinimum(
@@ -156,7 +169,7 @@ export function scoreAngles(
   if (grid.bent_knee_angle) {
     scores.push({
       critere: "bent_knee_angle",
-      score: scoreFromThreshold(
+      score: scoreFromMaximum(
         angles.bentKneeAngle,
         grid.bent_knee_angle.target,
         grid.bent_knee_angle.tolerance
