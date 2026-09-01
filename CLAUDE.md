@@ -164,8 +164,7 @@ quoi la 4K sortait plus compressée que la 1080p.
 déposer.** Les visuels arrivent sur fond noir alors que l'application les
 affiche en `object-contain` sur une carte ardoise avec un halo cyan quand la
 figure est sélectionnée : un fond opaque produirait un rectangle noir et un
-halo carré. `scripts/import-figure-image.mjs` détoure, normalise au format
-des images en place (640x640 RGBA, corps sur 580 px, centré) et doit être
+halo carré. `scripts/import-figure-image.mjs` détoure, cadre et doit être
 utilisé pour toute nouvelle illustration plutôt qu'une copie à la main.
 
 Deux partis pris s'y trouvent, tous deux demandés explicitement. Le reflet au
@@ -184,12 +183,18 @@ plancher d'intensité, la brume vivant entre 30 et 120 quand le reflet monte
 de 150 à 250. Ne pas confondre les deux en retouchant le script : couper la
 brume au niveau du reflet effacerait aussi ce dernier.
 
-Le cadrage se calcule sur le corps seul, décor exclu. Cadrer sur l'image
-entière faisait varier l'échelle du personnage d'une figure à l'autre selon
-que son reflet touche ses appuis ou flotte loin en dessous : le front lever
-sortait 40 % plus petit que la planche dans la même grille. Le décor proche
-est conservé dans la marge, le décor lointain coupé à une distance où il ne
-reste que du fond, donc sans bord visible.
+Le cadrage suit le rapport de forme du contenu, sans carré imposé. Un carré
+mettait le corps à l'échelle sur sa plus grande dimension : un corps compact
+comme la tuck planche le remplissait, un corps allongé comme la full n'en
+occupait qu'une bande et paraissait deux fois plus petit dans la même grille,
+pendant que l'`object-contain` de la vignette perdait tout l'espace
+horizontal restant. Chaque figure remplit désormais sa tuile.
+
+La marge, elle, se calcule sur le corps seul, décor exclu. Le décor proche
+est intégré au cadre, le décor lointain coupé : un reflet qui flotte loin
+sous le sujet étirerait le cadre et rapetisserait le personnage d'autant,
+soit exactement le défaut qu'on corrige. La coupe tombe alors dans du fond,
+sans bord visible.
 
 La séparation corps / décor repose sur le canal rouge, nul dans le décor et
 supérieur à 120 sur le corps. Deux exceptions à connaître avant d'y toucher :

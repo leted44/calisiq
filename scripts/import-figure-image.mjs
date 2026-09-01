@@ -14,8 +14,17 @@ import sharp from "sharp";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-const CANVAS = 640; // format des illustrations existantes
-const CONTENT = 580; // sujet mis à l'échelle sur cette taille, soit 30 px de marge
+// Les illustrations ne sont plus posées dans un carré. Un carré met le corps
+// à l'échelle sur sa plus grande dimension : un corps compact comme la tuck
+// planche le remplit, un corps allongé comme la full n'en occupe qu'une
+// bande et paraît deux fois plus petit dans la même grille. Et comme la
+// vignette affiche l'image en object-contain dans une boîte plus large que
+// haute, tout l'espace horizontal restant était perdu.
+//
+// On cadre donc au plus juste sur le contenu, en gardant son rapport de
+// forme. Chaque figure remplit alors sa tuile, quelle que soit sa silhouette.
+const LONG_SIDE = 640; // plus grand côté de l'image produite
+const MARGIN_RATIO = 0.04; // marge autour du contenu, en fraction de ce côté
 const ALPHA_FLOOR = 30; // en dessous : fond, totalement transparent (le fond des
 // illustrations est un bleu nuit qui monte jusqu'à 25, pas un noir pur)
 const ALPHA_CEIL = 65; // au dessus : sujet, totalement opaque
@@ -145,10 +154,8 @@ for (let y = 0; y < H; y++) {
   for (let x = 0; x < W; x++) rgba[(y * W + x) * 4 + 3] = 0;
 }
 
-// Boîte englobante du corps. Le décor en est volontairement exclu : cadrer
-// sur lui ferait varier la taille du personnage d'une figure à l'autre selon
-// que son reflet touche ses appuis ou flotte loin en dessous, et le front
-// lever se retrouvait 40 % plus petit que la planche dans la même grille.
+// Boîte englobante du corps, décor exclu : c'est elle qui fixe la marge, pour
+// que le personnage soit cadré de la même façon d'une figure à l'autre.
 let x0 = W, x1 = 0, y0 = H, y1 = 0;
 for (let y = firstRow; y <= lastRow; y++) {
   for (let x = 0; x < W; x++) {
@@ -163,36 +170,40 @@ for (let y = firstRow; y <= lastRow; y++) {
 
 const subjectW = x1 - x0 + 1;
 const subjectH = y1 - y0 + 1;
-const scale = CONTENT / Math.max(subjectW, subjectH);
 
-// Fenêtre découpée dans la source : la taille du canvas ramenée à l'échelle
-// de l'original, centrée sur le corps. Le décor proche est donc conservé
-// dans la marge, et le décor lointain coupé — mais à une distance où il n'en
-// reste qu'un fond noir, donc sans bord visible.
-const windowSize = Math.round(CANVAS / scale);
-const winLeft = Math.round((x0 + x1) / 2 - windowSize / 2);
-const winTop = Math.round((y0 + y1) / 2 - windowSize / 2);
-
-// Recopie manuelle plutôt qu'un extract : la fenêtre peut déborder de la
-// source, et les pixels hors cadre doivent rester transparents.
-const windowBuf = Buffer.alloc(windowSize * windowSize * 4);
-for (let y = 0; y < windowSize; y++) {
-  const sy = winTop + y;
-  if (sy < 0 || sy >= H) continue;
-  for (let x = 0; x < windowSize; x++) {
-    const sx = winLeft + x;
-    if (sx < 0 || sx >= W) continue;
-    rgba.copy(windowBuf, (y * windowSize + x) * 4, (sy * W + sx) * 4, (sy * W + sx) * 4 + 4);
+// Le décor conservé est intégré au cadre s'il tient dans la marge. Au delà,
+// il est coupé : un reflet qui flotte loin sous le sujet étirerait le cadre
+// et rapetisserait d'autant le personnage, ce qui est précisément le défaut
+// qu'on corrige. La coupe tombe alors dans du fond, sans bord visible.
+const margin = Math.round(MARGIN_RATIO * Math.max(subjectW, subjectH));
+let cx0 = x0, cx1 = x1, cy0 = y0, cy1 = y1;
+for (let y = Math.max(0, y0 - margin); y <= Math.min(H - 1, y1 + margin); y++) {
+  for (let x = Math.max(0, x0 - margin); x <= Math.min(W - 1, x1 + margin); x++) {
+    if (rgba[(y * W + x) * 4 + 3] > 8) {
+      if (x < cx0) cx0 = x;
+      if (x > cx1) cx1 = x;
+      if (y < cy0) cy0 = y;
+      if (y > cy1) cy1 = y;
+    }
   }
 }
+cx0 = Math.max(0, cx0 - margin);
+cy0 = Math.max(0, cy0 - margin);
+cx1 = Math.min(W - 1, cx1 + margin);
+cy1 = Math.min(H - 1, cy1 + margin);
 
-await sharp(windowBuf, {
-  raw: { width: windowSize, height: windowSize, channels: 4 },
-})
-  .resize(CANVAS, CANVAS, { fit: "fill" })
+const cropW = cx1 - cx0 + 1;
+const cropH = cy1 - cy0 + 1;
+const scale = LONG_SIDE / Math.max(cropW, cropH);
+const outW = Math.max(1, Math.round(cropW * scale));
+const outH = Math.max(1, Math.round(cropH * scale));
+
+await sharp(rgba, { raw: { width: W, height: H, channels: 4 } })
+  .extract({ left: cx0, top: cy0, width: cropW, height: cropH })
+  .resize(outW, outH, { fit: "fill" })
   .png({ compressionLevel: 9 })
   .toFile(outPath);
 
 console.log(
-  `${outName} : source ${W}x${H}, corps ${subjectW}x${subjectH}, décor conservé jusqu'à la ligne ${lastRow}, sortie ${CANVAS}x${CANVAS}`
+  `${outName} : source ${W}x${H}, corps ${subjectW}x${subjectH}, sortie ${outW}x${outH}`
 );
