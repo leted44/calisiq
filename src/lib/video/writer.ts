@@ -14,11 +14,29 @@ import { withFixedDuration } from "./fixMp4Duration";
 // les métadonnées sont placées en tête de fichier, durée comprise).
 // MediaRecorder reste en repli pour les navigateurs sans WebCodecs.
 
+// Chaînes de codec H.264, par profil et par niveau. Le niveau borne la
+// résolution : 4.2 s'arrête à peu près au 1080p, il faut 5.1 ou 5.2 pour de
+// la 4K. Un encodeur à qui on demande du 3840x2160 en niveau 4.2 refuse la
+// configuration, ce qui faisait retomber tout l'export en MediaRecorder.
+const CODEC_CANDIDATES_HIGH_RES = [
+  "avc1.640034", // High 5.2 — couvre la 4K
+  "avc1.640033", // High 5.1
+  "avc1.4D0034", // Main 5.2
+];
 const CODEC_CANDIDATES = [
   "avc1.42002A", // Baseline 4.2 — le plus largement décodable
   "avc1.4D002A", // Main 4.2
   "avc1.64002A", // High 4.2
 ];
+
+// Au dessus du 1080p, les niveaux élevés passent en premier ; les niveaux
+// plus bas restent essayés ensuite, parce que certains encodeurs acceptent
+// une résolution que leur niveau déclaré ne couvre pas en théorie.
+function codecCandidatesFor(width: number, height: number): string[] {
+  return Math.max(width, height) > 1920
+    ? [...CODEC_CANDIDATES_HIGH_RES, ...CODEC_CANDIDATES]
+    : CODEC_CANDIDATES;
+}
 
 const RECORDER_MIME_TYPES = [
   "video/mp4;codecs=avc1.42E01E",
@@ -33,8 +51,15 @@ const RECORDER_MIME_TYPES = [
 // défaut du navigateur, pour un rendu net et publiable plutôt que
 // compressé. Recalculé après un éventuel redimensionnement, sinon une
 // vidéo réduite garderait le débit d'une 1080p et pèserait pour rien.
+//
+// Le plafond était à 25 Mb/s, calibré sur le 1080p. En 4K il ramenait le
+// débit à 3 bits/pixel, soit une image visiblement plus compressée que ce
+// que reçoit une 1080p : la résolution montait, la qualité descendait.
+// Il est donc porté à 45 Mb/s, ce qui reste supportable en mémoire —
+// le muxer garde tout le fichier en RAM avant le téléchargement, et
+// 45 Mb/s font environ 170 Mo pour trente secondes.
 export function bitrateFor(width: number, height: number): number {
-  return Math.min(25_000_000, Math.max(4_000_000, Math.round(width * height * 9)));
+  return Math.min(45_000_000, Math.max(4_000_000, Math.round(width * height * 9)));
 }
 
 export type VideoWriter = {
@@ -66,7 +91,7 @@ async function pickCodec(
   bitrate: number
 ): Promise<string | null> {
   if (typeof VideoEncoder === "undefined") return null;
-  for (const codec of CODEC_CANDIDATES) {
+  for (const codec of codecCandidatesFor(width, height)) {
     try {
       const support = await VideoEncoder.isConfigSupported({
         codec,
@@ -382,8 +407,17 @@ export async function createVideoWriter(
   //
   // Le canvas vient d'être créé pour l'export et rien n'y est encore
   // dessiné : le redimensionner ici est sans effet de bord.
-  for (const maxDimension of [Infinity, 720, 540]) {
+  // Paliers resserrés depuis que l'export sort en résolution native : une
+  // source 4K refusée tombait directement en 720p, alors qu'un encodeur qui
+  // cale en 4K accepte presque toujours du 1440p ou du 1080p.
+  let lastTried = "";
+  for (const maxDimension of [Infinity, 2160, 1440, 1080, 720, 540]) {
     resizeCanvas(canvas, maxDimension);
+    // Un palier plus haut que la source ne change rien : inutile de repayer
+    // une vérification d'encodeur pour la même taille.
+    const size = `${canvas.width}x${canvas.height}`;
+    if (size === lastTried) continue;
+    lastTried = size;
     const writer = await createWebCodecsWriter(
       canvas,
       bitrateFor(canvas.width, canvas.height)

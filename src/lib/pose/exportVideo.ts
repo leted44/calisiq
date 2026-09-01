@@ -16,12 +16,21 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Taille max de sortie, alignée sur ce que consomment réellement Instagram/
-// TikTok (1080x1920 en portrait) — exporter en UHD natif (souvent 2160x3840
-// sur un téléphone récent) n'apporte aucune qualité visible une fois republié
-// (le réseau recompresse de toute façon) et multiplie par 4 le travail de
-// rendu par frame, l'une des causes du saccadé à l'enregistrement.
-const MAX_EXPORT_DIMENSION = 1080;
+// Plafond de résolution de l'export.
+//
+// L'export sortait auparavant en 1080p quelle que soit la source, au motif
+// qu'Instagram et TikTok recompressent de toute façon. C'était vrai pour la
+// republication, mais faux pour l'utilisateur : une vidéo filmée en 4K
+// revenait dégradée, et le fichier téléchargé n'était plus utilisable pour
+// autre chose que le réseau social. On exporte donc désormais à la
+// résolution native de la source, plafonnée à l'UHD.
+//
+// Deux effets à connaître. Le rendu par image coûte quatre fois plus cher en
+// 4K qu'en 1080p, l'export est donc plus long. Et si l'encodeur de l'appareil
+// refuse la résolution native, createVideoWriter redescend automatiquement
+// par paliers (voir writer.ts) : on ne perd jamais l'export, seulement des
+// pixels.
+const MAX_EXPORT_DIMENSION = 3840;
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   shoulder_protraction: "Épaules",

@@ -27,6 +27,8 @@ ne code pas.
 | Schéma base de données | `supabase/schema.sql` + `supabase/migrations/` |
 | Pipeline d'analyse | `src/lib/pose/runAnalysis.ts` |
 | Export vidéo annotée | `src/lib/pose/exportVideo.ts` |
+| Encodage du fichier exporté | `src/lib/video/writer.ts` |
+| Préparation des illustrations de figures | `scripts/import-figure-image.mjs` |
 
 `grid.ts` contient l'historique de calibration de chaque seuil en
 commentaires : d'où vient la valeur, sur combien d'échantillons réels, et
@@ -145,6 +147,28 @@ jambes), `straightestKneeAngle` et `straightestLegHipAngle` (jambe la plus
 tendue, celle qui porte la difficulté). Toute future figure asymétrique
 doit être notée sur ces critères, pas sur les moyennes.
 
+**L'export sort en résolution native, le stockage reste en 1080p.** Ce sont
+deux chemins distincts qu'il ne faut pas confondre. Le fichier téléchargé
+avec le squelette suit désormais la résolution de la vidéo source, plafonnée
+à l'UHD : une vidéo filmée en 4K se télécharge en 4K. Le fichier téléversé
+sur Supabase, lui, reste ré-encodé à 1080p, parce que la limite de 50 Mo par
+fichier et le quota de 1 Go du plan gratuit sont des contraintes dures.
+Conséquence à connaître et à ne pas traiter comme un bug : un export lancé
+juste après l'analyse part du fichier d'origine et sort en 4K, un export
+relancé depuis l'historique part du fichier stocké et sort en 1080p. Monter
+la résolution supposait aussi de suivre le niveau H.264 (4.2 s'arrête vers
+le 1080p, la 4K demande 5.1 ou 5.2) et de relever le plafond de débit, sans
+quoi la 4K sortait plus compressée que la 1080p.
+
+**Les illustrations de figures passent par un script, pas par un glisser
+déposer.** Les visuels arrivent sur fond noir alors que l'application les
+affiche en `object-contain` sur une carte ardoise avec un halo cyan quand la
+figure est sélectionnée : un fond opaque produirait un rectangle noir et un
+halo carré. `scripts/import-figure-image.mjs` détoure le sujet, retire le
+reflet au sol quand il est détaché du corps, et normalise au format des
+images en place (640x640 RGBA, sujet sur 580 px, centré). Toute nouvelle
+illustration doit passer par lui plutôt que d'être copiée à la main.
+
 **Rôle admin en base, pas en dur.** Le drapeau `is_admin` vit sur
 `profiles`, ce qui évite de coder une adresse e-mail dans le dépôt et
 permet de donner ou retirer le rôle sans redéploiement.
@@ -164,9 +188,13 @@ permet de donner ou retirer le rôle sans redéploiement.
 - **50 Mo par fichier** : plafond du plan gratuit Supabase, non
   configurable. Le passage à 100 Mo suppose le plan Pro à 25 $/mois.
 - **1 Go de stockage total** sur le plan gratuit.
-- **Single leg front lever non calibrée** : ses scores, et donc le fantôme
-  qui en découle, sont approximatifs. Les autres variations de front lever
-  ont été recalibrées le 2026-09-01.
+- **Straddle planche encore en DRAFT** : 3 échantillons seulement, ses
+  scores et le fantôme qui en découle restent approximatifs.
+- **Export 4K plus lent** : le rendu par image coûte quatre fois plus cher
+  qu'en 1080p, et le fichier est gardé en mémoire avant téléchargement
+  (environ 170 Mo pour trente secondes). Si l'encodeur de l'appareil refuse
+  la résolution native, `writer.ts` redescend par paliers plutôt que
+  d'échouer.
 - **Pas de multi-langue.** Français uniquement. L'anglais a été demandé
   mais reporté : environ 950 lignes de texte dans 46 fichiers, à faire
   quand on saura si l'audience est francophone ou internationale.
