@@ -38,21 +38,18 @@ type SampleComparison = {
   incoherence: string | null;
 };
 
-// Un échantillon peut être mesuré correctement et rester inutilisable :
-// c'est le cas quand la position filmée n'est pas celle de la variation
-// choisie. Le garder revient à apprendre à la grille qu'une figure vaut
-// une autre, et ça se paye sur tous les scores suivants. On le signale
-// donc au lieu de le laisser peser en silence.
-function incoherenceOf(sample: CalibrationSampleRow): string | null {
+// Un échantillon peut être mesuré correctement et montrer la position
+// d'une autre variation. C'est volontaire : noter sévèrement une figure
+// soumise dans la mauvaise catégorie apprend justement à la grille à
+// sanctionner ce cas. On se contente donc de l'étiqueter, pour retrouver
+// d'un coup d'œil quels échantillons sont des contre-exemples et vérifier
+// que leur note va bien dans ce sens.
+function autreVariation(sample: CalibrationSampleRow): string | null {
   if (sample.variation === "one_leg_front_lever") {
     const bent = sample.bent_knee_angle;
     const straight = sample.straightest_knee_angle;
-    if (bent !== null && bent > 150) {
-      return "les deux jambes sont tendues : c'est un full front lever";
-    }
-    if (straight !== null && straight < 120) {
-      return "les deux jambes sont repliées : c'est un tuck front lever";
-    }
+    if (bent !== null && bent > 150) return "les deux jambes sont tendues";
+    if (straight !== null && straight < 120) return "les deux jambes sont repliées";
   }
   return null;
 }
@@ -121,7 +118,7 @@ export default function CalibrationAccuracy({
     const raison = sample.incoherence
       ? `
 
-Motif détecté : ${sample.incoherence}.`
+À noter : ${sample.incoherence}, c'est peut-être un contre-exemple volontaire.`
       : "";
     const question =
       `Supprimer définitivement l'échantillon #${sample.index} de ${label} ` +
@@ -170,7 +167,7 @@ Motif détecté : ${sample.incoherence}.`
       index: list.length + 1,
       userRating: sample.user_rating,
       computed,
-      incoherence: incoherenceOf(sample),
+      incoherence: autreVariation(sample),
       // Écart signé : positif = la grille est plus généreuse que toi.
       gap: computed - sample.user_rating,
     });
@@ -275,9 +272,9 @@ Motif détecté : ${sample.incoherence}.`
                     </button>
                   </div>
                   {s.incoherence && (
-                    <p className="mt-1 pl-9 text-[11px] leading-snug text-orange-400">
-                      Position incohérente avec la variation : {s.incoherence}.
-                      Cet échantillon fausse la calibration.
+                    <p className="mt-1 pl-9 text-[11px] leading-snug text-slate-500">
+                      Contre-exemple : {s.incoherence}, ce n&apos;est pas la
+                      position de cette variation.
                     </p>
                   )}
                 </div>

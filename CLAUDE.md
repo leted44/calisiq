@@ -70,6 +70,15 @@ essais que les angles actuels ne distinguent pas : typiquement une figure
 d’une autre variation notée sévèrement, ou un dos arrondi que la grille ne
 voit pas.
 
+**Les exécutions soumises dans la mauvaise variation sont volontaires.**
+Une même vidéo est notée sous plusieurs variations avec une note qui baisse
+à mesure qu’on s’éloigne de la figure réellement exécutée (un full front
+lever noté 10 en full, 7,5 en straddle, 7 en single leg, 5 en advanced
+tuck, 4 en tuck). C’est ce qui apprend à la grille à sanctionner un
+utilisateur qui choisit la mauvaise catégorie. Ces échantillons ne sont
+donc pas des erreurs à supprimer, et ils tombent d’ailleurs parmi les mieux
+ajustés. Ne pas les écarter d’une recalibration.
+
 La Single Leg Front Lever n'a pas été recalibrée : 4 échantillons, dont 2
 antérieurs aux mesures asymétriques et donc inexploitables. Ses seuils
 restent DRAFT. Suivre l'écart dans le bloc « Justesse de la grille » de
