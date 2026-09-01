@@ -44,11 +44,16 @@ const MARGIN_RATIO = 0.05;
 // plus courte étendue de toutes, il paraît le plus imposant : dans une tuile
 // plus large que haute, c'est la hauteur occupée que l'œil compare, et lui
 // seul touchait le haut et le bas du cadre. Ce plafond est donc un jugement
-// visuel, arbitré en comparant trois valeurs côte à côte sur la grille
-// réelle : à 0,90 il écrase la ligne, à 0,58 il devient insignifiant à côté
-// de la planche. Il ne concerne que les figures verticales, les autres
-// passent toutes sous ce seuil sans être touchées.
-const MAX_HEIGHT_RATIO = 0.72;
+// visuel, arbitré en comparant plusieurs valeurs côte à côte sur la grille
+// réelle. Il a d'abord été fixé bas, à 0,72, quand les vignettes étaient
+// petites et serrées : le handstand y écrasait la ligne. Il est remonté à
+// 0,88 avec les cartes larges du sélecteur, où l'équilibre s'inverse — une
+// figure verticale y flotte au milieu d'un vide horizontal et paraît
+// riquiqui pendant que la planche remplit toute la largeur. La bonne valeur
+// dépend donc de la mise en page : la revoir si le sélecteur change de
+// forme. Seules les figures verticales sont concernées, les autres passent
+// toutes sous ce seuil sans être touchées.
+const MAX_HEIGHT_RATIO = 0.88;
 const ALPHA_FLOOR = 30; // en dessous : fond, totalement transparent (le fond des
 // illustrations est un bleu nuit qui monte jusqu'à 25, pas un noir pur)
 const ALPHA_CEIL = 65; // au dessus : sujet, totalement opaque

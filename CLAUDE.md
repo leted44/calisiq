@@ -227,10 +227,14 @@ pas un calcul. L'aire seule n'harmonise pas une figure verticale avec des
 figures horizontales : le handstand a la plus petite aire et la plus courte
 étendue de toutes, et paraissait pourtant le plus imposant, parce que dans
 une tuile plus large que haute c'est la hauteur occupée que l'œil compare et
-que lui seul touchait le haut et le bas du cadre. La valeur a été arbitrée en
-comparant trois hauteurs côte à côte sur la grille réelle. Elle ne concerne
-que les figures verticales, toutes les autres passent dessous sans être
-touchées.
+que lui seul touchait le haut et le bas du cadre. La valeur s'arbitre en comparant plusieurs hauteurs côte
+à côte sur la grille réelle, et **elle dépend de la mise en page** : basse
+quand les vignettes sont petites et serrées, où une figure verticale écrase
+la ligne ; haute avec les cartes larges du sélecteur, où l'équilibre
+s'inverse et où la même figure flotte au milieu d'un vide horizontal pendant
+que la planche remplit toute la largeur. La revoir si le sélecteur change de
+forme. Seules les figures verticales sont concernées, toutes les autres
+passent dessous sans être touchées.
 
 Le décor suit le cadre. Un élément détaché qui n'y tient pas entièrement est
 retiré, pas rogné : un reflet coupé net par le bord se lit comme un défaut de
