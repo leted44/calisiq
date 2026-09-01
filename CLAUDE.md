@@ -164,21 +164,32 @@ quoi la 4K sortait plus compressée que la 1080p.
 déposer.** Les visuels arrivent sur fond noir alors que l'application les
 affiche en `object-contain` sur une carte ardoise avec un halo cyan quand la
 figure est sélectionnée : un fond opaque produirait un rectangle noir et un
-halo carré. `scripts/import-figure-image.mjs` détoure le sujet, retire le
-décor et normalise au format des images en place (640x640 RGBA, sujet sur
-580 px, centré). Toute nouvelle illustration doit passer par lui plutôt que
-d'être copiée à la main.
+halo carré. `scripts/import-figure-image.mjs` détoure, normalise au format
+des images en place (640x640 RGBA, corps sur 580 px, centré) et doit être
+utilisé pour toute nouvelle illustration plutôt qu'une copie à la main.
 
-Le détourage combine trois critères, chacun ajouté parce qu'une illustration
-mettait le précédent en défaut : la luminance sépare le sujet du fond, un
-découpage en bandes écarte un reflet au sol détaché du corps, et une porte
-sur le canal rouge écarte celui qui touche les mains, le décor étant d'un
-bleu sans rouge là où le corps monte au dessus de 120. Cette dernière porte
-creusait les points d'articulation, eux aussi cyan, d'où une exception pour
-les pixels très lumineux. Il reste un chevauchement irréductible entre le
-cœur du reflet au sol et les points les plus ternes, qui laisse un fin trait
-sous les mains : invisible à la taille d'affichage, il se lit comme une
-ombre.
+Deux partis pris s'y trouvent, tous deux demandés explicitement. Le reflet au
+sol est **conservé**, il fait partie du style. Mais il n'est pas traité comme
+le corps : un halo est une lumière, il doit éclaircir le fond, et opacifié
+comme le reste il devenait une tache bleu nuit plus sombre que la carte
+qu'il était censé illuminer. Son opacité est donc proportionnelle à son
+intensité, seule approximation d'un rendu additif possible dans un PNG. Le
+corps, lui, reste franchement opaque, sinon ses zones d'ombre laisseraient
+passer le fond.
+
+Le cadrage se calcule sur le corps seul, décor exclu. Cadrer sur l'image
+entière faisait varier l'échelle du personnage d'une figure à l'autre selon
+que son reflet touche ses appuis ou flotte loin en dessous : le front lever
+sortait 40 % plus petit que la planche dans la même grille. Le décor proche
+est conservé dans la marge, le décor lointain coupé à une distance où il ne
+reste que du fond, donc sans bord visible.
+
+La séparation corps / décor repose sur le canal rouge, nul dans le décor et
+supérieur à 120 sur le corps. Deux exceptions à connaître avant d'y toucher :
+les points d'articulation sont eux aussi d'un cyan sans rouge et se
+creusaient en trous noirs, ils sont rattrapés par leur intensité ; et le
+cœur d'un reflet est assez lumineux pour passer pour du corps, ce qui
+interdit d'utiliser ce rattrapage dans le calcul du cadrage.
 
 **Rôle admin en base, pas en dur.** Le drapeau `is_admin` vit sur
 `profiles`, ce qui évite de coder une adresse e-mail dans le dépôt et

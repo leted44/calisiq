@@ -19,20 +19,27 @@ const CONTENT = 580; // sujet mis à l'échelle sur cette taille, soit 30 px de 
 const ALPHA_FLOOR = 30; // en dessous : fond, totalement transparent (le fond des
 // illustrations est un bleu nuit qui monte jusqu'à 25, pas un noir pur)
 const ALPHA_CEIL = 65; // au dessus : sujet, totalement opaque
-const GAP_MIN = 60; // hauteur de vide qui sépare un reflet au sol du sujet
-// Le reflet au sol et le halo de barre sont d'un bleu pur : leur canal rouge
-// est à zéro, alors que le corps monte au dessus de 120. Une porte sur le
-// rouge élimine donc le décor sans entamer le sujet, y compris quand le
-// reflet touche les mains et qu'aucune bande vide ne permet de le découper.
+// Le reflet au sol et le halo de barre sont conservés : ils font partie du
+// style. Ils ne peuvent pas pour autant être traités comme le corps. Un halo
+// est une lumière, il doit éclaircir le fond ; opacifié comme le reste, il
+// devient une tache bleu nuit posée sur la carte ardoise, plus sombre que le
+// fond qu'il est censé illuminer. On lui donne donc une opacité
+// proportionnelle à son intensité, seule approximation possible d'un rendu
+// additif dans un PNG, et le résultat s'éclaircit bien sur un fond sombre.
+//
+// Le sujet, lui, reste franchement opaque, sans quoi ses zones d'ombre
+// laisseraient passer le fond. On le reconnaît à son canal rouge, nul dans
+// le décor et supérieur à 120 sur le corps, en gardant à part les points
+// d'articulation : eux aussi d'un cyan sans rouge, ils s'en distinguent par
+// une intensité qui sature au dessus de 245.
 const RED_FLOOR = 25;
 const RED_CEIL = 55;
-// Mais les points d'articulation sont eux aussi d'un cyan quasi sans rouge :
-// la porte seule les creusait en trous noirs au milieu du corps. Ils s'en
-// distinguent par l'intensité — ils saturent au dessus de 245, quand le
-// reflet au sol plafonne vers 180 — donc un pixel franchement lumineux est
-// conservé quel que soit son rouge.
 const BRIGHT_FLOOR = 195;
 const BRIGHT_CEIL = 230;
+const GLOW_CEIL = 255; // intensité au dessus de laquelle un halo est opaque
+// Une bande de pixels dont la masse est sous cette fraction de celle du sujet
+// n'est ni un reflet ni un membre détaché, mais du bruit d'encodage.
+const NOISE_BAND_RATIO = 0.02;
 
 const [srcPath, outName] = process.argv.slice(2);
 if (!srcPath || !outName) {
@@ -59,6 +66,9 @@ const { width: W, height: H } = info;
 // escalier. Les pixels de bord restent sombres, ce qui est sans conséquence
 // puisque le fond de l'application est sombre lui aussi.
 const rgba = Buffer.alloc(W * H * 4);
+// Masque du corps seul, décor exclu : c'est lui qui décide du cadrage, pour
+// que toutes les figures s'affichent à la même échelle dans la grille.
+const subjectMask = new Uint8Array(W * H);
 for (let i = 0; i < W * H; i++) {
   const r = data[i * 3];
   const g = data[i * 3 + 1];
@@ -73,7 +83,16 @@ for (let i = 0; i < W * H; i++) {
     1,
     Math.max(0, (lum - BRIGHT_FLOOR) / (BRIGHT_CEIL - BRIGHT_FLOOR))
   );
-  const a = Math.round(255 * brightness * Math.max(redGate, brightGate));
+  // 1 sur le corps, 0 sur le décor lumineux
+  const subject = Math.max(redGate, brightGate);
+  const glow = Math.min(1, Math.max(0, (lum - ALPHA_FLOOR) / (GLOW_CEIL - ALPHA_FLOOR)));
+  const a = Math.round(255 * Math.max(subject * brightness, glow));
+  // Cadrage : seul le critère du rouge entre en compte, pas l'intensité. Le
+  // cœur d'un reflet est assez lumineux pour passer pour du sujet, et la
+  // boîte englobante descendait alors jusqu'au sol. Les points
+  // d'articulation en sont exclus au passage, sans effet : ils sont posés
+  // sur le corps, jamais au delà.
+  if (redGate * brightness > 0.5) subjectMask[i] = 1;
   rgba[i * 4] = r;
   rgba[i * 4 + 1] = g;
   rgba[i * 4 + 2] = b;
@@ -104,22 +123,29 @@ for (let y = 0; y < H; y++) {
 }
 if (!bands.length) throw new Error('aucun sujet détecté dans ' + srcPath);
 const main = bands.reduce((a, b) => (b.mass > a.mass ? b : a));
+// Le reflet au sol est conservé, y compris quand il flotte détaché sous le
+// sujet : c'est un parti pris visuel. Seules les bandes négligeables sont
+// écartées, elles ne viennent pas de l'illustration mais de son encodage.
 let firstRow = main.start;
 let lastRow = main.end;
 for (const b of bands) {
-  if (b.end < firstRow && firstRow - b.end <= GAP_MIN) firstRow = b.start;
-  if (b.start > lastRow && b.start - lastRow <= GAP_MIN) lastRow = b.end;
+  if (b.mass < main.mass * NOISE_BAND_RATIO) continue;
+  if (b.start < firstRow) firstRow = b.start;
+  if (b.end > lastRow) lastRow = b.end;
 }
 for (let y = 0; y < H; y++) {
   if (y >= firstRow && y <= lastRow) continue;
   for (let x = 0; x < W; x++) rgba[(y * W + x) * 4 + 3] = 0;
 }
 
-// Boîte englobante du sujet conservé
+// Boîte englobante du corps. Le décor en est volontairement exclu : cadrer
+// sur lui ferait varier la taille du personnage d'une figure à l'autre selon
+// que son reflet touche ses appuis ou flotte loin en dessous, et le front
+// lever se retrouvait 40 % plus petit que la planche dans la même grille.
 let x0 = W, x1 = 0, y0 = H, y1 = 0;
 for (let y = firstRow; y <= lastRow; y++) {
   for (let x = 0; x < W; x++) {
-    if (rgba[(y * W + x) * 4 + 3] > 8) {
+    if (subjectMask[y * W + x]) {
       if (x < x0) x0 = x;
       if (x > x1) x1 = x;
       if (y < y0) y0 = y;
@@ -128,36 +154,38 @@ for (let y = firstRow; y <= lastRow; y++) {
   }
 }
 
-const cropW = x1 - x0 + 1;
-const cropH = y1 - y0 + 1;
-const scale = CONTENT / Math.max(cropW, cropH);
-const targetW = Math.max(1, Math.round(cropW * scale));
-const targetH = Math.max(1, Math.round(cropH * scale));
+const subjectW = x1 - x0 + 1;
+const subjectH = y1 - y0 + 1;
+const scale = CONTENT / Math.max(subjectW, subjectH);
 
-const subject = await sharp(rgba, { raw: { width: W, height: H, channels: 4 } })
-  .extract({ left: x0, top: y0, width: cropW, height: cropH })
-  .resize(targetW, targetH, { fit: "fill" })
-  .png()
-  .toBuffer();
+// Fenêtre découpée dans la source : la taille du canvas ramenée à l'échelle
+// de l'original, centrée sur le corps. Le décor proche est donc conservé
+// dans la marge, et le décor lointain coupé — mais à une distance où il n'en
+// reste qu'un fond noir, donc sans bord visible.
+const windowSize = Math.round(CANVAS / scale);
+const winLeft = Math.round((x0 + x1) / 2 - windowSize / 2);
+const winTop = Math.round((y0 + y1) / 2 - windowSize / 2);
 
-await sharp({
-  create: {
-    width: CANVAS,
-    height: CANVAS,
-    channels: 4,
-    background: { r: 0, g: 0, b: 0, alpha: 0 },
-  },
+// Recopie manuelle plutôt qu'un extract : la fenêtre peut déborder de la
+// source, et les pixels hors cadre doivent rester transparents.
+const windowBuf = Buffer.alloc(windowSize * windowSize * 4);
+for (let y = 0; y < windowSize; y++) {
+  const sy = winTop + y;
+  if (sy < 0 || sy >= H) continue;
+  for (let x = 0; x < windowSize; x++) {
+    const sx = winLeft + x;
+    if (sx < 0 || sx >= W) continue;
+    rgba.copy(windowBuf, (y * windowSize + x) * 4, (sy * W + sx) * 4, (sy * W + sx) * 4 + 4);
+  }
+}
+
+await sharp(windowBuf, {
+  raw: { width: windowSize, height: windowSize, channels: 4 },
 })
-  .composite([
-    {
-      input: subject,
-      left: Math.round((CANVAS - targetW) / 2),
-      top: Math.round((CANVAS - targetH) / 2),
-    },
-  ])
+  .resize(CANVAS, CANVAS, { fit: "fill" })
   .png({ compressionLevel: 9 })
   .toFile(outPath);
 
 console.log(
-  `${outName} : source ${W}x${H}, sujet ${cropW}x${cropH} (lignes ${firstRow}-${lastRow}), sortie ${CANVAS}x${CANVAS}`
+  `${outName} : source ${W}x${H}, corps ${subjectW}x${subjectH}, décor conservé jusqu'à la ligne ${lastRow}, sortie ${CANVAS}x${CANVAS}`
 );
