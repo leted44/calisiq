@@ -36,6 +36,13 @@ const RED_FLOOR = 25;
 const RED_CEIL = 55;
 const BRIGHT_FLOOR = 195;
 const BRIGHT_CEIL = 230;
+// Plancher du halo. Les illustrations portent, en plus du reflet au sol, une
+// brume diffuse autour du sujet. Sur fond noir elle ne se voit pas ; rendue
+// en semi-transparent sur la carte ardoise, elle devenait un nuage laiteux
+// tout autour du personnage. Elle se distingue du reflet par l'intensité :
+// la brume vit entre 30 et 120, le reflet monte de 150 à 250. On ne garde
+// donc que ce qui brille franchement.
+const GLOW_FLOOR = 120;
 const GLOW_CEIL = 255; // intensité au dessus de laquelle un halo est opaque
 // Une bande de pixels dont la masse est sous cette fraction de celle du sujet
 // n'est ni un reflet ni un membre détaché, mais du bruit d'encodage.
@@ -85,7 +92,7 @@ for (let i = 0; i < W * H; i++) {
   );
   // 1 sur le corps, 0 sur le décor lumineux
   const subject = Math.max(redGate, brightGate);
-  const glow = Math.min(1, Math.max(0, (lum - ALPHA_FLOOR) / (GLOW_CEIL - ALPHA_FLOOR)));
+  const glow = Math.min(1, Math.max(0, (lum - GLOW_FLOOR) / (GLOW_CEIL - GLOW_FLOOR)));
   const a = Math.round(255 * Math.max(subject * brightness, glow));
   // Cadrage : seul le critère du rouge entre en compte, pas l'intensité. Le
   // cœur d'un reflet est assez lumineux pour passer pour du sujet, et la

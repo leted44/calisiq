@@ -177,6 +177,13 @@ intensité, seule approximation d'un rendu additif possible dans un PNG. Le
 corps, lui, reste franchement opaque, sinon ses zones d'ombre laisseraient
 passer le fond.
 
+Ce rendu en semi-transparent a révélé un second élément de décor, invisible
+tant que le fond était noir : une brume diffuse autour du sujet, qui devenait
+un nuage laiteux une fois posée sur la carte ardoise. Elle est écartée par un
+plancher d'intensité, la brume vivant entre 30 et 120 quand le reflet monte
+de 150 à 250. Ne pas confondre les deux en retouchant le script : couper la
+brume au niveau du reflet effacerait aussi ce dernier.
+
 Le cadrage se calcule sur le corps seul, décor exclu. Cadrer sur l'image
 entière faisait varier l'échelle du personnage d'une figure à l'autre selon
 que son reflet touche ses appuis ou flotte loin en dessous : le front lever
