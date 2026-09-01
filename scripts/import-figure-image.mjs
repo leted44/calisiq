@@ -20,6 +20,19 @@ const ALPHA_FLOOR = 30; // en dessous : fond, totalement transparent (le fond de
 // illustrations est un bleu nuit qui monte jusqu'à 25, pas un noir pur)
 const ALPHA_CEIL = 65; // au dessus : sujet, totalement opaque
 const GAP_MIN = 60; // hauteur de vide qui sépare un reflet au sol du sujet
+// Le reflet au sol et le halo de barre sont d'un bleu pur : leur canal rouge
+// est à zéro, alors que le corps monte au dessus de 120. Une porte sur le
+// rouge élimine donc le décor sans entamer le sujet, y compris quand le
+// reflet touche les mains et qu'aucune bande vide ne permet de le découper.
+const RED_FLOOR = 25;
+const RED_CEIL = 55;
+// Mais les points d'articulation sont eux aussi d'un cyan quasi sans rouge :
+// la porte seule les creusait en trous noirs au milieu du corps. Ils s'en
+// distinguent par l'intensité — ils saturent au dessus de 245, quand le
+// reflet au sol plafonne vers 180 — donc un pixel franchement lumineux est
+// conservé quel que soit son rouge.
+const BRIGHT_FLOOR = 195;
+const BRIGHT_CEIL = 230;
 
 const [srcPath, outName] = process.argv.slice(2);
 if (!srcPath || !outName) {
@@ -51,9 +64,16 @@ for (let i = 0; i < W * H; i++) {
   const g = data[i * 3 + 1];
   const b = data[i * 3 + 2];
   const lum = Math.max(r, g, b);
-  const a = Math.round(
-    255 * Math.min(1, Math.max(0, (lum - ALPHA_FLOOR) / (ALPHA_CEIL - ALPHA_FLOOR)))
+  const brightness = Math.min(
+    1,
+    Math.max(0, (lum - ALPHA_FLOOR) / (ALPHA_CEIL - ALPHA_FLOOR))
   );
+  const redGate = Math.min(1, Math.max(0, (r - RED_FLOOR) / (RED_CEIL - RED_FLOOR)));
+  const brightGate = Math.min(
+    1,
+    Math.max(0, (lum - BRIGHT_FLOOR) / (BRIGHT_CEIL - BRIGHT_FLOOR))
+  );
+  const a = Math.round(255 * brightness * Math.max(redGate, brightGate));
   rgba[i * 4] = r;
   rgba[i * 4 + 1] = g;
   rgba[i * 4 + 2] = b;

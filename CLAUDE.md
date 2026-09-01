@@ -165,9 +165,20 @@ déposer.** Les visuels arrivent sur fond noir alors que l'application les
 affiche en `object-contain` sur une carte ardoise avec un halo cyan quand la
 figure est sélectionnée : un fond opaque produirait un rectangle noir et un
 halo carré. `scripts/import-figure-image.mjs` détoure le sujet, retire le
-reflet au sol quand il est détaché du corps, et normalise au format des
-images en place (640x640 RGBA, sujet sur 580 px, centré). Toute nouvelle
-illustration doit passer par lui plutôt que d'être copiée à la main.
+décor et normalise au format des images en place (640x640 RGBA, sujet sur
+580 px, centré). Toute nouvelle illustration doit passer par lui plutôt que
+d'être copiée à la main.
+
+Le détourage combine trois critères, chacun ajouté parce qu'une illustration
+mettait le précédent en défaut : la luminance sépare le sujet du fond, un
+découpage en bandes écarte un reflet au sol détaché du corps, et une porte
+sur le canal rouge écarte celui qui touche les mains, le décor étant d'un
+bleu sans rouge là où le corps monte au dessus de 120. Cette dernière porte
+creusait les points d'articulation, eux aussi cyan, d'où une exception pour
+les pixels très lumineux. Il reste un chevauchement irréductible entre le
+cœur du reflet au sol et les points les plus ternes, qui laisse un fin trait
+sous les mains : invisible à la taille d'affichage, il se lit comme une
+ombre.
 
 **Rôle admin en base, pas en dur.** Le drapeau `is_admin` vit sur
 `profiles`, ce qui évite de coder une adresse e-mail dans le dépôt et
