@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis";
@@ -53,6 +53,10 @@ type Variation = Progression | HandstandVariation | FrontLeverPlaceholderVariati
 const FIGURES: {
   value: Figure;
   label: string;
+  // Nature du geste, en deux mots. Sert à séparer une figure d'une variation
+  // au premier coup d'œil : la figure dit quel mouvement on travaille, la
+  // variation dit à quel stade on en est.
+  tagline: string;
   available: boolean;
   Icon: typeof PlancheFigureIcon;
   image?: string;
@@ -60,6 +64,7 @@ const FIGURES: {
   {
     value: "planche",
     label: "Planche",
+    tagline: "Poussée horizontale",
     available: true,
     Icon: PlancheFigureIcon,
     image: "/figures/planche.png",
@@ -67,6 +72,7 @@ const FIGURES: {
   {
     value: "handstand",
     label: "Handstand",
+    tagline: "Équilibre inversé",
     available: true,
     Icon: HandstandFigureIcon,
     image: "/figures/handstand.png",
@@ -81,6 +87,7 @@ const FIGURES: {
     // prudence tant que la recalibration n'a pas été faite. Suivre la
     // justesse dans le bloc "Justesse de la grille" de /calibration.
     label: "Front Lever",
+    tagline: "Traction horizontale",
     available: true,
     Icon: FrontLeverFigureIcon,
     image: "/figures/full-front-lever.png",
@@ -90,6 +97,11 @@ const FIGURES: {
 type VariationOption = {
   value: Variation;
   label: string;
+  // Ce qui définit la position, en une ligne. C'est le seul moyen fiable de
+  // distinguer les variations entre elles : de profil et à la taille d'une
+  // vignette, une straddle et une full planche sont deux silhouettes quasi
+  // identiques. La description tranche là où l'illustration ne peut pas.
+  cue: string;
   Icon: typeof TuckPlancheIcon;
   available: boolean;
   image?: string;
@@ -100,6 +112,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     {
       value: "tuck_planche",
       label: "Tuck",
+      cue: "Genoux ramenés contre la poitrine",
       Icon: TuckPlancheIcon,
       available: true,
       image: "/figures/tuck-planche.png",
@@ -107,6 +120,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     {
       value: "advanced_tuck_planche",
       label: "Advanced tuck",
+      cue: "Hanches ouvertes, genoux encore repliés",
       Icon: AdvancedTuckIcon,
       available: true,
       image: "/figures/advanced-tuck-planche.png",
@@ -114,6 +128,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     {
       value: "straddle_planche",
       label: "Straddle",
+      cue: "Jambes tendues et écartées",
       Icon: StraddlePlancheIcon,
       available: true,
       image: "/figures/straddle-planche.png",
@@ -121,6 +136,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     {
       value: "full_planche",
       label: "Full",
+      cue: "Corps entièrement tendu à l’horizontale",
       Icon: FullPlancheIcon,
       available: true,
       image: "/figures/planche.png",
@@ -130,23 +146,26 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     {
       value: "handstand",
       label: "Handstand",
+      cue: "Corps aligné en équilibre sur les mains",
       Icon: HandstandFigureIcon,
       available: true,
       image: "/figures/handstand.png",
     },
-    { value: "handstand_push_up", label: "Handstand Push-up", Icon: HandstandPushUpIcon, available: false },
-    { value: "one_arm_handstand", label: "One Arm Handstand", Icon: OneArmHandstandIcon, available: false },
+    { value: "handstand_push_up", label: "Handstand Push-up", cue: "Flexion complète des bras en équilibre", Icon: HandstandPushUpIcon, available: false },
+    { value: "one_arm_handstand", label: "One Arm Handstand", cue: "Équilibre tenu sur un seul bras", Icon: OneArmHandstandIcon, available: false },
   ],
   front_lever: [
     {
       value: "tuck_front_lever",
       label: "Tuck",
+      cue: "Genoux ramenés contre la poitrine",
       Icon: TuckFrontLeverIcon,
       available: true,
     },
     {
       value: "advanced_tuck_front_lever",
       label: "Advanced tuck",
+      cue: "Hanches ouvertes, genoux encore repliés",
       Icon: AdvancedTuckFrontLeverIcon,
       available: true,
     },
@@ -155,18 +174,21 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     {
       value: "one_leg_front_lever",
       label: "Single Leg",
+      cue: "Une jambe tendue, l’autre repliée",
       Icon: OneLegFrontLeverIcon,
       available: true,
     },
     {
       value: "straddle_front_lever",
       label: "Straddle",
+      cue: "Jambes tendues et écartées",
       Icon: StraddleFrontLeverIcon,
       available: true,
     },
     {
       value: "full_front_lever",
       label: "Full",
+      cue: "Corps entièrement tendu sous la barre",
       Icon: FullFrontLeverIcon,
       available: true,
       image: "/figures/full-front-lever.png",
@@ -174,11 +196,193 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     {
       value: "one_arm_front_lever",
       label: "One Arm",
+      cue: "Suspendu par un seul bras",
       Icon: OneArmFrontLeverIcon,
       available: false,
     },
   ],
 };
+
+// Intitulé de section : petites capitales espacées suivies d'un filet qui
+// s'éteint. Donne une hiérarchie de page là où toutes les sections se
+// ressemblaient, sans ajouter de poids visuel.
+function SectionHeading({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+        {children}
+      </p>
+      <span
+        aria-hidden
+        className="h-px flex-1 bg-gradient-to-r from-slate-800 via-slate-800/40 to-transparent"
+      />
+    </div>
+  );
+}
+
+// Sélecteur de variation.
+//
+// Il ne s'appelle plus "Variations" mais "Progression", et ce n'est pas
+// qu'un mot : les variations d'une figure forment une suite ordonnée, de la
+// plus accessible à la plus dure, et c'est cette information qui les
+// distingue vraiment. Les silhouettes, elles, n'y arrivent pas — de profil
+// et à la taille d'une vignette, une straddle et une full planche sont deux
+// images presque identiques, et l'utilisateur ne pouvait pas choisir en
+// regardant.
+//
+// D'où trois repères qui ne dépendent pas du dessin : un rail numéroté qui
+// situe chaque étape dans la suite, une jauge de difficulté, et surtout une
+// ligne de texte qui dit ce qui définit la position retenue.
+function VariationRail({
+  options,
+  value,
+  onChange,
+}: {
+  options: VariationOption[];
+  value: Variation;
+  onChange: (next: Variation) => void;
+}) {
+  const currentIndex = options.findIndex((o) => o.value === value);
+  const current = options[currentIndex];
+  const count = options.length;
+  // Le rail relie les centres des pastilles, pas les bords de la grille :
+  // il commence donc à un demi-pas du bord, quel que soit le nombre d'étapes.
+  const halfStep = 50 / count;
+  const progress =
+    count > 1 ? (Math.max(0, currentIndex) / (count - 1)) * (100 - 2 * halfStep) : 0;
+
+  return (
+    <div className="space-y-3">
+      <SectionHeading>Progression</SectionHeading>
+
+      <div className="relative">
+        <span
+          aria-hidden
+          className="absolute top-[22px] h-px bg-slate-800"
+          style={{ left: `${halfStep}%`, right: `${halfStep}%` }}
+        />
+        <span
+          aria-hidden
+          className="absolute top-[22px] h-px bg-gradient-to-r from-cyan-500/40 to-cyan-400 transition-all duration-500 ease-out"
+          style={{ left: `${halfStep}%`, width: `${progress}%` }}
+        />
+
+        <div
+          className="relative grid gap-1"
+          style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
+        >
+          {options.map((o, index) => {
+            const selected = o.value === value;
+            const reached = index <= currentIndex;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                disabled={!o.available}
+                onClick={() => onChange(o.value)}
+                className={`group flex flex-col items-center gap-1.5 rounded-xl px-0.5 pb-2 pt-2.5 transition-colors duration-200 ${
+                  !o.available
+                    ? "cursor-not-allowed"
+                    : selected
+                    ? "bg-cyan-400/[0.06]"
+                    : "hover:bg-slate-800/40"
+                }`}
+              >
+                <span
+                  className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-bold transition-all duration-300 ${
+                    !o.available
+                      ? "border-slate-800 bg-slate-950 text-slate-700"
+                      : selected
+                      ? "border-cyan-300 bg-cyan-400 text-slate-950 shadow-[0_0_16px_rgba(34,211,238,0.75)]"
+                      : reached
+                      ? "border-cyan-500/50 bg-slate-950 text-cyan-300"
+                      : "border-slate-700 bg-slate-950 text-slate-500"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+
+                {o.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={o.image}
+                    alt=""
+                    className={`h-10 w-full object-contain transition-all duration-300 ${
+                      !o.available
+                        ? "opacity-25 grayscale"
+                        : selected
+                        ? "drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                        : "opacity-55 saturate-50 group-hover:opacity-85 group-hover:saturate-100"
+                    }`}
+                  />
+                ) : (
+                  <span className="flex h-10 items-center">
+                    <o.Icon
+                      className={`h-7 w-7 transition-colors ${
+                        !o.available
+                          ? "text-slate-700"
+                          : selected
+                          ? "text-cyan-400"
+                          : "text-slate-500 group-hover:text-slate-400"
+                      }`}
+                    />
+                  </span>
+                )}
+
+                <span
+                  className={`text-center text-[11px] font-medium leading-tight ${
+                    !o.available
+                      ? "text-slate-600"
+                      : selected
+                      ? "text-white"
+                      : "text-slate-400"
+                  }`}
+                >
+                  {o.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {current && (
+        <div className="rounded-xl border border-slate-800 bg-gradient-to-b from-slate-900 to-slate-900/30 px-3.5 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-white">{current.label}</p>
+            <span className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-slate-500">
+                Difficulté
+              </span>
+              <span className="flex items-end gap-[3px]">
+                {options.map((o, index) => (
+                  <span
+                    key={o.value}
+                    aria-hidden
+                    className={`w-[3px] rounded-full transition-colors duration-300 ${
+                      index <= currentIndex ? "bg-cyan-400" : "bg-slate-700"
+                    }`}
+                    // Barres croissantes : la jauge se lit d'un coup d'œil,
+                    // même sans compter les segments.
+                    style={{ height: `${7 + index * 2}px` }}
+                  />
+                ))}
+              </span>
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
+            {current.cue}
+          </p>
+          {!current.available && (
+            <p className="mt-2 inline-flex rounded-full border border-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+              Bientôt disponible
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const EXERCISE_TYPES: {
   value: ExerciseType;
@@ -827,49 +1031,93 @@ export default function AnalysisForm() {
       />
 
       <div className="space-y-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Figures
-        </p>
+        <SectionHeading>Figures</SectionHeading>
         <div className="grid grid-cols-2 gap-3">
-          {FIGURES.map((f) => {
-            const selected = figure === f.value;
-            return (
-              <button
-                key={f.value}
-                type="button"
-                disabled={!f.available}
-                onClick={() => selectFigure(f.value)}
-                className={`relative flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-colors ${
-                  !f.available
-                    ? "cursor-not-allowed border-slate-800 bg-slate-800/40 text-slate-600"
-                    : selected
-                    ? "border-cyan-500 bg-cyan-500/10 text-white"
-                    : "border-slate-700 bg-slate-800 text-slate-200 hover:border-slate-600"
+        {FIGURES.map((f, index) => {
+          const selected = figure === f.value;
+          // Nombre impair de figures : la dernière prend toute la largeur
+          // plutôt que de laisser un trou dans la grille.
+          const wide = FIGURES.length % 2 === 1 && index === FIGURES.length - 1;
+          return (
+            <button
+              key={f.value}
+              type="button"
+              disabled={!f.available}
+              onClick={() => selectFigure(f.value)}
+              className={`group relative overflow-hidden rounded-2xl border text-left transition-all duration-300 ${
+                wide ? "col-span-2" : ""
+              } ${
+                !f.available
+                  ? "cursor-not-allowed border-slate-800/60 bg-slate-900/40"
+                  : selected
+                  ? "border-cyan-400/60 bg-slate-900 shadow-[0_14px_34px_-14px_rgba(34,211,238,0.6)]"
+                  : "border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-900"
+              }`}
+            >
+              {/* Halo derrière le sujet, révélé à la sélection. C'est lui qui
+                  fait exister la figure choisie plutôt qu'un simple liseré. */}
+              <div
+                aria-hidden
+                className={`pointer-events-none absolute inset-0 transition-opacity duration-500 ${
+                  selected ? "opacity-100" : "opacity-0"
                 }`}
-              >
+                style={{
+                  background:
+                    "radial-gradient(115% 85% at 50% 72%, rgba(34,211,238,0.30) 0%, rgba(34,211,238,0.09) 45%, transparent 74%)",
+                }}
+              />
+
+              <div className={`relative ${wide ? "h-36" : "h-28"} w-full px-3 pt-3`}>
                 {f.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={f.image}
-                    alt={f.label}
-                    className={`h-24 w-full object-contain ${
-                      selected ? "drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]" : ""
+                    alt=""
+                    className={`h-full w-full object-contain transition-all duration-300 ${
+                      !f.available
+                        ? "opacity-30 grayscale"
+                        : selected
+                        ? "drop-shadow-[0_0_18px_rgba(34,211,238,0.45)]"
+                        : "opacity-60 saturate-50 group-hover:opacity-90 group-hover:saturate-100"
                     }`}
                   />
                 ) : (
-                  <f.Icon
-                    className={`h-9 w-9 ${
-                      selected ? "text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]" : ""
+                  <div className="flex h-full items-center justify-center">
+                    <f.Icon
+                      className={`h-10 w-10 ${
+                        selected ? "text-cyan-400" : "text-slate-600"
+                      }`}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="relative flex items-center gap-2.5 px-3.5 pb-3 pt-1">
+                {/* Barre d'accent : marque la sélection sans épaissir le cadre */}
+                <span
+                  aria-hidden
+                  className={`h-7 w-[3px] shrink-0 rounded-full transition-colors duration-300 ${
+                    selected ? "bg-cyan-400" : "bg-slate-700 group-hover:bg-slate-600"
+                  }`}
+                />
+                <span className="min-w-0">
+                  <span
+                    className={`block truncate text-[15px] font-semibold leading-tight ${
+                      !f.available ? "text-slate-600" : selected ? "text-white" : "text-slate-300"
                     }`}
-                  />
-                )}
-                <span className="font-medium">{f.label}</span>
-                {!f.available && (
-                  <span className="block text-xs text-slate-500">
-                    Bientôt disponible
+                  >
+                    {f.label}
                   </span>
-                )}
-              </button>
+                  <span
+                    className={`block truncate text-[11px] leading-tight ${
+                      selected ? "text-cyan-300/80" : "text-slate-500"
+                    }`}
+                  >
+                    {f.available ? f.tagline : "Bientôt disponible"}
+                  </span>
+                </span>
+              </div>
+            </button>
             );
           })}
         </div>
@@ -877,61 +1125,14 @@ export default function AnalysisForm() {
 
       {figure && (
       <>
-      <div className="space-y-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Variations
-        </p>
-        <div className={`grid gap-2 ${figure === "planche" ? "grid-cols-4" : "grid-cols-3"}`}>
-          {VARIATIONS_BY_FIGURE[figure].map((v) => {
-            const selected = progression === v.value;
-            return (
-              <button
-                key={v.value}
-                type="button"
-                disabled={!v.available}
-                onClick={() => setProgression(v.value)}
-                className={`relative flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-center transition-colors ${
-                  !v.available
-                    ? "cursor-not-allowed border-slate-800 bg-slate-800/40 text-slate-600"
-                    : selected
-                    ? "border-cyan-500 bg-cyan-500/10 text-white"
-                    : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600"
-                }`}
-              >
-                {v.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={v.image}
-                    alt={v.label}
-                    className={`h-12 w-full object-contain ${
-                      selected && v.available
-                        ? "drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
-                        : ""
-                    }`}
-                  />
-                ) : (
-                  <v.Icon
-                    className={`h-8 w-8 ${
-                      selected && v.available
-                        ? "text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]"
-                        : ""
-                    }`}
-                  />
-                )}
-                <span className="text-xs font-medium">{v.label}</span>
-                {!v.available && (
-                  <span className="block text-[10px] text-slate-500">Bientôt</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <VariationRail
+        options={VARIATIONS_BY_FIGURE[figure]}
+        value={progression}
+        onChange={setProgression}
+      />
 
       <div className="space-y-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Types d&apos;exercice
-        </p>
+        <SectionHeading>Types d&apos;exercice</SectionHeading>
         <div className="grid grid-cols-3 gap-2">
           {EXERCISE_TYPES.map((t) => {
             const selected = exerciseType === t.value;

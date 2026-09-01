@@ -160,6 +160,23 @@ la résolution supposait aussi de suivre le niveau H.264 (4.2 s'arrête vers
 le 1080p, la 4K demande 5.1 ou 5.2) et de relever le plafond de débit, sans
 quoi la 4K sortait plus compressée que la 1080p.
 
+**Le choix de la variation ne repose pas sur l'illustration.** Les figures et
+les variations avaient le même traitement visuel, si bien qu'une carte
+« Planche » et une carte « Full » se lisaient comme deux choix de même
+niveau. Pire, à la taille d'une vignette et vues de profil, une straddle et
+une full planche sont deux silhouettes presque identiques : aucune
+illustration ne permettait de les départager, quelle que soit sa qualité.
+
+Les deux niveaux sont donc traités différemment. Les figures sont des cartes
+larges portant le nom et la nature du geste, avec un halo qui matérialise la
+sélection. Les variations forment un rail de progression numéroté : elles
+constituent une suite ordonnée de la plus accessible à la plus dure, et c'est
+cette information, pas le dessin, qui les distingue. Un panneau sous le rail
+donne la jauge de difficulté et surtout la **ligne de texte qui définit la
+position** (« jambes tendues et écartées », « corps entièrement tendu »).
+C'est ce texte qui tranche là où l'image ne peut pas : le champ `cue` de
+chaque variation n'est pas décoratif, ne pas le retirer.
+
 **Les illustrations de figures passent par un script, pas par un glisser
 déposer.** Les visuels arrivent sur fond noir alors que l'application les
 affiche en `object-contain` sur une carte ardoise avec un halo cyan quand la
