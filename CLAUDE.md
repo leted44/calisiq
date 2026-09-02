@@ -109,9 +109,17 @@ position idéale, écran de score final. Filigrane CalisIQ sur chaque image.
 **Suivi** : historique, courbes de progression par figure, comparatif
 avant/après entre la vidéo de référence et la dernière analyse.
 
-**Administration** (réservé au compte `is_admin`) : page Statistiques
-(inscrits, utilisateurs ayant réellement analysé, rétention) et page
-Calibration (mesurer et noter des figures pour affiner les seuils).
+**Administration** (réservé au compte `is_admin`) : page Statistiques et
+page Calibration (mesurer et noter des figures pour affiner les seuils).
+
+Les statistiques sont alimentées automatiquement : un trigger sur
+`auth.users` crée le profil à l'inscription, la page compte ces lignes. Elle
+montre les inscrits, ceux qui ont réellement analysé, la rétention, et le
+détail jour par jour des inscriptions sur 30 jours avec la liste des dates
+concernées, pour pouvoir relier un pic à une publication Instagram ou TikTok.
+Les séries quotidiennes sont complétées côté SQL pour inclure les jours à
+zéro : sans eux la courbe collait les jours actifs les uns aux autres et
+mentait sur le rythme.
 
 ## Décisions structurantes prises en cours de route
 

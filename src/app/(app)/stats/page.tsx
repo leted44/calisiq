@@ -2,22 +2,51 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { TrendUpIcon, ProfileIcon, BodyIcon, TimerIcon } from "@/components/icons";
 
+type DailyPoint = { day: string; count: number };
+
 type AdminStats = {
   total_users: number;
   users_7d: number;
   users_30d: number;
   onboarded_users: number;
+  last_signup_at: string | null;
   active_users: number;
   active_users_7d: number;
   total_sessions: number;
   sessions_7d: number;
   returning_users: number;
-  daily_sessions: { day: string; count: number }[];
+  daily_users: DailyPoint[];
+  daily_sessions: DailyPoint[];
 };
 
 function percent(part: number, whole: number): string {
   if (whole === 0) return "—";
   return `${Math.round((part / whole) * 100)}%`;
+}
+
+// Les jours arrivent en "AAAA-MM-JJ". Les lire à midi évite qu'un fuseau à
+// l'ouest ne les décale d'une journée entière à l'affichage.
+function parseDay(day: string): Date {
+  return new Date(`${day}T12:00:00`);
+}
+
+const shortDate = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+});
+const longDate = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+});
+
+function relativeDays(from: string): string {
+  const days = Math.round(
+    (Date.now() - new Date(from).getTime()) / (24 * 60 * 60 * 1000)
+  );
+  if (days <= 0) return "aujourd'hui";
+  if (days === 1) return "hier";
+  return `il y a ${days} jours`;
 }
 
 function StatCard({
@@ -39,6 +68,66 @@ function StatCard({
       </div>
       <p className="mt-2 text-2xl font-bold text-white">{value}</p>
       {hint && <p className="mt-0.5 text-[11px] text-slate-500">{hint}</p>}
+    </div>
+  );
+}
+
+// Histogramme jour par jour.
+//
+// Les jours vides sont tracés en gris plutôt qu'omis : c'est la seule façon
+// de lire un rythme. Une barre par jour, même à zéro, dit « trois jours sans
+// personne » ; sans elles, trois inscriptions étalées sur deux semaines se
+// liraient comme trois jours d'affilée.
+function DailyChart({
+  data,
+  unit,
+  accent = "cyan",
+}: {
+  data: DailyPoint[];
+  unit: string;
+  accent?: "cyan" | "slate";
+}) {
+  const max = Math.max(1, ...data.map((d) => d.count));
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+  const barColor =
+    accent === "cyan"
+      ? "bg-gradient-to-t from-cyan-500/50 to-cyan-400"
+      : "bg-gradient-to-t from-slate-600 to-slate-400";
+
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm text-slate-300">
+          <span className="font-semibold text-white">{total}</span> {unit}
+        </p>
+        <p className="text-[11px] text-slate-500">pic à {max}/jour</p>
+      </div>
+
+      <div className="mt-3 flex h-24 items-end gap-[2px]">
+        {data.map((d) => (
+          <div
+            key={d.day}
+            title={`${longDate.format(parseDay(d.day))} · ${d.count}`}
+            className="flex h-full flex-1 items-end"
+          >
+            {d.count > 0 ? (
+              <div
+                className={`w-full rounded-sm ${barColor}`}
+                // Plancher de 8 % : une barre à 1 quand le pic est à 12 ferait
+                // moins d'un pixel et passerait pour un jour vide.
+                style={{ height: `${Math.max(8, (d.count / max) * 100)}%` }}
+              />
+            ) : (
+              <div className="h-[2px] w-full rounded-sm bg-slate-800" />
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2 flex justify-between text-[10px] text-slate-500">
+        <span>{shortDate.format(parseDay(data[0].day))}</span>
+        <span>{shortDate.format(parseDay(data[data.length - 1].day))}</span>
+      </div>
     </div>
   );
 }
@@ -67,7 +156,11 @@ export default async function StatsPage() {
   }
 
   const stats = data as AdminStats;
-  const maxDaily = Math.max(1, ...stats.daily_sessions.map((d) => d.count));
+  // Repli si la migration des séries quotidiennes n'est pas encore appliquée
+  // en base : la page doit s'afficher, pas planter sur un tableau absent.
+  const dailyUsers = stats.daily_users ?? [];
+  const dailySessions = stats.daily_sessions ?? [];
+  const signupDays = dailyUsers.filter((d) => d.count > 0).reverse();
 
   return (
     <div className="flex flex-col items-center gap-5 px-4 pb-6 pt-10">
@@ -91,6 +184,11 @@ export default async function StatsPage() {
             <StatCard
               label="Total"
               value={stats.total_users}
+              hint={
+                stats.last_signup_at
+                  ? `dernière ${relativeDays(stats.last_signup_at)}`
+                  : "aucune pour l'instant"
+              }
               icon={ProfileIcon}
             />
             <StatCard
@@ -101,6 +199,49 @@ export default async function StatsPage() {
             />
           </div>
         </div>
+
+        {dailyUsers.length > 0 && (
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+              Inscriptions par jour · 30 jours
+            </p>
+            <DailyChart data={dailyUsers} unit="inscriptions sur 30 jours" />
+
+            <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
+              {signupDays.length === 0 ? (
+                <p className="text-sm text-slate-400">
+                  Aucune inscription sur les 30 derniers jours.
+                </p>
+              ) : (
+                <>
+                  <p className="mb-1 text-[11px] uppercase tracking-wide text-slate-500">
+                    Jours avec inscription
+                  </p>
+                  <ul className="divide-y divide-slate-800">
+                    {signupDays.slice(0, 10).map((d) => (
+                      <li
+                        key={d.day}
+                        className="flex items-center justify-between py-2 text-sm"
+                      >
+                        <span className="text-slate-300 first-letter:uppercase">
+                          {longDate.format(parseDay(d.day))}
+                        </span>
+                        <span className="font-semibold text-cyan-400">
+                          {d.count === 1 ? "1 inscrit" : `${d.count} inscrits`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {signupDays.length > 10 && (
+                    <p className="mt-2 text-[11px] text-slate-500">
+                      et {signupDays.length - 10} autres jours plus anciens
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -146,26 +287,16 @@ export default async function StatsPage() {
           </div>
         </div>
 
-        {stats.daily_sessions.length > 0 && (
+        {dailySessions.length > 0 && (
           <div>
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-              14 derniers jours
+              Analyses par jour · 14 jours
             </p>
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-              <div className="flex h-24 items-end gap-1">
-                {stats.daily_sessions.map((d) => (
-                  <div
-                    key={d.day}
-                    className="flex-1 rounded-t bg-gradient-to-t from-cyan-500/40 to-cyan-400"
-                    style={{ height: `${(d.count / maxDaily) * 100}%` }}
-                    title={`${d.day} · ${d.count} analyses`}
-                  />
-                ))}
-              </div>
-              <p className="mt-2 text-center text-[11px] text-slate-500">
-                Analyses par jour · maximum {maxDaily}
-              </p>
-            </div>
+            <DailyChart
+              data={dailySessions}
+              unit="analyses sur 14 jours"
+              accent="slate"
+            />
           </div>
         )}
       </div>
