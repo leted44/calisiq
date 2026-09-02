@@ -118,9 +118,9 @@ export default function OnboardingWizard({
       <div className="flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logo-emblem.png"
+          src="/logo-emblem.webp"
           alt=""
-          className="h-20 w-auto drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+          className="h-20 w-auto mix-blend-screen"
         />
       </div>
 

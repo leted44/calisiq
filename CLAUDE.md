@@ -186,22 +186,38 @@ position** (« jambes tendues et écartées », « corps entièrement tendu »).
 C'est ce texte qui tranche là où l'image ne peut pas : le champ `cue` de
 chaque variation n'est pas décoratif, ne pas le retirer.
 
-**Le logo se décline en trois pièces, pas une.** `scripts/import-logo.mjs`
-découpe le visuel source (carré, sur fond noir) en `logo-full.png` (le verrou
-complet, pour la connexion et l'accueil), `logo-emblem.png` (l'athlète et son
-anneau, sans le mot-logo, pour les endroits où la marque a déjà été vue en
-grand) et `logo-mark.png` (le glyphe « IQ » et sa loupe).
+**Le logo ne se détoure pas, il se compose en `screen`.** C'est la décision
+la plus importante du sujet, et elle a coûté deux essais ratés qu'il ne faut
+pas refaire. Le visuel de marque est une illustration lumineuse sur fond noir.
+Un seuil de luminance rend transparents les noirs qui appartiennent au sujet —
+cheveux, short, parallettes — et le fond de la page les traverse : les cheveux
+sont ressortis à 3 d'opacité sur 255, avec un voile de fumée sur tout le logo.
+Un remplissage depuis les bords échoue autrement : les noirs du corps
+communiquent avec le fond là où le liseré lumineux s'interrompt, et la
+transparence fuit jusque dans le torse.
+
+Les fichiers produits sont donc **opaques et strictement identiques à
+l'original**, à la mise à l'échelle près, et c'est l'affichage qui fait le
+travail : `mix-blend-screen` sur les `<img>`. Le noir pur n'ajoute rien et
+s'efface exactement, les lumières s'additionnent au fond. Deux conséquences à
+respecter en touchant à ces écrans : le fond derrière le logo doit rester
+sombre et uni — les halos cyan décoratifs qui s'y trouvaient ont été retirés,
+ils transparaissaient dans les noirs — et pas de `drop-shadow`, le visuel
+porte son propre éclairage.
+
+`scripts/import-logo.mjs` découpe le visuel en `logo-full.webp` (le verrou
+complet, connexion et accueil), `logo-emblem.webp` (l'athlète et son anneau,
+sans le mot-logo, pour l'onboarding) et `logo-mark.webp` (le glyphe « IQ »).
+Sortie en WebP : l'image est opaque et photoréaliste, 912 Ko en PNG contre 90
+en WebP pour un rendu indiscernable. La qualité est tenue haut exprès, parce
+que la composition en `screen` exige des noirs à zéro — le moindre bruit
+s'ajouterait au fond et se verrait comme un voile.
 
 Les icônes sont faites à partir du **glyphe**, pas de l'emblème : vérifié en
 maquette, l'athlète devient illisible dès 32 px alors que deux lettres pleines
-et une loupe restent nettes. Elles sont posées sur le fond de marque plutôt que
-laissées transparentes, sans quoi le cyan disparaîtrait sur les lanceurs
-Android à fond blanc, et la version `maskable` garde 24 % de marge parce
-qu'Android recadre ces icônes en cercle ou en goutte.
-
-Le visuel source pèse 1,5 Mo une fois détouré. Le script le ramène à 800 px de
-côté en PNG quantifié, soit 253 Ko : c'est un fichier chargé à chaque ouverture
-de l'app, il ne doit pas transporter des pixels que personne ne verra.
+et une loupe restent nettes. Elles sont posées sur le fond de marque, également
+en `screen`, et la version `maskable` garde 24 % de marge parce qu'Android
+recadre ces icônes en cercle ou en goutte.
 
 **Les illustrations de figures passent par un script, pas par un glisser
 déposer.** Les visuels arrivent sur fond noir alors que l'application les

@@ -117,16 +117,19 @@ export default function LoginPage() {
           carré. À largeur égale il aurait occupé un tiers de hauteur en
           moins et l'écran se serait vidé par le haut. */}
       <div className="relative flex w-full max-w-[330px] flex-col items-center gap-2">
+        {/* Le logo est une image opaque sur fond noir, composée en `screen` :
+            le noir n'ajoute rien et s'efface exactement, les lumières
+            s'additionnent au fond. D'où deux règles à respecter ici. Le fond
+            derrière doit rester sombre et uni, sinon il transparaît dans les
+            noirs du logo — le halo cyan qui se trouvait à cet endroit a été
+            retiré pour cette raison. Et pas de `drop-shadow` : le visuel porte
+            déjà son propre éclairage. */}
         <div className="relative w-full">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-full bg-cyan-500/25 blur-3xl"
-          />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo-full.png"
+            src="/logo-full.webp"
             alt="CalisIQ"
-            className="relative w-full drop-shadow-[0_0_25px_rgba(34,211,238,0.35)]"
+            className="relative w-full mix-blend-screen"
           />
         </div>
         <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400/90">

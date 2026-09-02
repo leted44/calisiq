@@ -4,20 +4,18 @@ import { LightbulbIcon, BodyIcon, TimerIcon } from "@/components/icons";
 export default function AccueilPage() {
   return (
     <div className="relative flex flex-col items-center gap-8 overflow-hidden px-4 pt-10">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-16 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-cyan-500/20 blur-3xl"
-      />
-
       <div className="relative flex flex-col items-center gap-2">
         {/* Hauteur ramenée de 176 à 160 px : le nouveau logo est presque
             carré, il occupe donc bien plus de surface qu'avant à hauteur
-            égale, et repoussait le sélecteur de figures hors de l'écran. */}
+            égale, et repoussait le sélecteur de figures hors de l'écran.
+            Composé en `screen`, comme sur l'écran de connexion : le halo cyan
+            qui baignait cette zone a été retiré, il serait passé au travers
+            des noirs du logo. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logo-full.png"
+          src="/logo-full.webp"
           alt="CalisIQ"
-          className="h-40 w-auto drop-shadow-[0_0_22px_rgba(34,211,238,0.4)]"
+          className="h-40 w-auto mix-blend-screen"
         />
         <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
           Analyse Intelligente de la Forme
