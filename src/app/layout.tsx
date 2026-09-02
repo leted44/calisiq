@@ -20,10 +20,10 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "CalisIQ",
   },
-  icons: {
-    icon: "/icon/192",
-    apple: "/icon/180",
-  },
+  // Pas de bloc `icons` : src/app/icon.png et src/app/apple-icon.png sont
+  // détectés par Next, qui écrit les balises <link> lui-même. Le déclarer ici
+  // reprendrait la main sur ces fichiers et pointerait vers l'ancienne route
+  // /icon/[size], supprimée avec le rendu « CQ » qu'elle générait.
 };
 
 export const viewport: Viewport = {

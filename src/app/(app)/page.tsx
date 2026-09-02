@@ -10,11 +10,14 @@ export default function AccueilPage() {
       />
 
       <div className="relative flex flex-col items-center gap-2">
+        {/* Hauteur ramenée de 176 à 160 px : le nouveau logo est presque
+            carré, il occupe donc bien plus de surface qu'avant à hauteur
+            égale, et repoussait le sélecteur de figures hors de l'écran. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/logo-full.png"
           alt="CalisIQ"
-          className="h-44 w-auto drop-shadow-[0_0_22px_rgba(34,211,238,0.4)]"
+          className="h-40 w-auto drop-shadow-[0_0_22px_rgba(34,211,238,0.4)]"
         />
         <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
           Analyse Intelligente de la Forme

@@ -29,6 +29,7 @@ ne code pas.
 | Export vidéo annotée | `src/lib/pose/exportVideo.ts` |
 | Encodage du fichier exporté | `src/lib/video/writer.ts` |
 | Préparation des illustrations de figures | `scripts/import-figure-image.mjs` |
+| Préparation du logo et des icônes | `scripts/import-logo.mjs` |
 
 `grid.ts` contient l'historique de calibration de chaque seuil en
 commentaires : d'où vient la valeur, sur combien d'échantillons réels, et
@@ -184,6 +185,23 @@ donne la jauge de difficulté et surtout la **ligne de texte qui définit la
 position** (« jambes tendues et écartées », « corps entièrement tendu »).
 C'est ce texte qui tranche là où l'image ne peut pas : le champ `cue` de
 chaque variation n'est pas décoratif, ne pas le retirer.
+
+**Le logo se décline en trois pièces, pas une.** `scripts/import-logo.mjs`
+découpe le visuel source (carré, sur fond noir) en `logo-full.png` (le verrou
+complet, pour la connexion et l'accueil), `logo-emblem.png` (l'athlète et son
+anneau, sans le mot-logo, pour les endroits où la marque a déjà été vue en
+grand) et `logo-mark.png` (le glyphe « IQ » et sa loupe).
+
+Les icônes sont faites à partir du **glyphe**, pas de l'emblème : vérifié en
+maquette, l'athlète devient illisible dès 32 px alors que deux lettres pleines
+et une loupe restent nettes. Elles sont posées sur le fond de marque plutôt que
+laissées transparentes, sans quoi le cyan disparaîtrait sur les lanceurs
+Android à fond blanc, et la version `maskable` garde 24 % de marge parce
+qu'Android recadre ces icônes en cercle ou en goutte.
+
+Le visuel source pèse 1,5 Mo une fois détouré. Le script le ramène à 800 px de
+côté en PNG quantifié, soit 253 Ko : c'est un fichier chargé à chaque ouverture
+de l'app, il ne doit pas transporter des pixels que personne ne verra.
 
 **Les illustrations de figures passent par un script, pas par un glisser
 déposer.** Les visuels arrivent sur fond noir alors que l'application les

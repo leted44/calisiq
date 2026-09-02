@@ -112,6 +112,18 @@ export default function OnboardingWizard({
 
   return (
     <div className="w-full max-w-sm space-y-6 rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl shadow-black/40">
+      {/* L'emblème seul, sans le mot-logo : la marque vient d'être vue en
+          grand sur l'écran de connexion, la répéter entière juste après
+          ferait redite. */}
+      <div className="flex justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-emblem.png"
+          alt=""
+          className="h-20 w-auto drop-shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+        />
+      </div>
+
       <div>
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Bienvenue

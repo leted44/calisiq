@@ -112,7 +112,11 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-slate-950 p-4">
-      <div className="relative flex w-full max-w-[300px] flex-col items-center gap-2">
+      {/* Largeur portée de 300 à 330 px avec le nouveau logo : l'ancien
+          verrou était nettement plus haut que large, le nouveau est presque
+          carré. À largeur égale il aurait occupé un tiers de hauteur en
+          moins et l'écran se serait vidé par le haut. */}
+      <div className="relative flex w-full max-w-[330px] flex-col items-center gap-2">
         <div className="relative w-full">
           <div
             aria-hidden
