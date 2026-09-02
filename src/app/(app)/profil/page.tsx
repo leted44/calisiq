@@ -167,9 +167,11 @@ export default async function ProfilPage() {
           </Link>
         )}
 
-        {/* Ne s'affiche que si l'installation est réellement possible :
-            masqué une fois l'app installée, et masqué aussi sur les
-            navigateurs qui ne savent pas le faire. */}
+        {/* Toujours visible, avec deux états : « Installer CalisIQ » tant que
+            ce n'est pas fait, « CalisIQ est bien installé » une fois lancée
+            depuis l'écran d'accueil. Un bouton qui se cache quand le
+            navigateur n'expose pas d'invite native laisserait l'utilisateur
+            sans réponse ; il déplie alors la marche à suivre. */}
         <InstallAppButton />
 
         <LogoutButton />

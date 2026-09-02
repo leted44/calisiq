@@ -111,6 +111,16 @@ position idéale, écran de score final. Filigrane CalisIQ sur chaque image.
 **Compte** : installation de l'app sur l'écran d'accueil et suppression
 définitive du compte, toutes deux depuis le profil.
 
+L'invite d'installation est **capturée par un script du layout racine**, pas
+par le composant qui l'utilise. Chrome n'émet `beforeinstallprompt` qu'une
+fois, au chargement initial, et ne la rejoue jamais : un écouteur monté avec la
+page Profil, où l'utilisateur arrive plusieurs secondes plus tard, la manque
+systématiquement. Le script la retient dans le HTML initial, le bouton vient la
+chercher au clic. Celui-ci reste visible en toute circonstance, avec deux
+états, et déplie la marche à suivre quand le navigateur n'expose aucune invite
+native — iOS n'en propose aucune, et les navigateurs intégrés à Instagram ou
+TikTok non plus.
+
 La suppression passe par `delete_own_account`, qui remonte la chaîne des
 tables à la main — aucune clé étrangère du schéma n'est en `on delete cascade`
 — puis efface la ligne `auth.users`. Les fichiers du stockage, eux, sont
