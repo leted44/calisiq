@@ -2,6 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    // `id` fige l'identité de l'application aux yeux du navigateur. Sans lui,
+    // l'identifiant est déduit de `start_url` : le jour où celle-ci change,
+    // l'installation existante est traitée comme une autre application.
+    id: "/",
     name: "CalisIQ",
     short_name: "CalisIQ",
     description: "Analyse biomécanique de tes mouvements de calisthénie",
@@ -15,8 +19,8 @@ export default function manifest(): MetadataRoute.Manifest {
     // La version "maskable" est la même à 20 % de marge : Android recadre ces
     // icônes en cercle ou en goutte et rognerait l'anneau sans cette réserve.
     icons: [
-      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };

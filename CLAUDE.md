@@ -108,12 +108,18 @@ superposé, scores qui évoluent en direct, chrono du hold, ralenti sur la
 position la mieux tenue avec le point faible entouré et le fantôme de la
 position idéale, écran de score final. Filigrane CalisIQ sur chaque image.
 
-**Compte** : suppression définitive par l'utilisateur lui-même, depuis le
-profil. Elle passe par la fonction `delete_own_account`, qui remonte la chaîne
-des tables à la main — aucune clé étrangère du schéma n'est en `on delete
-cascade` — puis efface les fichiers du stockage et la ligne `auth.users`.
-Confirmation par recopie d'un mot, parce qu'un « es-tu sûr ? » se clique par
-réflexe et que rien n'est restaurable ensuite.
+**Compte** : installation de l'app sur l'écran d'accueil et suppression
+définitive du compte, toutes deux depuis le profil.
+
+La suppression passe par `delete_own_account`, qui remonte la chaîne des
+tables à la main — aucune clé étrangère du schéma n'est en `on delete cascade`
+— puis efface la ligne `auth.users`. Les fichiers du stockage, eux, sont
+supprimés côté client juste avant l'appel : **Supabase refuse le `delete`
+direct sur `storage.objects`**, y compris à une fonction `security definer`,
+avec le message « Direct deletion from storage tables is not allowed ». Seule
+l'API de stockage y a droit, et elle exige une session encore valide, donc
+avant. Confirmation par recopie d'un mot, parce qu'un « es-tu sûr ? » se clique
+par réflexe et que rien n'est restaurable ensuite.
 
 **Suivi** : historique, courbes de progression par figure, comparatif
 avant/après entre la vidéo de référence et la dernière analyse.

@@ -20,10 +20,37 @@ export default function DeleteAccountButton() {
 
   const confirmed = typed.trim().toUpperCase() === CONFIRMATION_WORD;
 
+  // Vide les fichiers de l'utilisateur dans un bucket. Les chemins sont plats,
+  // de la forme `{userId}/fichier`, un seul listage suffit donc.
+  async function purgeBucket(bucket: string, userId: string) {
+    const { data: files } = await supabase.storage
+      .from(bucket)
+      .list(userId, { limit: 1000 });
+    if (!files || files.length === 0) return;
+    await supabase.storage
+      .from(bucket)
+      .remove(files.map((file) => `${userId}/${file.name}`));
+  }
+
   async function handleDelete() {
     if (!confirmed || loading) return;
     setLoading(true);
     setError(null);
+
+    // Les vidéos et l'avatar partent en premier, et depuis le navigateur.
+    // Supabase interdit le `delete` direct sur `storage.objects`, y compris
+    // à une fonction `security definer` : seule l'API de stockage y a droit.
+    // On le fait donc avant, tant que la session est encore valide — après la
+    // suppression du compte, plus aucun appel authentifié ne passerait.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      await Promise.all([
+        purgeBucket("videos", user.id),
+        purgeBucket("avatars", user.id),
+      ]);
+    }
 
     const { error: rpcError } = await supabase.rpc("delete_own_account");
 

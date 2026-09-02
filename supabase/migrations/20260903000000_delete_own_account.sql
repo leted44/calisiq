@@ -10,9 +10,14 @@
 --
 -- L'ordre compte : aucune clé étrangère du schéma n'est en `on delete
 -- cascade`, il faut donc remonter la chaîne à la main, des feuilles vers la
--- racine, sinon Postgres refuse la suppression. Les fichiers du stockage sont
--- effacés dans la foulée : ils sont rangés dans un dossier portant l'identifiant
--- de l'utilisateur, et personne n'irait les chercher une fois le compte parti.
+-- racine, sinon Postgres refuse la suppression.
+--
+-- Les fichiers du stockage ne sont PAS effacés ici. Supabase interdit le
+-- `delete` direct sur `storage.objects`, même à une fonction `security
+-- definer` : la requête est rejetée par « Direct deletion from storage tables
+-- is not allowed. Use the Storage API instead. » Le nettoyage se fait donc
+-- côté client, par l'API de stockage, juste avant l'appel à cette fonction —
+-- voir DeleteAccountButton.tsx.
 create or replace function public.delete_own_account()
 returns void
 language plpgsql
@@ -35,10 +40,6 @@ begin
 
   delete from public.sessions where user_id = uid;
   delete from public.calibration_samples where user_id = uid;
-
-  delete from storage.objects
-  where bucket_id in ('videos', 'avatars')
-    and (storage.foldername(name))[1] = uid::text;
 
   delete from public.profiles where id = uid;
 

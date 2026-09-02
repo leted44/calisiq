@@ -508,3 +508,35 @@ export function ChangeVideoIcon({ className = base }: IconProps) {
     </svg>
   );
 }
+
+// Téléphone avec une flèche vers le bas : l'installation de l'app sur
+// l'écran d'accueil. Une flèche de téléchargement seule aurait évoqué un
+// fichier à récupérer, pas une application à installer.
+export function InstallAppIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect
+        x="6"
+        y="2.5"
+        width="12"
+        height="19"
+        rx="2.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M12 7v7m0 0 2.5-2.5M12 14l-2.5-2.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10.5 18.5h3"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "../_components/LogoutButton";
 import DeleteAccountButton from "../_components/DeleteAccountButton";
+import InstallAppButton from "../_components/InstallAppButton";
 import {
   RulerIcon,
   ScaleIcon,
@@ -165,6 +166,11 @@ export default async function ProfilPage() {
             </div>
           </Link>
         )}
+
+        {/* Ne s'affiche que si l'installation est réellement possible :
+            masqué une fois l'app installée, et masqué aussi sur les
+            navigateurs qui ne savent pas le faire. */}
+        <InstallAppButton />
 
         <LogoutButton />
 
