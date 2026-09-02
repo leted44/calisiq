@@ -116,10 +116,18 @@ par le composant qui l'utilise. Chrome n'émet `beforeinstallprompt` qu'une
 fois, au chargement initial, et ne la rejoue jamais : un écouteur monté avec la
 page Profil, où l'utilisateur arrive plusieurs secondes plus tard, la manque
 systématiquement. Le script la retient dans le HTML initial, le bouton vient la
-chercher au clic. Celui-ci reste visible en toute circonstance, avec deux
-états, et déplie la marche à suivre quand le navigateur n'expose aucune invite
-native — iOS n'en propose aucune, et les navigateurs intégrés à Instagram ou
-TikTok non plus.
+chercher au clic. Celui-ci reste visible en toute circonstance, et adapte
+sa forme au navigateur.
+
+**Sur iPhone, l'installation en un clic est impossible**, et aucun code n'y
+changera rien : Apple n'implémente pas `beforeinstallprompt` et réserve le
+geste à la feuille de partage de Safari. Le composant affiche donc directement
+les deux étapes, avec les pictogrammes réels d'iOS plutôt que leur
+description — l'utilisateur doit reconnaître le bouton Partager dans sa barre,
+pas le déduire d'une phrase. Hors Safari sur iOS (Chrome, ou les navigateurs
+intégrés à Instagram et TikTok, par lesquels arriveront la plupart des
+visiteurs) l'installation n'est même pas possible : le seul geste utile est de
+copier l'adresse pour l'ouvrir dans Safari, et c'est ce que propose la carte.
 
 La suppression passe par `delete_own_account`, qui remonte la chaîne des
 tables à la main — aucune clé étrangère du schéma n'est en `on delete cascade`
