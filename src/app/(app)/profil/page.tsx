@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "../_components/LogoutButton";
+import DeleteAccountButton from "../_components/DeleteAccountButton";
 import {
   RulerIcon,
   ScaleIcon,
@@ -166,6 +167,12 @@ export default async function ProfilPage() {
         )}
 
         <LogoutButton />
+
+        {/* Séparé du reste et discret : la suppression doit être trouvable
+            sans être à portée de pouce d'un geste courant. */}
+        <div className="border-t border-slate-800 pt-4">
+          <DeleteAccountButton />
+        </div>
       </div>
     </div>
   );

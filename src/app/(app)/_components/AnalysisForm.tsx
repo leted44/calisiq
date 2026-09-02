@@ -161,6 +161,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Genoux ramenés contre la poitrine",
       Icon: TuckFrontLeverIcon,
       available: true,
+      image: "/figures/tuck-front-lever.png",
     },
     {
       value: "advanced_tuck_front_lever",
@@ -168,6 +169,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Hanches ouvertes, genoux encore repliés",
       Icon: AdvancedTuckFrontLeverIcon,
       available: true,
+      image: "/figures/advanced-tuck-front-lever.png",
     },
     // Ordre de difficulté croissante : la Single Leg se situe entre
     // l'advanced tuck et le straddle.
@@ -177,6 +179,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Une jambe tendue, l’autre repliée",
       Icon: OneLegFrontLeverIcon,
       available: true,
+      image: "/figures/one-leg-front-lever.png",
     },
     {
       value: "straddle_front_lever",

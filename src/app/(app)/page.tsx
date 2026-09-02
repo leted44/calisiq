@@ -1,7 +1,16 @@
 import AnalysisForm from "./_components/AnalysisForm";
+import TodayActivity from "./_components/TodayActivity";
+import { createClient } from "@/lib/supabase/server";
 import { LightbulbIcon, BodyIcon, TimerIcon } from "@/components/icons";
 
-export default function AccueilPage() {
+export default async function AccueilPage() {
+  const supabase = await createClient();
+  // Total réel des analyses du jour, tous comptes confondus. La RLS empêche de
+  // le calculer côté client, d'où la fonction dédiée. En cas d'échec — migration
+  // pas encore appliquée, par exemple — on repart de zéro plutôt que de casser
+  // la page pour un indicateur décoratif.
+  const { data: analysesToday } = await supabase.rpc("analyses_today");
+
   return (
     <div className="relative flex flex-col items-center gap-8 overflow-hidden px-4 pt-10">
       <div className="relative flex flex-col items-center gap-2">
@@ -41,6 +50,10 @@ export default function AccueilPage() {
           <TimerIcon className="h-5 w-5 text-cyan-400" />
           <span className="text-xs text-slate-400">2-3 sec de hold</span>
         </div>
+      </div>
+
+      <div className="relative w-full max-w-md">
+        <TodayActivity realCount={typeof analysesToday === "number" ? analysesToday : 0} />
       </div>
 
       <div className="relative w-full max-w-md">

@@ -44,6 +44,7 @@ scoring.
 | Straddle planche | Actif, seuils DRAFT | 3 échantillons seulement |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
 | Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
+| Illustrations front lever | Tuck, advanced tuck, single leg et full faites | Il manque la straddle, qui affiche encore une icône |
 | Single Leg Front Lever | Actif | Genou de la jambe libre calibré le 2026-09-01 sur 6 échantillons |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
 
@@ -107,6 +108,13 @@ superposé, scores qui évoluent en direct, chrono du hold, ralenti sur la
 position la mieux tenue avec le point faible entouré et le fantôme de la
 position idéale, écran de score final. Filigrane CalisIQ sur chaque image.
 
+**Compte** : suppression définitive par l'utilisateur lui-même, depuis le
+profil. Elle passe par la fonction `delete_own_account`, qui remonte la chaîne
+des tables à la main — aucune clé étrangère du schéma n'est en `on delete
+cascade` — puis efface les fichiers du stockage et la ligne `auth.users`.
+Confirmation par recopie d'un mot, parce qu'un « es-tu sûr ? » se clique par
+réflexe et que rien n'est restaurable ensuite.
+
 **Suivi** : historique, courbes de progression par figure, comparatif
 avant/après entre la vidéo de référence et la dernière analyse.
 
@@ -123,6 +131,24 @@ zéro : sans eux la courbe collait les jours actifs les uns aux autres et
 mentait sur le rythme.
 
 ## Décisions structurantes prises en cours de route
+
+**L'indicateur d'activité de l'accueil est en partie simulé.** Le « N ont
+analysé aujourd'hui » additionne le total réel du jour (fonction
+`analyses_today`, la RLS empêchant de le calculer côté client) et une valeur
+simulée destinée à meubler l'écran tant que l'audience se construit. C'est un
+choix produit assumé, demandé explicitement, et la constante
+`SIMULATION_ACTIVE` de `TodayActivity.tsx` suffit à le rendre entièrement
+honnête le jour où le trafic réel se suffit à lui-même.
+
+Deux propriétés à préserver si la simulation évolue. Elle est **déterministe** :
+deux personnes qui ouvrent l'app à la même seconde voient le même nombre, sans
+quoi une capture d'écran partagée trahirait le procédé. Et elle est
+**strictement croissante** sur la journée : un compteur qui recule sous les yeux
+de l'utilisateur se remarque immédiatement. La fourchette est volontairement
+modeste, un chiffre invraisemblable pour une application qui démarre
+décrédibilise davantage qu'il ne rassure.
+
+
 
 **Enregistrement opt-in.** Une analyse n'est pas sauvegardée
 automatiquement ; l'utilisateur choisit de garder la figure. Certaines
