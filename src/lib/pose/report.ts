@@ -283,6 +283,14 @@ export function describeCriterion(
   return map[critere]?.[tierFor(score)] ?? "";
 }
 
+// Une progression est dite calibrée quand au moins un de ses critères a été
+// recalé sur des figures réelles notées à la main. Tant que la liste est vide,
+// ses seuils sont entièrement raisonnés : la figure s'analyse, mais sa note est
+// approximative et l'interface doit le dire.
+export function isCalibrated(progression: string): boolean {
+  return (CALIBRATED_CRITERIA[progression]?.length ?? 0) > 0;
+}
+
 export function figureFromProgression(
   progression: string
 ): "planche" | "handstand" | "front_lever" | "dragon_flag" | "reps" {

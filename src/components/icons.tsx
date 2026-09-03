@@ -620,3 +620,45 @@ export function LinkIcon({ className = base }: IconProps) {
     </svg>
   );
 }
+
+// Cadenas fermé : la figure n'est pas analysable du tout, l'app ne sait pas
+// encore la noter.
+export function LockIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect
+        x="4.5"
+        y="10.5"
+        width="15"
+        height="10"
+        rx="2.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
+      <path
+        d="M8 10.5V7.6a4 4 0 0 1 8 0v2.9"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// Signe « environ » dans un cercle : la figure s'analyse, mais ses seuils
+// n'ont jamais été validés sur des vidéos réelles. La note est donc
+// approximative. Volontairement différent d'un cadenas, qui dirait à tort que
+// la figure est inutilisable.
+export function ApproximateIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M7.5 12.6c1.1-1.9 2.6-1.9 4.5 0s3.4 1.9 4.5 0"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}

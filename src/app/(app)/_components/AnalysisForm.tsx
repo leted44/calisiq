@@ -12,7 +12,12 @@ import type { Progression, RepProgression } from "@/lib/pose/grid";
 import CaptureTipsModal, { shouldSkipTips } from "./CaptureTipsModal";
 import ResultCard from "./ResultCard";
 import ExportVideoButton from "./ExportVideoButton";
-import { PROGRESSION_LABELS, figureFromProgression } from "@/lib/pose/report";
+import {
+  PROGRESSION_LABELS,
+  figureFromProgression,
+  isCalibrated,
+} from "@/lib/pose/report";
+import { LockIcon, ApproximateIcon } from "@/components/icons";
 import {
   UploadCloudIcon,
   CameraIcon,
@@ -152,6 +157,7 @@ const FIGURES: {
     tagline: "Poussée verticale",
     available: true,
     Icon: DipFigureIcon,
+    image: "/figures/parallel-dip.png",
   },
   {
     value: "pompes",
@@ -381,6 +387,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Corps suspendu entre deux barres parallèles",
       Icon: DipFigureIcon,
       available: true,
+      image: "/figures/parallel-dip.png",
     },
   ],
   pompes: [
@@ -425,6 +432,44 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     },
   ],
 };
+
+// Marque d'état d'une figure, en pastille de coin.
+//
+// Deux états distincts, et il ne faut pas les confondre. Le cadenas dit que
+// l'app ne sait pas analyser la figure du tout. Le signe « environ » dit
+// qu'elle l'analyse, mais avec des seuils jamais validés sur des vidéos
+// réelles : la note existe, elle est seulement approximative. Un cadenas sur
+// ce second cas laisserait croire à tort que la figure est inutilisable.
+function StatusBadge({
+  state,
+  size = "md",
+}: {
+  state: "locked" | "draft";
+  size?: "sm" | "md";
+}) {
+  const box = size === "sm" ? "h-4 w-4" : "h-5 w-5";
+  const glyph = size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3";
+  return (
+    <span
+      title={
+        state === "locked"
+          ? "Pas encore analysable"
+          : "Note approximative : seuils pas encore validés sur des figures réelles"
+      }
+      className={`flex ${box} items-center justify-center rounded-full border ${
+        state === "locked"
+          ? "border-slate-700 bg-slate-950 text-slate-500"
+          : "border-amber-500/40 bg-amber-500/10 text-amber-400"
+      }`}
+    >
+      {state === "locked" ? (
+        <LockIcon className={glyph} />
+      ) : (
+        <ApproximateIcon className={glyph} />
+      )}
+    </span>
+  );
+}
 
 // Intitulé de section : petites capitales espacées suivies d'un filet qui
 // s'éteint. Donne une hiérarchie de page là où toutes les sections se
@@ -503,7 +548,7 @@ function VariationRail({
                 type="button"
                 disabled={!o.available}
                 onClick={() => onChange(o.value)}
-                className={`group flex flex-col items-center gap-1.5 rounded-xl px-0.5 pb-2 pt-2.5 transition-colors duration-200 ${
+                className={`group relative flex flex-col items-center gap-1.5 rounded-xl px-0.5 pb-2 pt-2.5 transition-colors duration-200 ${
                   !o.available
                     ? "cursor-not-allowed"
                     : selected
@@ -511,6 +556,19 @@ function VariationRail({
                     : "hover:bg-slate-800/40"
                 }`}
               >
+                {/* Le badge est ancré à la pastille numérotée et non au coin du
+                    bouton : la largeur d'un nœud varie de deux à six colonnes
+                    selon la figure, et au coin il finissait par sembler
+                    appartenir au nœud voisin. */}
+                <span className="relative z-10">
+                  {(!o.available || !isCalibrated(o.value)) && (
+                    <span className="absolute -right-2 -top-1 z-20">
+                      <StatusBadge
+                        size="sm"
+                        state={o.available ? "draft" : "locked"}
+                      />
+                    </span>
+                  )}
                 <span
                   className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-bold transition-all duration-300 ${
                     !o.available
@@ -523,6 +581,7 @@ function VariationRail({
                   }`}
                 >
                   {index + 1}
+                </span>
                 </span>
 
                 {o.image ? (
@@ -596,10 +655,20 @@ function VariationRail({
           <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
             {current.cue}
           </p>
-          {!current.available && (
-            <p className="mt-2 inline-flex rounded-full border border-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-              Bientôt disponible
+          {!current.available ? (
+            <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+              <LockIcon className="h-3.5 w-3.5 shrink-0" />
+              Pas encore analysable, la notation de cette variation reste à
+              construire.
             </p>
+          ) : (
+            !isCalibrated(current.value) && (
+              <p className="mt-2.5 flex items-center gap-1.5 text-[11px] leading-relaxed text-amber-400/90">
+                <ApproximateIcon className="h-3.5 w-3.5 shrink-0" />
+                Note approximative : les seuils de cette variation n&apos;ont pas
+                encore été validés sur des figures réelles.
+              </p>
+            )
           )}
         </div>
       )}
@@ -1262,6 +1331,14 @@ export default function AnalysisForm() {
           // Nombre impair de figures : la dernière prend toute la largeur
           // plutôt que de laisser un trou dans la grille.
           const wide = FIGURES.length % 2 === 1 && index === FIGURES.length - 1;
+          // Une figure est marquée « approximative » quand aucune de ses
+          // variations n'a été recalée sur des figures réelles. Dès qu'une
+          // seule l'est, la marque disparaît : la famille a une base fiable.
+          const figureIsDraft =
+            f.available &&
+            !VARIATIONS_BY_FIGURE[f.value].some(
+              (v) => v.available && isCalibrated(v.value)
+            );
           return (
             <button
               key={f.value}
@@ -1278,6 +1355,12 @@ export default function AnalysisForm() {
                   : "border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-900"
               }`}
             >
+              {(!f.available || figureIsDraft) && (
+                <span className="absolute right-2.5 top-2.5 z-10">
+                  <StatusBadge state={f.available ? "draft" : "locked"} />
+                </span>
+              )}
+
               {/* Halo derrière le sujet, révélé à la sélection. C'est lui qui
                   fait exister la figure choisie plutôt qu'un simple liseré. */}
               <div
