@@ -313,6 +313,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Genoux repliés, le tronc descend d'un bloc",
       Icon: TuckDragonFlagIcon,
       available: true,
+      image: "/figures/tuck-dragon-flag.png",
     },
     {
       value: "straddle_dragon_flag",
@@ -320,6 +321,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Jambes tendues et écartées",
       Icon: StraddleDragonFlagIcon,
       available: true,
+      image: "/figures/straddle-dragon-flag.png",
     },
     {
       value: "full_dragon_flag",
