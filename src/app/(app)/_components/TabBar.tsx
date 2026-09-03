@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HomeIcon, HistoryIcon, TrendUpIcon, ProfileIcon } from "@/components/icons";
 
+// « Accueil » pointe sur /analyser et non sur / : la racine est devenue la
+// page publique de présentation, celle qu'on envoie depuis Instagram.
 const TABS = [
-  { href: "/", label: "Accueil", Icon: HomeIcon },
+  { href: "/analyser", label: "Accueil", Icon: HomeIcon },
   { href: "/historique", label: "Historique", Icon: HistoryIcon },
   { href: "/progression", label: "Progrès", Icon: TrendUpIcon },
   { href: "/profil", label: "Profil", Icon: ProfileIcon },

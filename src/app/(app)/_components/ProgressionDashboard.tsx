@@ -165,7 +165,7 @@ export default function ProgressionDashboard({
           figure par figure.
         </p>
         <Link
-          href="/"
+          href="/analyser"
           className="inline-block rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2 text-sm font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)]"
         >
           Faire une analyse

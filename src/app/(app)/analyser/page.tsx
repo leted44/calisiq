@@ -1,5 +1,5 @@
-import AnalysisForm from "./_components/AnalysisForm";
-import TodayActivity from "./_components/TodayActivity";
+import AnalysisForm from "../_components/AnalysisForm";
+import TodayActivity from "../_components/TodayActivity";
 import { createClient } from "@/lib/supabase/server";
 import { LightbulbIcon, BodyIcon, TimerIcon } from "@/components/icons";
 

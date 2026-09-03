@@ -106,7 +106,7 @@ export default function OnboardingWizard({
       return;
     }
 
-    router.push("/");
+    router.push("/analyser");
     router.refresh();
   }
 

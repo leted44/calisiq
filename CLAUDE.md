@@ -156,6 +156,23 @@ mentait sur le rythme.
 
 ## Décisions structurantes prises en cours de route
 
+**La racine est une page publique, l'app vit sur `/analyser`.** Jusque-là
+toutes les routes étaient derrière l'authentification et `/` renvoyait sur
+l'écran de connexion : un visiteur venu d'Instagram tombait sur un formulaire,
+sans une image ni une phrase expliquant ce que fait l'app. C'était le principal
+trou d'acquisition, bien avant l'absence de toute autre fonctionnalité.
+
+`src/app/page.tsx` présente donc le produit aux visiteurs et redirige les
+utilisateurs connectés vers `/analyser`. Une seule adresse à communiquer, qui
+s'adapte à qui l'ouvre. Le `start_url` du manifest reste `/` et traverse
+cette redirection sans encombre.
+
+La page ne promet que ce que le scoring tient : trois figures, dix variations,
+et le fait que l'analyse tourne dans le navigateur. Ne pas y annoncer de
+figures non calibrées.
+
+
+
 **L'indicateur d'activité de l'accueil est en partie simulé.** Le « N ont
 analysé aujourd'hui » additionne le total réel du jour (fonction
 `analyses_today`, la RLS empêchant de le calculer côté client) et une valeur

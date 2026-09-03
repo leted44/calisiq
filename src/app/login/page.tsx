@@ -33,7 +33,7 @@ export default function LoginPage() {
         setError(error.message);
         return;
       }
-      router.push("/");
+      router.push("/analyser");
       router.refresh();
       return;
     }
@@ -47,7 +47,7 @@ export default function LoginPage() {
     }
 
     if (data.session) {
-      router.push("/");
+      router.push("/analyser");
       router.refresh();
       return;
     }
@@ -74,7 +74,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    router.push("/analyser");
     router.refresh();
   }
 
