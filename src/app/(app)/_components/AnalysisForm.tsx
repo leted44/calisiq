@@ -42,6 +42,10 @@ import {
   TuckDragonFlagIcon,
   StraddleDragonFlagIcon,
   FullDragonFlagIcon,
+  HumanFlagFigureIcon,
+  TuckHumanFlagIcon,
+  StraddleHumanFlagIcon,
+  FullHumanFlagIcon,
   PullUpFigureIcon,
   DipFigureIcon,
   PushUpFigureIcon,
@@ -56,6 +60,7 @@ type Figure =
   | "handstand"
   | "front_lever"
   | "dragon_flag"
+  | "human_flag"
   // Exercices à répétition : notés sur une série, pas sur une position tenue.
   | "traction"
   | "dips"
@@ -120,6 +125,15 @@ const FIGURES: {
     tagline: "Gainage renversé",
     available: true,
     Icon: DragonFlagFigureIcon,
+    image: "/figures/dragon-flag.png",
+  },
+  {
+    value: "human_flag",
+    label: "Drapeau",
+    tagline: "Gainage latéral",
+    available: true,
+    Icon: HumanFlagFigureIcon,
+    image: "/figures/human-flag.png",
   },
   {
     value: "traction",
@@ -127,6 +141,7 @@ const FIGURES: {
     tagline: "Tirage vertical",
     available: true,
     Icon: PullUpFigureIcon,
+    image: "/figures/strict-pull-up.png",
   },
   {
     value: "dips",
@@ -285,6 +300,34 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Corps entièrement tendu, aucune cassure à la hanche",
       Icon: FullDragonFlagIcon,
       available: true,
+      image: "/figures/dragon-flag.png",
+    },
+  ],
+
+  // Drapeau. Même progression que le dragon flag : du groupé à l'écarté puis
+  // au corps tendu, sans palier intermédiaire de type advanced tuck.
+  human_flag: [
+    {
+      value: "tuck_human_flag",
+      label: "Tuck",
+      cue: "Genoux repliés, corps à l'horizontale contre le mât",
+      Icon: TuckHumanFlagIcon,
+      available: true,
+    },
+    {
+      value: "straddle_human_flag",
+      label: "Straddle",
+      cue: "Jambes tendues et écartées",
+      Icon: StraddleHumanFlagIcon,
+      available: true,
+    },
+    {
+      value: "full_human_flag",
+      label: "Full",
+      cue: "Corps entièrement tendu à l'horizontale",
+      Icon: FullHumanFlagIcon,
+      available: true,
+      image: "/figures/human-flag.png",
     },
   ],
 
@@ -302,6 +345,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Corps incliné sous une barre basse, pieds au sol",
       Icon: PullUpFigureIcon,
       available: true,
+      image: "/figures/australian-pull-up.png",
     },
     {
       value: "strict_pull_up",
@@ -309,6 +353,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Suspendu, sans élan, menton au-dessus de la barre",
       Icon: PullUpFigureIcon,
       available: true,
+      image: "/figures/strict-pull-up.png",
     },
   ],
   dips: [

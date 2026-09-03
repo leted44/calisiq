@@ -321,3 +321,60 @@ export function PistolFigureIcon({ className = base }: IconProps) {
     </svg>
   );
 }
+
+// --- Drapeau (human flag) ---
+// Corps horizontal accroché à un mât vertical : c'est le mât qui distingue le
+// drapeau du front lever au premier coup d'œil.
+
+export function HumanFlagFigureIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M18 3v18" {...stroke} />
+      <path d="M18 7 15 11" {...stroke} />
+      <path d="M18 16 15 12.5" {...stroke} />
+      <circle cx="14" cy="11.6" r="1.5" {...stroke} />
+      <path d="M12.6 11.8 3 12" {...stroke} />
+    </svg>
+  );
+}
+
+export function TuckHumanFlagIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M18 3v18" {...stroke} />
+      <path d="M18 7 15 11" {...stroke} />
+      <path d="M18 16 15 12.5" {...stroke} />
+      <circle cx="14" cy="11.6" r="1.5" {...stroke} />
+      <path d="M12.6 11.8 9 12" {...stroke} />
+      <path d="M9 12 7 9.5" {...stroke} />
+      <path d="M7 9.5 5 12" {...stroke} />
+    </svg>
+  );
+}
+
+export function StraddleHumanFlagIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M18 3v18" {...stroke} />
+      <path d="M18 7 15 11" {...stroke} />
+      <path d="M18 16 15 12.5" {...stroke} />
+      <circle cx="14" cy="11.6" r="1.5" {...stroke} />
+      <path d="M12.6 11.8 9 12" {...stroke} />
+      <path d="M9 12 3 9" {...stroke} />
+      <path d="M9 12 3 15" {...stroke} />
+    </svg>
+  );
+}
+
+export function FullHumanFlagIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M18 3v18" {...stroke} />
+      <path d="M18 7 15 11" {...stroke} />
+      <path d="M18 16 15 12.5" {...stroke} />
+      <circle cx="14" cy="11.6" r="1.5" {...stroke} />
+      <path d="M12.6 11.8 2.5 12" {...stroke} />
+      <path d="M4 11 2.5 12 4 13" {...stroke} />
+    </svg>
+  );
+}

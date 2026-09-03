@@ -15,6 +15,9 @@ export const PROGRESSION_LABELS: Record<string, string> = {
   tuck_dragon_flag: "Tuck dragon flag",
   straddle_dragon_flag: "Straddle dragon flag",
   full_dragon_flag: "Full dragon flag",
+  tuck_human_flag: "Tuck drapeau",
+  straddle_human_flag: "Straddle drapeau",
+  full_human_flag: "Full drapeau",
   australian_pull_up: "Traction australienne",
   strict_pull_up: "Traction stricte",
   bench_dip: "Dips sur banc",
@@ -49,6 +52,9 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   tuck_dragon_flag: [],
   straddle_dragon_flag: [],
   full_dragon_flag: [],
+  tuck_human_flag: [],
+  straddle_human_flag: [],
+  full_human_flag: [],
   australian_pull_up: [],
   strict_pull_up: [],
   bench_dip: [],
@@ -282,6 +288,9 @@ export function figureFromProgression(
   if (progression === "handstand") return "handstand";
   if (progression.includes("front_lever")) return "front_lever";
   if (progression.includes("dragon_flag")) return "dragon_flag";
+  // Le drapeau partage la famille de descriptions du dragon flag : mêmes
+  // critères, même faute dominante, celle de casser à la hanche.
+  if (progression.includes("human_flag")) return "dragon_flag";
   // Les exercices à répétition partagent tous le même jeu de quatre critères,
   // donc les mêmes descriptions : inutile de les distinguer un par un ici.
   if (isRepProgression(progression)) return "reps";

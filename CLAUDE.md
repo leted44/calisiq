@@ -47,6 +47,7 @@ scoring.
 | Illustrations front lever | Tuck, advanced tuck, single leg et full faites | Il manque la straddle, qui affiche encore une icône |
 | Single Leg Front Lever | Actif | Genou de la jambe libre calibré le 2026-09-01 sur 6 échantillons |
 | Dragon Flag (tuck, straddle, full) | Actif, seuils DRAFT | Aucun échantillon réel, seuils entièrement raisonnés |
+| Drapeau (tuck, straddle, full) | Actif, seuils DRAFT | Aucun échantillon réel, seuils entièrement raisonnés |
 | Traction, Dips, Pompes, Pistol squat | Actif, seuils DRAFT | Exercices à répétition, aucun échantillon réel |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
 
@@ -374,6 +375,14 @@ interdit d'utiliser ce rattrapage dans le calcul du cadrage.
 **Rôle admin en base, pas en dur.** Le drapeau `is_admin` vit sur
 `profiles`, ce qui évite de coder une adresse e-mail dans le dépôt et
 permet de donner ou retirer le rôle sans redéploiement.
+
+**Le drapeau réutilise la famille du dragon flag** pour ses descriptions et
+ses conseils : mêmes critères, et surtout même faute dominante, celle de
+casser à la hanche pour raccourcir le levier. Une différence à ne pas confondre
+en touchant aux seuils : son inclinaison est une vraie **bande** centrée sur
+l'horizontale, là où celle du dragon flag est un seuil maximum. Sur un drapeau,
+un corps qui pointe vers le haut s'éloigne de la figure autant qu'un corps qui
+pique vers le bas ; sur un dragon flag, descendre plus bas est toujours mieux.
 
 ## Exercices à répétition
 

@@ -72,7 +72,10 @@ export type Progression =
   | "full_front_lever"
   | "tuck_dragon_flag"
   | "straddle_dragon_flag"
-  | "full_dragon_flag";
+  | "full_dragon_flag"
+  | "tuck_human_flag"
+  | "straddle_human_flag"
+  | "full_human_flag";
 
 type Threshold = { target: number; tolerance: number };
 type ShoulderProtractionThreshold = Threshold & { mode: "minimum" | "band" };
@@ -294,6 +297,38 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     // La faute classique du dragon flag : casser à la hanche pour soulager le
     // levier. C'est le critère le plus serré de la figure.
     hip_angle: { target: 180, tolerance: 10 },
+    knee_angle: { target: 180, tolerance: 12 },
+  },
+
+  // --- Drapeau (human flag) ---
+  //
+  // SEUILS DRAFT, entièrement raisonnés, aucun échantillon réel.
+  //
+  // Contrairement au dragon flag, l'inclinaison est ici une vraie bande et non
+  // un seuil maximum : la cible est l'horizontale, et un corps qui pointe vers
+  // le haut est aussi éloigné de la figure qu'un corps qui pique vers le bas.
+  //
+  // La tuck est notée sur le tronc seul, genoux repliés rendant la ligne
+  // épaule-cheville dépourvue de sens — même raisonnement que sur la tuck
+  // dragon flag et les figures asymétriques.
+  tuck_human_flag: {
+    torso_angle: { target: 10, tolerance: 25 },
+    elbow_angle: { target: 175, tolerance: 25 },
+    hip_angle: { target: 100, tolerance: 35 },
+    knee_angle: { target: 70, tolerance: 40 },
+  },
+  straddle_human_flag: {
+    body_line_angle_from_horizontal: { target: 5, tolerance: 20 },
+    elbow_angle: { target: 175, tolerance: 22 },
+    hip_angle: { target: 172, tolerance: 20 },
+    knee_angle: { target: 180, tolerance: 16 },
+  },
+  full_human_flag: {
+    body_line_angle_from_horizontal: { target: 0, tolerance: 15 },
+    // Bras du haut qui tire, bras du bas qui pousse : les deux doivent rester
+    // tendus, un coude qui plie trahit un corps qui s'affaisse vers la barre.
+    elbow_angle: { target: 175, tolerance: 20 },
+    hip_angle: { target: 180, tolerance: 12 },
     knee_angle: { target: 180, tolerance: 12 },
   },
 };
