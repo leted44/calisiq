@@ -7,11 +7,12 @@ import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis
 import { downloadBlob } from "@/lib/pose/exportVideo";
 import { compressVideoSegment } from "@/lib/video/compress";
 import type { PoseAngles } from "@/lib/pose/angles";
-import type { Progression } from "@/lib/pose/grid";
+import { isRepProgression } from "@/lib/pose/grid";
+import type { Progression, RepProgression } from "@/lib/pose/grid";
 import CaptureTipsModal, { shouldSkipTips } from "./CaptureTipsModal";
 import ResultCard from "./ResultCard";
 import ExportVideoButton from "./ExportVideoButton";
-import { PROGRESSION_LABELS } from "@/lib/pose/report";
+import { PROGRESSION_LABELS, figureFromProgression } from "@/lib/pose/report";
 import {
   UploadCloudIcon,
   CameraIcon,
@@ -41,18 +42,35 @@ import {
   TuckDragonFlagIcon,
   StraddleDragonFlagIcon,
   FullDragonFlagIcon,
+  PullUpFigureIcon,
+  DipFigureIcon,
+  PushUpFigureIcon,
+  PistolFigureIcon,
   HoldTypeIcon,
   PressTypeIcon,
   PushUpTypeIcon,
 } from "@/components/figureIcons";
 
-type Figure = "planche" | "handstand" | "front_lever" | "dragon_flag";
+type Figure =
+  | "planche"
+  | "handstand"
+  | "front_lever"
+  | "dragon_flag"
+  // Exercices à répétition : notés sur une série, pas sur une position tenue.
+  | "traction"
+  | "dips"
+  | "pompes"
+  | "pistol";
 type ExerciseType = "hold" | "press" | "push_up";
 type HandstandVariation = "handstand_push_up" | "one_arm_handstand";
 // one_leg_front_lever a rejoint Progression (grid.ts) le 2026-09-01, il
 // n'est donc plus un simple libellé sans scoring.
 type FrontLeverPlaceholderVariation = "one_arm_front_lever";
-type Variation = Progression | HandstandVariation | FrontLeverPlaceholderVariation;
+type Variation =
+  | Progression
+  | RepProgression
+  | HandstandVariation
+  | FrontLeverPlaceholderVariation;
 
 const FIGURES: {
   value: Figure;
@@ -102,6 +120,34 @@ const FIGURES: {
     tagline: "Gainage renversé",
     available: true,
     Icon: DragonFlagFigureIcon,
+  },
+  {
+    value: "traction",
+    label: "Traction",
+    tagline: "Tirage vertical",
+    available: true,
+    Icon: PullUpFigureIcon,
+  },
+  {
+    value: "dips",
+    label: "Dips",
+    tagline: "Poussée verticale",
+    available: true,
+    Icon: DipFigureIcon,
+  },
+  {
+    value: "pompes",
+    label: "Pompes",
+    tagline: "Poussée horizontale",
+    available: true,
+    Icon: PushUpFigureIcon,
+  },
+  {
+    value: "pistol",
+    label: "Pistol Squat",
+    tagline: "Jambes, unilatéral",
+    available: true,
+    Icon: PistolFigureIcon,
   },
 ];
 
@@ -238,6 +284,85 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       label: "Full",
       cue: "Corps entièrement tendu, aucune cassure à la hanche",
       Icon: FullDragonFlagIcon,
+      available: true,
+    },
+  ],
+
+  // --- Exercices à répétition ---
+  //
+  // Notés sur une série et non sur une position tenue : quatre critères
+  // communs à tous (extension, amplitude, contrôle, tempo), seuls les seuils
+  // changent d'un mouvement à l'autre. Les paliers sont de vraies
+  // progressions, choisies pour que la première soit accessible à quelqu'un
+  // qui débute.
+  traction: [
+    {
+      value: "australian_pull_up",
+      label: "Australienne",
+      cue: "Corps incliné sous une barre basse, pieds au sol",
+      Icon: PullUpFigureIcon,
+      available: true,
+    },
+    {
+      value: "strict_pull_up",
+      label: "Stricte",
+      cue: "Suspendu, sans élan, menton au-dessus de la barre",
+      Icon: PullUpFigureIcon,
+      available: true,
+    },
+  ],
+  dips: [
+    {
+      value: "bench_dip",
+      label: "Sur banc",
+      cue: "Mains derrière soi sur un banc, pieds au sol",
+      Icon: DipFigureIcon,
+      available: true,
+    },
+    {
+      value: "parallel_dip",
+      label: "Barres",
+      cue: "Corps suspendu entre deux barres parallèles",
+      Icon: DipFigureIcon,
+      available: true,
+    },
+  ],
+  pompes: [
+    {
+      value: "incline_push_up",
+      label: "Inclinées",
+      cue: "Mains surélevées, corps incliné",
+      Icon: PushUpFigureIcon,
+      available: true,
+    },
+    {
+      value: "push_up",
+      label: "Au sol",
+      cue: "Corps gainé, parallèle au sol",
+      Icon: PushUpFigureIcon,
+      available: true,
+    },
+    {
+      value: "decline_push_up",
+      label: "Déclinées",
+      cue: "Pieds surélevés, charge reportée sur les épaules",
+      Icon: PushUpFigureIcon,
+      available: true,
+    },
+  ],
+  pistol: [
+    {
+      value: "box_pistol_squat",
+      label: "Sur boîte",
+      cue: "Descente jusqu'à un appui, jambe libre tendue devant",
+      Icon: PistolFigureIcon,
+      available: true,
+    },
+    {
+      value: "pistol_squat",
+      label: "Complet",
+      cue: "Descente complète sur une jambe, sans appui",
+      Icon: PistolFigureIcon,
       available: true,
     },
   ],
@@ -903,6 +1028,7 @@ export default function AnalysisForm() {
         hold_duration_seconds: analysisResult.ok
           ? analysisResult.holdDurationSeconds
           : null,
+        rep_count: analysisResult.ok ? analysisResult.repCount : null,
         performed_at: fileSource === "import" ? performedAt : null,
       })
       .select("id")
@@ -1171,6 +1297,9 @@ export default function AnalysisForm() {
         onChange={setProgression}
       />
 
+      {/* Masqué sur les exercices à répétition : leur type est implicite, et
+          proposer « Hold » pour une traction n'aurait aucun sens. */}
+      {!isRepProgression(progression) && (
       <div className="space-y-3">
         <SectionHeading>Types d&apos;exercice</SectionHeading>
         <div className="grid grid-cols-3 gap-2">
@@ -1200,6 +1329,7 @@ export default function AnalysisForm() {
           })}
         </div>
       </div>
+      )}
 
       {!variationAvailable && !videoUrl && (
         <p className="rounded-lg bg-orange-500/10 p-3 text-sm text-orange-400">
@@ -1489,7 +1619,8 @@ export default function AnalysisForm() {
                 scores={result.scores}
                 recommendations={result.recommendations}
                 holdDurationSeconds={result.holdDurationSeconds}
-                figure={figure ?? "planche"}
+                repCount={result.repCount}
+                figure={figureFromProgression(progression)}
               />
             </>
           )}
@@ -1553,6 +1684,7 @@ export default function AnalysisForm() {
               holdStartSeconds={result.holdStartSeconds}
               holdEndSeconds={result.holdEndSeconds}
               holdDurationSeconds={result.holdDurationSeconds}
+              repTimes={result.repTimes}
               weakPointCue={result.recommendations[0]?.exercice ?? null}
             />
           )}

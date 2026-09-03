@@ -11,13 +11,19 @@ import {
   type PoseAngles,
   type HoldWindow,
 } from "./angles";
-import { scoreAngles, globalScore, type CriterionScore } from "./scoring";
+import { scoreAngles, globalScore, type CriterionScore, scoreReps } from "./scoring";
 import {
   pickWeakestCriterion,
   recommendationsFor,
   type Recommendation,
 } from "./recommendations";
 import type { Progression } from "./grid";
+import {
+  isRepProgression,
+  REP_SCORING_GRID,
+  type AnyProgression,
+} from "./grid";
+import { detectReps } from "./repAnalysis";
 import { drawAngleLabels } from "./canvasHud";
 import { seekTo } from "@/lib/video/playback";
 
@@ -59,6 +65,14 @@ export type PoseAnalysisResult =
       warning: string | null;
       holdWindow: HoldWindow;
       holdDurationSeconds: number | null;
+      // Nombre de répétitions détectées, sur un exercice dynamique. Null sur
+      // un hold, où la notion n'a pas de sens — comme holdDurationSeconds est
+      // null sur un exercice à répétitions. Les deux ne coexistent jamais.
+      repCount: number | null;
+      // Instant vidéo de fin de chaque répétition. Permet à l'export d'animer
+      // un compteur qui s'incrémente au fil de la lecture, comme le chrono le
+      // fait sur un hold, plutôt que d'afficher le total dès la première image.
+      repTimes: number[] | null;
       // Bornes temporelles (dans le référentiel de la vidéo entière, pas
       // de la plage rognée) du hold réellement détecté — utilisées par
       // l'export vidéo pour que le chrono affiché ne défile que pendant la
@@ -100,7 +114,7 @@ export async function runPoseAnalysis({
   canvas: HTMLCanvasElement;
   // null = mode mesure : renvoie les angles réels sans les noter (figure
   // pas encore calibrée, utilisé pour collecter des échantillons)
-  progression: Progression | null;
+  progression: AnyProgression | null;
   rangeStart?: number;
   rangeEnd?: number;
   onProgress?: (percent: number) => void;
@@ -272,6 +286,8 @@ export async function runPoseAnalysis({
       holdDurationSeconds,
       holdStartSeconds,
       holdEndSeconds,
+      repCount: null,
+      repTimes: null,
       summaryAngles: median,
       scores: [],
       globalScoreValue: 0,
@@ -295,6 +311,64 @@ export async function runPoseAnalysis({
     };
   }
 
+  // --- Voie dynamique ---
+  //
+  // Placée avant le scoring des holds, et se terminant par un return : le
+  // reste de la fonction reste donc typé sur les seules progressions de hold,
+  // sans qu'aucune ligne existante n'ait à changer.
+  if (isRepProgression(progression)) {
+    const thresholds = REP_SCORING_GRID[progression];
+    const reps = detectReps(angles, thresholds);
+
+    if (reps.length === 0) {
+      return {
+        ok: false,
+        framesAnalyzed: frames.length,
+        detectionRate,
+        warning:
+          "Aucune répétition complète détectée. Filme de profil, corps entier visible, et va au bout du mouvement dans les deux sens — les répétitions partielles ne sont pas comptées.",
+      };
+    }
+
+    const repScores = scoreReps({ angles, reps, thresholds });
+    const weakestRep = pickWeakestCriterion(repScores);
+    const repWarnings = [...warningParts];
+    if (reps.length < 3) {
+      repWarnings.push(
+        `Seulement ${reps.length} répétition${reps.length > 1 ? "s" : ""} détectée${reps.length > 1 ? "s" : ""} : la régularité du tempo n'a pas beaucoup de sens sur une série aussi courte.`
+      );
+    }
+
+    return {
+      ok: true,
+      framesAnalyzed: frames.length,
+      detectionRate,
+      warning: repWarnings.length > 0 ? repWarnings.join(" ") : null,
+      holdWindow: window,
+      // Un hold n'a pas de répétitions, une série n'a pas de durée de hold.
+      holdDurationSeconds: null,
+      holdStartSeconds: null,
+      holdEndSeconds: null,
+      repCount: reps.length,
+      repTimes: reps.map(
+        (r) => frameTimes[Math.min(r.end, frameTimes.length - 1)]
+      ),
+      summaryAngles: median,
+      scores: repScores,
+      globalScoreValue: globalScore(repScores),
+      recommendations: recommendationsFor(
+        weakestRep.critere,
+        weakestRep.score,
+        median.pelvisSagSign,
+        weakestRep.valeurMesuree - weakestRep.valeurCible,
+        progression
+      ),
+      representativeFrameDataUrl,
+      landmarksFrames: frames,
+      landmarksTimes: frameTimes,
+    };
+  }
+
   const scores = scoreAngles(median, progression);
   const weakest = pickWeakestCriterion(scores);
   const recommendations = recommendationsFor(
@@ -314,6 +388,8 @@ export async function runPoseAnalysis({
     holdDurationSeconds,
     holdStartSeconds,
     holdEndSeconds,
+    repCount: null,
+    repTimes: null,
     summaryAngles: median,
     scores,
     globalScoreValue: globalScore(scores),
@@ -370,6 +446,8 @@ export async function measureImage(
     holdWindow: { start: 0, end: 0, detected: true },
     holdDurationSeconds: 0,
     holdStartSeconds: 0,
+    repCount: null,
+    repTimes: null,
     holdEndSeconds: 0,
     summaryAngles: angles,
     scores: [],

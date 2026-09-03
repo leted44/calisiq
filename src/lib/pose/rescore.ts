@@ -14,7 +14,15 @@ import type { Progression } from "./grid";
 // scoreAngles, plutôt que de réimplémenter la traversée de la grille : une
 // seconde implémentation finirait par diverger de la première.
 
-const CRITERION_TO_ANGLE: Record<CriterionScore["critere"], keyof PoseAngles> = {
+// Partiel, et pas exhaustif par nature : les critères des exercices à
+// répétition n'ont pas d'angle unique correspondant. Le contrôle est un écart
+// type sur toute la série, le tempo un pourcentage. Ils ne peuvent donc pas
+// être recalculés depuis une valeur mesurée isolée, et la boucle plus bas les
+// ignore faute de correspondance. Rescorer une série demanderait de rejouer
+// la détection de répétitions, donc de re-analyser la vidéo.
+const CRITERION_TO_ANGLE: Partial<
+  Record<CriterionScore["critere"], keyof PoseAngles>
+> = {
   shoulder_protraction: "shoulderProtraction",
   shoulder_flexion: "shoulderFlexionAngle",
   pelvis_deviation: "pelvisDeviation",

@@ -1,5 +1,6 @@
 import type { PoseAngles } from "./angles";
-import { SCORING_GRID, type Progression } from "./grid";
+import { hipSwing, tempoRegularity, type Rep } from "./repAnalysis";
+import { SCORING_GRID, type Progression, type RepThresholds } from "./grid";
 
 export type CriterionScore = {
   critere:
@@ -13,7 +14,14 @@ export type CriterionScore = {
     | "torso_angle"
     | "straightest_knee_angle"
     | "straightest_leg_hip_angle"
-    | "bent_knee_angle";
+    | "bent_knee_angle"
+    // Critères propres aux exercices à répétition. Ils sortent du même type
+    // que les critères de hold, volontairement : tout l'aval — affichage,
+    // recommandations, export vidéo — fonctionne alors sans modification.
+    | "rep_lockout"
+    | "rep_peak"
+    | "rep_control"
+    | "rep_tempo";
   score: number;
   valeurMesuree: number;
   valeurCible: number;
@@ -220,4 +228,93 @@ export function scoreAngles(
 
 export function globalScore(scores: CriterionScore[]): number {
   return scores.reduce((sum, s) => sum + s.score, 0) / scores.length;
+}
+
+// ---------------------------------------------------------------------------
+// Notation des exercices à répétition
+// ---------------------------------------------------------------------------
+//
+// Quatre critères, les mêmes pour tous les mouvements ; seuls les seuils
+// changent d'un exercice à l'autre. Les modes de notation sont structurels et
+// non configurables, parce qu'ils découlent de la nature de chaque critère :
+//
+//   lockout  minimum — on ne peut pas dépasser l'extension complète,
+//                      s'arrêter avant est la faute.
+//   peak     maximum — descendre plus bas que demandé n'est jamais une faute.
+//   control  maximum — l'oscillation de hanche mesure l'élan, moins il y en a
+//                      mieux c'est, et zéro est parfait.
+//   tempo    minimum — au-delà d'une certaine régularité, plus régulier
+//                      n'apporte rien.
+export function scoreReps({
+  angles,
+  reps,
+  thresholds,
+}: {
+  angles: PoseAngles[];
+  reps: Rep[];
+  thresholds: RepThresholds;
+}): CriterionScore[] {
+  if (reps.length === 0) return [];
+
+  const driver = thresholds.driver;
+  // Position tendue et position fléchie réellement atteintes, moyennées sur
+  // la série : une seule bonne répétition ne doit pas masquer les autres.
+  const meanAt = (pick: (rep: Rep) => number) =>
+    reps.reduce((sum, rep) => sum + (angles[pick(rep)]?.[driver] ?? 0), 0) /
+    reps.length;
+
+  const flexedIsLow = thresholds.flexedValue < thresholds.extendedValue;
+  const lockoutValue = meanAt((rep) => rep.extendedIndex);
+  const peakValue = meanAt((rep) => rep.flexedIndex);
+
+  const scores: CriterionScore[] = [
+    {
+      critere: "rep_lockout",
+      // Sur un mouvement où la position tendue est l'angle haut (coude, genou),
+      // le verrouillage est un minimum. Si l'orientation s'inversait, la
+      // comparaison doit s'inverser avec elle.
+      score: flexedIsLow
+        ? scoreFromMinimum(lockoutValue, thresholds.lockout.target, thresholds.lockout.tolerance)
+        : scoreFromMaximum(lockoutValue, thresholds.lockout.target, thresholds.lockout.tolerance),
+      valeurMesuree: lockoutValue,
+      valeurCible: thresholds.lockout.target,
+    },
+    {
+      critere: "rep_peak",
+      score: flexedIsLow
+        ? scoreFromMaximum(peakValue, thresholds.peak.target, thresholds.peak.tolerance)
+        : scoreFromMinimum(peakValue, thresholds.peak.target, thresholds.peak.tolerance),
+      valeurMesuree: peakValue,
+      valeurCible: thresholds.peak.target,
+    },
+  ];
+
+  if (thresholds.hipSwing) {
+    const swing = hipSwing(angles, reps);
+    scores.push({
+      critere: "rep_control",
+      score: scoreFromMaximum(
+        swing,
+        thresholds.hipSwing.target,
+        thresholds.hipSwing.tolerance
+      ),
+      valeurMesuree: swing,
+      valeurCible: thresholds.hipSwing.target,
+    });
+  }
+
+  // Exprimé en pourcentage pour rester lisible à côté d'angles en degrés.
+  const regularity = tempoRegularity(reps) * 100;
+  scores.push({
+    critere: "rep_tempo",
+    score: scoreFromMinimum(
+      regularity,
+      thresholds.tempo.target,
+      thresholds.tempo.tolerance
+    ),
+    valeurMesuree: regularity,
+    valeurCible: thresholds.tempo.target,
+  });
+
+  return scores;
 }

@@ -47,6 +47,7 @@ scoring.
 | Illustrations front lever | Tuck, advanced tuck, single leg et full faites | Il manque la straddle, qui affiche encore une icône |
 | Single Leg Front Lever | Actif | Genou de la jambe libre calibré le 2026-09-01 sur 6 échantillons |
 | Dragon Flag (tuck, straddle, full) | Actif, seuils DRAFT | Aucun échantillon réel, seuils entièrement raisonnés |
+| Traction, Dips, Pompes, Pistol squat | Actif, seuils DRAFT | Exercices à répétition, aucun échantillon réel |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
 
 Le Front Lever a été réactivé le 2026-08-31, puis recalibré le 2026-09-01
@@ -373,6 +374,44 @@ interdit d'utiliser ce rattrapage dans le calcul du cadrage.
 **Rôle admin en base, pas en dur.** Le drapeau `is_admin` vit sur
 `profiles`, ce qui évite de coder une adresse e-mail dans le dépôt et
 permet de donner ou retirer le rôle sans redéploiement.
+
+## Exercices à répétition
+
+Deuxième modèle de notation, à côté de celui des holds, et volontairement
+séparé de bout en bout. Un hold se note sur des angles tenus, repérés par
+`detectHoldWindow` qui cherche le segment le plus immobile de la vidéo. Un
+mouvement dynamique n'a pas de segment immobile : sa qualité est dans la
+trajectoire.
+
+`repAnalysis.ts` découpe la série en répétitions par hystérésis sur un angle
+pilote (le coude pour les tractions et pompes, le genou pour les squats), avec
+une bande morte de 40 % qui empêche un signal tremblant de produire de fausses
+répétitions. `REP_SCORING_GRID` porte les seuils, séparée de `SCORING_GRID`
+parce que les deux n'ont pas les mêmes champs.
+
+**Quatre critères communs à tous les mouvements**, seuls les seuils changent :
+extension atteinte en position tendue (seuil minimum), amplitude atteinte en
+position fléchie (seuil maximum), oscillation de hanche qui mesure l'élan
+(seuil maximum), et régularité du tempo (seuil minimum). Les modes sont
+structurels et non configurables : on ne peut pas dépasser l'extension
+complète, descendre plus bas que demandé n'est jamais une faute.
+
+L'oscillation de hanche est **absente des mouvements de jambes** : dans un
+squat la hanche se ferme et s'ouvre par construction, son écart type mesurerait
+alors le mouvement lui-même et non la triche.
+
+Deux points d'articulation avec l'existant. La sortie est un
+`CriterionScore[]`, exactement le type produit par le scoring des holds :
+l'affichage, les recommandations et l'export fonctionnent donc sans
+modification. Et `repCount` est l'exact pendant de `holdDurationSeconds` —
+les deux ne sont jamais renseignés ensemble, ce qui permet à l'historique
+d'afficher la bonne mesure sans connaître le type d'exercice. L'export vidéo
+remplace le chrono par un compteur qui s'incrémente au fil de la lecture.
+
+Le rescoring depuis les valeurs stockées ne fonctionne pas sur ces exercices :
+le contrôle est un écart type sur toute la série, le tempo un pourcentage,
+aucun des deux n'est un angle isolé. Les recalibrer demandera de réanalyser la
+vidéo.
 
 ## Stack technique (fixée, ne pas relitiger)
 

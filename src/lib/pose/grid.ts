@@ -297,3 +297,176 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     knee_angle: { target: 180, tolerance: 12 },
   },
 };
+
+// ---------------------------------------------------------------------------
+// Exercices à répétition
+// ---------------------------------------------------------------------------
+//
+// Grille séparée de SCORING_GRID, et c'est délibéré : un hold se note sur des
+// angles tenus, une répétition se note sur deux positions extrêmes atteintes
+// et sur la qualité du trajet entre les deux. Les deux n'ont pas les mêmes
+// champs, les fondre dans un seul type aurait donné un objet à moitié vide
+// dans les deux sens.
+
+export type RepProgression =
+  | "australian_pull_up"
+  | "strict_pull_up"
+  | "bench_dip"
+  | "parallel_dip"
+  | "incline_push_up"
+  | "push_up"
+  | "decline_push_up"
+  | "box_pistol_squat"
+  | "pistol_squat";
+
+export type AnyProgression = Progression | RepProgression;
+
+export type RepThresholds = {
+  /** Angle qui oscille le plus nettement, et qui sert à découper les reps. */
+  driver: "elbowAngle" | "kneeAngle" | "hipAngle";
+  /** Valeurs approximatives du signal aux deux extrémités du mouvement. */
+  extendedValue: number;
+  flexedValue: number;
+  /** Fraction d'amplitude minimale pour qu'une oscillation compte comme rep. */
+  minRangeRatio: number;
+  /**
+   * Verrouillage : angle atteint en position tendue, moyenné sur les
+   * répétitions. Noté en seuil MINIMUM — aller plus loin que l'extension
+   * complète est impossible, rester en deçà est la faute.
+   */
+  lockout: Threshold;
+  /**
+   * Amplitude haute : angle atteint en position fléchie. Noté en seuil
+   * MAXIMUM — descendre plus bas que demandé n'est jamais une faute, c'est
+   * s'arrêter avant qui en est une.
+   */
+  peak: Threshold;
+  /**
+   * Oscillation tolérée de la hanche, en écart type sur la série. C'est la
+   * mesure de l'élan : un tirage strict garde le tronc gainé, un tirage lancé
+   * fait osciller la hanche. Noté en seuil MAXIMUM.
+   *
+   * Optionnel, et absent sur les mouvements de jambes : dans un squat la
+   * hanche se ferme et s'ouvre par construction, son écart type ne mesure
+   * alors plus la triche mais le mouvement lui-même.
+   */
+  hipSwing?: Threshold;
+  /**
+   * Régularité du tempo entre répétitions, en pourcentage. Seuil MINIMUM.
+   * Une série qui se dégrade se voit ici avant de se voir ailleurs.
+   */
+  tempo: Threshold;
+};
+
+// SEUILS DRAFT. Aucun échantillon réel, valeurs entièrement raisonnées à
+// partir de la géométrie attendue de chaque mouvement.
+export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
+  // --- Traction ---
+  australian_pull_up: {
+    driver: "elbowAngle",
+    extendedValue: 172,
+    flexedValue: 55,
+    minRangeRatio: 0.55,
+    lockout: { target: 170, tolerance: 25 },
+    peak: { target: 65, tolerance: 45 },
+    hipSwing: { target: 7, tolerance: 20 },
+    tempo: { target: 70, tolerance: 40 },
+  },
+  strict_pull_up: {
+    driver: "elbowAngle",
+    extendedValue: 175,
+    flexedValue: 45,
+    minRangeRatio: 0.55,
+    lockout: { target: 172, tolerance: 25 },
+    peak: { target: 55, tolerance: 45 },
+    // Le critère qui sépare une traction stricte d'une traction lancée, et que
+    // personne ne peut s'attribuer honnêtement tout seul.
+    hipSwing: { target: 8, tolerance: 20 },
+    tempo: { target: 70, tolerance: 40 },
+  },
+
+  // --- Dips ---
+  bench_dip: {
+    driver: "elbowAngle",
+    extendedValue: 172,
+    flexedValue: 90,
+    minRangeRatio: 0.55,
+    lockout: { target: 170, tolerance: 28 },
+    peak: { target: 95, tolerance: 40 },
+    hipSwing: { target: 10, tolerance: 25 },
+    tempo: { target: 70, tolerance: 40 },
+  },
+  parallel_dip: {
+    driver: "elbowAngle",
+    extendedValue: 175,
+    flexedValue: 80,
+    minRangeRatio: 0.55,
+    lockout: { target: 172, tolerance: 25 },
+    peak: { target: 85, tolerance: 40 },
+    hipSwing: { target: 8, tolerance: 22 },
+    tempo: { target: 70, tolerance: 40 },
+  },
+
+  // --- Pompes ---
+  incline_push_up: {
+    driver: "elbowAngle",
+    extendedValue: 170,
+    flexedValue: 80,
+    minRangeRatio: 0.6,
+    lockout: { target: 168, tolerance: 28 },
+    peak: { target: 85, tolerance: 40 },
+    hipSwing: { target: 7, tolerance: 20 },
+    tempo: { target: 70, tolerance: 40 },
+  },
+  push_up: {
+    driver: "elbowAngle",
+    extendedValue: 170,
+    flexedValue: 75,
+    minRangeRatio: 0.6,
+    lockout: { target: 168, tolerance: 25 },
+    peak: { target: 80, tolerance: 40 },
+    // Plus serré que sur une traction : en pompe, une hanche qui oscille
+    // signale un corps qui se casse, pas de l'élan.
+    hipSwing: { target: 6, tolerance: 18 },
+    tempo: { target: 70, tolerance: 40 },
+  },
+  decline_push_up: {
+    driver: "elbowAngle",
+    extendedValue: 170,
+    flexedValue: 72,
+    minRangeRatio: 0.6,
+    lockout: { target: 168, tolerance: 25 },
+    peak: { target: 78, tolerance: 38 },
+    hipSwing: { target: 5, tolerance: 16 },
+    tempo: { target: 70, tolerance: 40 },
+  },
+
+  // --- Pistol squat ---
+  //
+  // Pas de critère d'oscillation de hanche : elle se ferme et s'ouvre par
+  // construction dans un squat. Et attention, la profondeur réelle se juge
+  // aussi à la cheville, angle que angles.ts ne calcule pas encore : la note
+  // de profondeur reste donc partielle sur ces deux variations.
+  box_pistol_squat: {
+    driver: "kneeAngle",
+    extendedValue: 172,
+    flexedValue: 75,
+    minRangeRatio: 0.6,
+    lockout: { target: 170, tolerance: 28 },
+    peak: { target: 85, tolerance: 45 },
+    tempo: { target: 65, tolerance: 45 },
+  },
+  pistol_squat: {
+    driver: "kneeAngle",
+    extendedValue: 172,
+    flexedValue: 45,
+    minRangeRatio: 0.6,
+    lockout: { target: 170, tolerance: 25 },
+    peak: { target: 55, tolerance: 45 },
+    tempo: { target: 65, tolerance: 45 },
+  },
+};
+
+export function isRepProgression(value: string): value is RepProgression {
+  return value in REP_SCORING_GRID;
+}

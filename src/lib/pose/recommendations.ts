@@ -1,5 +1,5 @@
 import type { CriterionScore } from "./scoring";
-import type { Progression } from "./grid";
+import type { AnyProgression, Progression } from "./grid";
 import { tierFor, figureFromProgression, type ScoreTier } from "./report";
 
 export type Recommendation = { exercice: string; raison: string };
@@ -719,12 +719,110 @@ const DRAGON_FLAG_EXERCISE_MAP: Record<string, TieredRecommendations> = {
   },
 };
 
+// Exercices à répétition. Les quatre critères sont les mêmes pour tous les
+// mouvements, les conseils le sont donc aussi : ils portent sur la façon
+// d'exécuter une série, pas sur une figure particulière.
+const REP_EXERCISE_MAP: Record<string, TieredRecommendations> = {
+  rep_lockout: {
+    faible: [
+      {
+        exercice: "Marque une pause d'une seconde en bas de chaque répétition",
+        raison:
+          "Repartir sans extension complète escamote la partie la plus dure du mouvement, celle qui construit la force.",
+      },
+      {
+        exercice: "Baisse le nombre de répétitions et va chercher l'amplitude complète",
+        raison: "Mieux vaut cinq répétitions entières que douze amputées.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Descente contrôlée en 3 secondes",
+        raison: "L'extension est presque complète, le tempo lent va chercher les derniers degrés.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Rien à corriger sur l'extension",
+        raison: "Chaque répétition repart d'une position complète.",
+      },
+    ],
+  },
+  rep_peak: {
+    faible: [
+      {
+        exercice: "Réduis la difficulté jusqu'à pouvoir aller au bout",
+        raison:
+          "Les répétitions sont écourtées en haut : la charge actuelle dépasse ce que tu peux mener à son terme.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Pause d'une seconde en haut de chaque répétition",
+        raison: "L'amplitude y est presque, la pause empêche de couper la fin du mouvement.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Amplitude complète, tu peux augmenter le volume",
+        raison: "Les répétitions sont menées jusqu'au bout.",
+      },
+    ],
+  },
+  rep_control: {
+    faible: [
+      {
+        exercice: "Répétitions strictes avec pause d'une seconde en bas",
+        raison:
+          "Le bassin oscille : le mouvement est lancé. La pause casse l'élan et oblige à repartir de la force seule.",
+      },
+      {
+        exercice: "Hollow body hold, 3 x 30 s",
+        raison: "L'élan vient d'un tronc qui n'est pas gainé, c'est là qu'il faut travailler.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue « serre les fessiers et les abdos avant de tirer »",
+        raison: "Le balancement est léger, un cue de gainage suffit souvent à le supprimer.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Rien à corriger, le corps reste gainé",
+        raison: "Les répétitions sont tirées et non lancées.",
+      },
+    ],
+  },
+  rep_tempo: {
+    faible: [
+      {
+        exercice: "Arrête la série deux répétitions avant l'échec",
+        raison:
+          "Le tempo s'effondre en fin de série : les dernières répétitions se font en compensation plus qu'en force.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Impose-toi un tempo compté, 2 secondes montée, 2 secondes descente",
+        raison: "La régularité est correcte, un tempo compté la rendra franche.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Tempo maîtrisé, tu peux allonger la série",
+        raison: "La régularité tient d'un bout à l'autre.",
+      },
+    ],
+  },
+};
+
 export function recommendationsFor(
   critere: CriterionScore["critere"],
   score: number,
   pelvisSagSign: number,
   hipAngleDeviation: number,
-  progression: Progression
+  progression: AnyProgression
 ): Recommendation[] {
   const figure = figureFromProgression(progression);
   const exerciseMap =
@@ -734,9 +832,11 @@ export function recommendationsFor(
       ? FRONT_LEVER_EXERCISE_MAP
       : figure === "dragon_flag"
       ? DRAGON_FLAG_EXERCISE_MAP
+      : figure === "reps"
+      ? REP_EXERCISE_MAP
       : PLANCHE_EXERCISE_MAP;
   const tier = tierFor(score);
-  const isTuckFamily = TUCK_FAMILY_PROGRESSIONS.includes(progression);
+  const isTuckFamily = (TUCK_FAMILY_PROGRESSIONS as string[]).includes(progression);
 
   const key =
     critere === "pelvis_deviation"

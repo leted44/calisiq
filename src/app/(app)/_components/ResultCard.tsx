@@ -15,6 +15,10 @@ import {
 import ScoreRing from "@/components/ScoreRing";
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
+  rep_lockout: "Extension",
+  rep_peak: "Amplitude",
+  rep_control: "Contrôle",
+  rep_tempo: "Tempo",
   shoulder_protraction: "Épaules",
   shoulder_flexion: "Épaules",
   pelvis_deviation: "Bassin",
@@ -31,6 +35,10 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
 // Titres plus descriptifs pour la vue "Détail par catégorie" — les labels
 // courts ci-dessus restent utilisés sous les ScoreRing du résumé.
 const CRITERE_DETAIL_TITLES: Record<CriterionScore["critere"], string> = {
+  rep_lockout: "Extension complète",
+  rep_peak: "Amplitude du mouvement",
+  rep_control: "Contrôle du corps",
+  rep_tempo: "Régularité du tempo",
   shoulder_protraction: "Protraction des épaules",
   shoulder_flexion: "Ouverture des épaules",
   pelvis_deviation: "Alignement du bassin",
@@ -47,6 +55,10 @@ const CRITERE_DETAIL_TITLES: Record<CriterionScore["critere"], string> = {
 // Mots-clés techniques associés à chaque critère, purement indicatifs (pas
 // des mesures) — aident à reconnaître le vocabulaire coaching courant.
 const CRITERE_TAGS: Record<CriterionScore["critere"], string[]> = {
+  rep_lockout: ["Lockout", "Bas de rep"],
+  rep_peak: ["Amplitude", "Haut de rep"],
+  rep_control: ["Strict", "Kipping"],
+  rep_tempo: ["Tempo", "Endurance"],
   shoulder_protraction: ["Protraction", "Charge bras"],
   shoulder_flexion: ["Ouverture", "Stack"],
   pelvis_deviation: ["Bassin", "Banana"],
@@ -98,6 +110,7 @@ export default function ResultCard({
   scores,
   recommendations,
   holdDurationSeconds,
+  repCount,
   figure = "planche",
 }: {
   globalScoreValue: number;
@@ -105,7 +118,10 @@ export default function ResultCard({
   scores: CriterionScore[];
   recommendations: Recommendation[] | null;
   holdDurationSeconds?: number | null;
-  figure?: "planche" | "handstand" | "front_lever" | "dragon_flag";
+  // Exclusif de holdDurationSeconds : une série n'a pas de durée de hold, un
+  // hold n'a pas de répétitions. L'un des deux est toujours null.
+  repCount?: number | null;
+  figure?: "planche" | "handstand" | "front_lever" | "dragon_flag" | "reps";
 }) {
   const [view, setView] = useState<"summary" | "details">("summary");
   const globalTier = tierFor(globalScoreValue);
@@ -176,6 +192,9 @@ export default function ResultCard({
                 label="Hold"
                 suffix="s"
               />
+            )}
+            {repCount !== undefined && repCount !== null && (
+              <ScoreRing value={repCount} label="Reps" />
             )}
           </div>
 
@@ -259,6 +278,17 @@ export default function ResultCard({
               </div>
             );
           })}
+
+          {repCount !== undefined && repCount !== null && (
+            <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+              <h4 className="text-base font-bold text-white">Répétitions</h4>
+              <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                Répétitions complètes détectées :{" "}
+                <span className="font-semibold text-white">{repCount}</span>. Les
+                répétitions partielles ne sont pas comptées.
+              </p>
+            </div>
+          )}
 
           {holdDurationSeconds !== undefined && holdDurationSeconds !== null && (
             <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">

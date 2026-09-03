@@ -19,7 +19,7 @@ export default async function SessionDetailPage({
   const { data: session } = await supabase
     .from("sessions")
     .select(
-      "id, progression, status, video_url, created_at, performed_at, trim_start, trim_end, hold_duration_seconds, is_reference, scores(critere, score, valeur_mesuree, valeur_cible), recommendations(exercice, raison)"
+      "id, progression, status, video_url, created_at, performed_at, trim_start, trim_end, hold_duration_seconds, rep_count, is_reference, scores(critere, score, valeur_mesuree, valeur_cible), recommendations(exercice, raison)"
     )
     .eq("id", id)
     .single();
@@ -49,6 +49,7 @@ export default async function SessionDetailPage({
           scores,
           recommendations: session.recommendations ?? [],
           holdDurationSeconds: session.hold_duration_seconds,
+          repCount: session.rep_count,
         }
       : null;
 

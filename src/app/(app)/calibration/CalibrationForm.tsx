@@ -26,6 +26,15 @@ const VARIATIONS = [
   { value: "tuck_dragon_flag", label: "Tuck Dragon Flag", figure: "dragon_flag" },
   { value: "straddle_dragon_flag", label: "Straddle Dragon Flag", figure: "dragon_flag" },
   { value: "full_dragon_flag", label: "Full Dragon Flag", figure: "dragon_flag" },
+  { value: "australian_pull_up", label: "Traction australienne", figure: "traction" },
+  { value: "strict_pull_up", label: "Traction stricte", figure: "traction" },
+  { value: "bench_dip", label: "Dips sur banc", figure: "dips" },
+  { value: "parallel_dip", label: "Dips barres parallèles", figure: "dips" },
+  { value: "incline_push_up", label: "Pompes inclinées", figure: "pompes" },
+  { value: "push_up", label: "Pompes au sol", figure: "pompes" },
+  { value: "decline_push_up", label: "Pompes déclinées", figure: "pompes" },
+  { value: "box_pistol_squat", label: "Pistol squat sur boîte", figure: "pistol" },
+  { value: "pistol_squat", label: "Pistol squat", figure: "pistol" },
 ] as const;
 
 // Plus bas que le formulaire principal (2s) : ici on ne mesure qu'une

@@ -15,6 +15,9 @@ type PersistedReport = {
   scores: CriterionScore[];
   recommendations: Recommendation[];
   holdDurationSeconds: number | null;
+  // Absent des séances enregistrées avant l'arrivée des exercices dynamiques,
+  // d'où l'optionnel : elles n'ont pas de colonne à lire.
+  repCount?: number | null;
 };
 
 export default function VideoPoseOverlay({
@@ -78,6 +81,7 @@ export default function VideoPoseOverlay({
       .update({
         status: "done",
         hold_duration_seconds: analysisResult.holdDurationSeconds,
+        rep_count: analysisResult.repCount,
       })
       .eq("id", sessionId);
     if (sessionError) throw sessionError;
@@ -185,6 +189,7 @@ export default function VideoPoseOverlay({
             scores={report.scores}
             recommendations={report.recommendations}
             holdDurationSeconds={report.holdDurationSeconds}
+            repCount={report.repCount ?? null}
             figure={figure}
           />
           <ExportVideoButton

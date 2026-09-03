@@ -33,6 +33,10 @@ function sleep(ms: number): Promise<void> {
 const MAX_EXPORT_DIMENSION = 3840;
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
+  rep_lockout: "Extension",
+  rep_peak: "Amplitude",
+  rep_control: "Contrôle",
+  rep_tempo: "Tempo",
   shoulder_protraction: "Épaules",
   shoulder_flexion: "Épaules",
   pelvis_deviation: "Bassin",
@@ -129,11 +133,16 @@ function drawHud(
   {
     figureLabel,
     elapsedSeconds,
+    repsDone,
     globalScoreValue,
     scores,
   }: {
     figureLabel: string;
     elapsedSeconds: number;
+    // Sur un exercice dynamique, le chrono de hold n'a aucun sens : on affiche
+    // le nombre de répétitions déjà accomplies à cet instant de la vidéo. Null
+    // sur un hold, où c'est le chrono qui reprend sa place.
+    repsDone: number | null;
     globalScoreValue: number;
     scores: CriterionScore[];
   }
@@ -190,14 +199,16 @@ function drawHud(
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = holdLabelFont;
-  ctx.fillText("HOLD", topCenterX, topCardY + 28 * scale);
+  ctx.fillText(repsDone === null ? "HOLD" : "REPS", topCenterX, topCardY + 28 * scale);
 
   drawMixedText(
     ctx,
-    [
-      { text: elapsedSeconds.toFixed(1), font: timerFont, color: "#38bdf8" },
-      { text: "s", font: timerSuffixFont, color: "#38bdf8" },
-    ],
+    repsDone === null
+      ? [
+          { text: elapsedSeconds.toFixed(1), font: timerFont, color: "#38bdf8" },
+          { text: "s", font: timerSuffixFont, color: "#38bdf8" },
+        ]
+      : [{ text: String(repsDone), font: timerFont, color: "#38bdf8" }],
     topCenterX,
     topCardY + 52 * scale,
     "center"
@@ -513,6 +524,12 @@ function drawOutro(
 // le plus faible. Indices MediaPipe Pose (11/12 épaules, 13/14 coudes,
 // 23/24 hanches, 25/26 genoux, 27/28 chevilles).
 const CRITERION_LANDMARKS: Record<CriterionScore["critere"], number[]> = {
+  // Coudes et genoux : les deux articulations qui portent le signal d'une
+  // répétition, quel que soit le mouvement.
+  rep_lockout: [13, 14, 25, 26],
+  rep_peak: [13, 14, 25, 26],
+  rep_control: [23, 24],
+  rep_tempo: [11, 12, 23, 24],
   shoulder_protraction: [11, 12],
   shoulder_flexion: [11, 12],
   pelvis_deviation: [23, 24],
@@ -785,6 +802,7 @@ export async function recordAnnotatedVideo({
   holdStartSeconds,
   holdEndSeconds,
   holdDurationSeconds,
+  repTimes,
   weakPointCue,
   forceLegacyEncoder,
   onProgress,
@@ -818,6 +836,10 @@ export async function recordAnnotatedVideo({
   // Durée finale du hold (secondes) — affichée sur l'écran de révélation
   // à la fin de la vidéo, sous le score final.
   holdDurationSeconds?: number | null;
+  // Instants de fin de chaque répétition, sur un exercice dynamique. Le HUD
+  // s'en sert pour incrémenter un compteur au fil de la lecture. Absent sur un
+  // hold, où le chrono garde sa place.
+  repTimes?: number[] | null;
   // Conseil affiché pendant le ralenti sur le point faible (typiquement la
   // première recommandation de l'analyse).
   weakPointCue?: string | null;
@@ -959,9 +981,16 @@ export async function recordAnnotatedVideo({
       const holdElapsed =
         Math.min(mediaTime, hudHoldEnd) - hudHoldStart;
 
+      // Répétitions déjà accomplies à cet instant : le compteur monte pendant
+      // la lecture au lieu d'annoncer le total dès la première image.
+      const repsDone = repTimes
+        ? repTimes.filter((time) => time <= mediaTime).length
+        : null;
+
       drawHud(ctx, canvas, {
         figureLabel,
         elapsedSeconds: Math.max(0, holdElapsed),
+        repsDone,
         globalScoreValue: liveGlobalScoreValue,
         scores: liveScores,
       });

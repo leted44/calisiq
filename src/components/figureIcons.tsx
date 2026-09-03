@@ -270,3 +270,54 @@ export function FullDragonFlagIcon({ className = base }: IconProps) {
     </svg>
   );
 }
+
+// --- Exercices à répétition ---
+// Pictogrammes sobres : la flèche verticale indique le sens du mouvement,
+// c'est ce qui les distingue des figures tenues.
+
+export function PullUpFigureIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M3 5h18" {...stroke} />
+      <circle cx="12" cy="10" r="1.6" {...stroke} />
+      <path d="M9 5.5 12 8.6 15 5.5" {...stroke} />
+      <path d="M12 11.6v5" {...stroke} />
+      <path d="M20 10v5m0-5-1.6 1.6M20 10l1.6 1.6" {...stroke} />
+    </svg>
+  );
+}
+
+export function DipFigureIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M4 7h5M15 7h5" {...stroke} />
+      <circle cx="12" cy="9" r="1.6" {...stroke} />
+      <path d="M8 7.5 12 10.6 16 7.5" {...stroke} />
+      <path d="M12 10.6v5.5" {...stroke} />
+      <path d="M12 16.1 10 20M12 16.1 14 20" {...stroke} />
+    </svg>
+  );
+}
+
+export function PushUpFigureIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <circle cx="5" cy="9.5" r="1.6" {...stroke} />
+      <path d="M6.6 10.2 19 14" {...stroke} />
+      <path d="M9 11 9 17M17 13.4 17 17" {...stroke} />
+      <path d="M3 20h18" {...stroke} />
+    </svg>
+  );
+}
+
+export function PistolFigureIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <circle cx="10" cy="4.5" r="1.6" {...stroke} />
+      <path d="M10 6.1v5" {...stroke} />
+      <path d="M10 11.1 8 15.5 10 20" {...stroke} />
+      <path d="M10 11.1 16 12.5" {...stroke} />
+      <path d="M4 20h16" {...stroke} />
+    </svg>
+  );
+}

@@ -1,4 +1,5 @@
 import type { CriterionScore } from "./scoring";
+import { isRepProgression } from "./grid";
 
 export const PROGRESSION_LABELS: Record<string, string> = {
   tuck_planche: "Tuck planche",
@@ -14,6 +15,15 @@ export const PROGRESSION_LABELS: Record<string, string> = {
   tuck_dragon_flag: "Tuck dragon flag",
   straddle_dragon_flag: "Straddle dragon flag",
   full_dragon_flag: "Full dragon flag",
+  australian_pull_up: "Traction australienne",
+  strict_pull_up: "Traction stricte",
+  bench_dip: "Dips sur banc",
+  parallel_dip: "Dips barres parallèles",
+  incline_push_up: "Pompes inclinées",
+  push_up: "Pompes au sol",
+  decline_push_up: "Pompes déclinées",
+  box_pistol_squat: "Pistol squat sur boîte",
+  pistol_squat: "Pistol squat",
 };
 
 // Critères effectivement recalibrés dans le code à partir de données
@@ -39,12 +49,29 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   tuck_dragon_flag: [],
   straddle_dragon_flag: [],
   full_dragon_flag: [],
+  australian_pull_up: [],
+  strict_pull_up: [],
+  bench_dip: [],
+  parallel_dip: [],
+  incline_push_up: [],
+  push_up: [],
+  decline_push_up: [],
+  box_pistol_squat: [],
+  pistol_squat: [],
 };
 
 // Définition générique de ce que mesure chaque critère (indépendante du
 // score obtenu) — pour expliquer "qu'est-ce que c'est", pas "est-ce que
 // c'est bon". Affiché dans le rapport à côté du repère mesuré/cible.
 export const CRITERE_DEFINITIONS: Record<CriterionScore["critere"], string> = {
+  rep_lockout:
+    "Angle atteint en position tendue, moyenné sur la série. Mesure si chaque répétition part bien d'une extension complète.",
+  rep_peak:
+    "Angle atteint en position fléchie, moyenné sur la série. Mesure si chaque répétition est menée jusqu'au bout.",
+  rep_control:
+    "Écart type de l'angle de hanche sur la série. Mesure l'élan : une hanche qui oscille trahit un mouvement lancé plutôt que tiré.",
+  rep_tempo:
+    "Régularité de la durée des répétitions, en pourcentage. Une série qui se dégrade s'allonge sur les dernières répétitions.",
   elbow_angle:
     "Angle épaule-coude-poignet. Mesure si le bras est verrouillé (proche de 180°) ou fléchi.",
   hip_angle:
@@ -205,10 +232,36 @@ const DRAGON_FLAG_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   },
 };
 
+const REP_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
+  rep_lockout: {
+    optimal: "Chaque répétition part d'une extension complète.",
+    bon: "Extension presque complète en bas de chaque répétition.",
+    faible:
+      "Les répétitions ne repartent pas d'une extension complète — l'amplitude est amputée par le bas.",
+  },
+  rep_peak: {
+    optimal: "Répétitions menées jusqu'au bout.",
+    bon: "Amplitude correcte, il manque quelques degrés en haut.",
+    faible: "Répétitions écourtées en haut — le mouvement n'est pas mené à son terme.",
+  },
+  rep_control: {
+    optimal: "Corps gainé, aucun élan.",
+    bon: "Léger balancement du bassin, le mouvement reste globalement tiré.",
+    faible:
+      "Le bassin oscille nettement — les répétitions sont lancées plutôt que tirées.",
+  },
+  rep_tempo: {
+    optimal: "Tempo régulier d'un bout à l'autre de la série.",
+    bon: "Tempo globalement régulier, avec un léger ralentissement.",
+    faible:
+      "Le tempo se dégrade fortement : les dernières répétitions sont bien plus lentes que les premières.",
+  },
+};
+
 export function describeCriterion(
   critere: CriterionScore["critere"],
   score: number,
-  figure: "planche" | "handstand" | "front_lever" | "dragon_flag"
+  figure: "planche" | "handstand" | "front_lever" | "dragon_flag" | "reps"
 ): string {
   const map =
     figure === "handstand"
@@ -217,16 +270,21 @@ export function describeCriterion(
       ? FRONT_LEVER_DESCRIPTIONS
       : figure === "dragon_flag"
       ? DRAGON_FLAG_DESCRIPTIONS
+      : figure === "reps"
+      ? REP_DESCRIPTIONS
       : PLANCHE_DESCRIPTIONS;
   return map[critere]?.[tierFor(score)] ?? "";
 }
 
 export function figureFromProgression(
   progression: string
-): "planche" | "handstand" | "front_lever" | "dragon_flag" {
+): "planche" | "handstand" | "front_lever" | "dragon_flag" | "reps" {
   if (progression === "handstand") return "handstand";
   if (progression.includes("front_lever")) return "front_lever";
   if (progression.includes("dragon_flag")) return "dragon_flag";
+  // Les exercices à répétition partagent tous le même jeu de quatre critères,
+  // donc les mêmes descriptions : inutile de les distinguer un par un ici.
+  if (isRepProgression(progression)) return "reps";
   return "planche";
 }
 

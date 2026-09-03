@@ -34,6 +34,7 @@ export default function ExportVideoButton({
   holdStartSeconds,
   holdEndSeconds,
   holdDurationSeconds,
+  repTimes,
   weakPointCue,
 }: {
   videoRef: RefObject<HTMLVideoElement | null>;
@@ -48,6 +49,7 @@ export default function ExportVideoButton({
   holdStartSeconds?: number | null;
   holdEndSeconds?: number | null;
   holdDurationSeconds?: number | null;
+  repTimes?: number[] | null;
   weakPointCue?: string | null;
 }) {
   const [recording, setRecording] = useState(false);
@@ -64,6 +66,7 @@ export default function ExportVideoButton({
     progression,
     globalScoreValue,
     holdDurationSeconds,
+  repTimes,
     rangeStart,
     rangeEnd,
     scores.length,
@@ -102,6 +105,7 @@ export default function ExportVideoButton({
         holdStartSeconds,
         holdEndSeconds,
         holdDurationSeconds,
+        repTimes,
         weakPointCue,
         forceLegacyEncoder,
         onProgress: setProgress,
