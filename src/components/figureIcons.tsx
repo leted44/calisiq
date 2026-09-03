@@ -225,3 +225,48 @@ export function PushUpTypeIcon({ className = "h-5 w-5" }: IconProps) {
     </svg>
   );
 }
+
+export function DragonFlagFigureIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M3 7h5" {...stroke} />
+      <circle cx="5.5" cy="5.2" r="1.5" {...stroke} />
+      <path d="M7 7.5 20 15" {...stroke} />
+    </svg>
+  );
+}
+
+export function TuckDragonFlagIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M3 7h5" {...stroke} />
+      <circle cx="5.5" cy="5.2" r="1.5" {...stroke} />
+      <path d="M7 7.5 14 12" {...stroke} />
+      <path d="M14 12l3.5-1.5" {...stroke} />
+      <path d="M17.5 10.5 16 14" {...stroke} />
+    </svg>
+  );
+}
+
+export function StraddleDragonFlagIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M3 7h5" {...stroke} />
+      <circle cx="5.5" cy="5.2" r="1.5" {...stroke} />
+      <path d="M7 7.5 14 12" {...stroke} />
+      <path d="M14 12 21 12" {...stroke} />
+      <path d="M14 12 20 17" {...stroke} />
+    </svg>
+  );
+}
+
+export function FullDragonFlagIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M3 7h5" {...stroke} />
+      <circle cx="5.5" cy="5.2" r="1.5" {...stroke} />
+      <path d="M7 7.5 21 15" {...stroke} />
+      <path d="M18.5 13.4 20 11.5" {...stroke} />
+    </svg>
+  );
+}

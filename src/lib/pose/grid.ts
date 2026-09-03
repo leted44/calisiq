@@ -69,7 +69,10 @@ export type Progression =
   | "advanced_tuck_front_lever"
   | "one_leg_front_lever"
   | "straddle_front_lever"
-  | "full_front_lever";
+  | "full_front_lever"
+  | "tuck_dragon_flag"
+  | "straddle_dragon_flag"
+  | "full_dragon_flag";
 
 type Threshold = { target: number; tolerance: number };
 type ShoulderProtractionThreshold = Threshold & { mode: "minimum" | "band" };
@@ -78,14 +81,24 @@ type ShoulderProtractionThreshold = Threshold & { mode: "minimum" | "band" };
 // un défaut mais rester en deçà n'en est pas un — le miroir du mode
 // "minimum" de la protraction.
 type MaximumThreshold = Threshold & { mode: "maximum" };
+// Un critère d'inclinaison peut être une bande ou un seuil maximum selon la
+// figure. Sur un front lever, la cible est l'horizontale et s'en écarter dans
+// un sens comme dans l'autre est une faute : c'est une bande. Sur un dragon
+// flag, descendre plus bas n'est jamais une faute, c'est même toute la
+// difficulté : c'est un seuil maximum.
+type TiltThreshold = Threshold | MaximumThreshold;
 
 export type ProgressionThresholds = {
-  body_line_angle_from_horizontal?: Threshold;
+  body_line_angle_from_horizontal?: TiltThreshold;
   // Tronc seul (épaule -> hanche). Utilisé quand la ligne épaule-cheville
   // n'a pas de sens : figures à une jambe, où les deux chevilles sont dans
   // des positions différentes.
-  torso_angle?: Threshold;
-  elbow_angle: Threshold;
+  torso_angle?: TiltThreshold;
+  // Optionnel : toutes les figures n'ont pas de critère de coude. Sur un
+  // dragon flag, les bras servent d'ancrage derrière la tête et leur angle
+  // ne dit rien de la qualité du mouvement. L'inclure quand même reviendrait
+  // à ajouter une note qui ne mesure rien et gonfle le score global.
+  elbow_angle?: Threshold;
   // Optionnel : sur une figure asymétrique, la moyenne gauche/droite mélange
   // une jambe tendue et une jambe repliée et ne décrit ni l'une ni l'autre.
   // L'inclure quand même avec une tolérance énorme reviendrait à ajouter un
@@ -249,5 +262,38 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     elbow_angle: { target: 180, tolerance: 35 },
     hip_angle: { target: 178, tolerance: 10 },
     knee_angle: { target: 180, tolerance: 19 },
+  },
+
+  // --- Dragon flag ---
+  //
+  // SEUILS DRAFT, entièrement raisonnés, aucun échantillon réel. À calibrer
+  // via /calibration avant de se fier aux notes.
+  //
+  // Deux partis pris à connaître avant d'y toucher.
+  //
+  // L'inclinaison est un seuil MAXIMUM et non une bande : sur un dragon flag,
+  // plus le corps descend vers l'horizontale, plus c'est dur et mieux c'est.
+  // Une bande centrée sur 20° pénaliserait un corps tenu parfaitement
+  // horizontal, ce qui est l'inverse de la réalité.
+  //
+  // La tuck est notée sur le tronc seul et non sur la ligne épaule-cheville :
+  // genoux repliés, cette ligne traverse un corps qui n'existe pas, exactement
+  // le problème déjà rencontré sur les figures asymétriques.
+  tuck_dragon_flag: {
+    torso_angle: { target: 40, tolerance: 50, mode: "maximum" },
+    hip_angle: { target: 100, tolerance: 35 },
+    knee_angle: { target: 70, tolerance: 40 },
+  },
+  straddle_dragon_flag: {
+    body_line_angle_from_horizontal: { target: 35, tolerance: 55, mode: "maximum" },
+    hip_angle: { target: 175, tolerance: 20 },
+    knee_angle: { target: 180, tolerance: 18 },
+  },
+  full_dragon_flag: {
+    body_line_angle_from_horizontal: { target: 20, tolerance: 55, mode: "maximum" },
+    // La faute classique du dragon flag : casser à la hanche pour soulager le
+    // levier. C'est le critère le plus serré de la figure.
+    hip_angle: { target: 180, tolerance: 10 },
+    knee_angle: { target: 180, tolerance: 12 },
   },
 };

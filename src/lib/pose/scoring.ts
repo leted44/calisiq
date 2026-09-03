@@ -34,6 +34,19 @@ function scoreFromThreshold(
 // Critère "seuil maximum" : score plein tant que la mesure reste sous le
 // seuil, décroissance linéaire au-delà (utilisé pour la jambe qui doit
 // rester repliée : la replier plus n'est jamais un défaut)
+// Note un critère d'inclinaison, qui peut être une bande ou un seuil maximum
+// selon la figure. Voir TiltThreshold dans grid.ts : sur un front lever on
+// vise l'horizontale et s'en écarter des deux côtés est une faute, sur un
+// dragon flag descendre plus bas n'en est jamais une.
+function scoreTilt(
+  measured: number,
+  threshold: { target: number; tolerance: number; mode?: "maximum" }
+): number {
+  return threshold.mode === "maximum"
+    ? scoreFromMaximum(measured, threshold.target, threshold.tolerance)
+    : scoreFromThreshold(measured, threshold.target, threshold.tolerance);
+}
+
 function scoreFromMaximum(
   measured: number,
   maximum: number,
@@ -129,25 +142,23 @@ export function scoreAngles(
     });
   }
 
-  scores.push({
-    critere: "elbow_angle",
-    score: scoreFromThreshold(
-      angles.elbowAngle,
-      grid.elbow_angle.target,
-      grid.elbow_angle.tolerance
-    ),
-    valeurMesuree: angles.elbowAngle,
-    valeurCible: grid.elbow_angle.target,
-  });
+  if (grid.elbow_angle) {
+    scores.push({
+      critere: "elbow_angle",
+      score: scoreFromThreshold(
+        angles.elbowAngle,
+        grid.elbow_angle.target,
+        grid.elbow_angle.tolerance
+      ),
+      valeurMesuree: angles.elbowAngle,
+      valeurCible: grid.elbow_angle.target,
+    });
+  }
 
   if (grid.torso_angle) {
     scores.push({
       critere: "torso_angle",
-      score: scoreFromThreshold(
-        angles.torsoAngleFromHorizontal,
-        grid.torso_angle.target,
-        grid.torso_angle.tolerance
-      ),
+      score: scoreTilt(angles.torsoAngleFromHorizontal, grid.torso_angle),
       valeurMesuree: angles.torsoAngleFromHorizontal,
       valeurCible: grid.torso_angle.target,
     });
@@ -195,10 +206,9 @@ export function scoreAngles(
   if (grid.body_line_angle_from_horizontal) {
     scores.push({
       critere: "body_line_angle",
-      score: scoreFromThreshold(
+      score: scoreTilt(
         angles.bodyLineAngleFromHorizontal,
-        grid.body_line_angle_from_horizontal.target,
-        grid.body_line_angle_from_horizontal.tolerance
+        grid.body_line_angle_from_horizontal
       ),
       valeurMesuree: angles.bodyLineAngleFromHorizontal,
       valeurCible: grid.body_line_angle_from_horizontal.target,

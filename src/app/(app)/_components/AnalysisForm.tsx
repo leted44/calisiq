@@ -37,12 +37,16 @@ import {
   FullFrontLeverIcon,
   OneLegFrontLeverIcon,
   OneArmFrontLeverIcon,
+  DragonFlagFigureIcon,
+  TuckDragonFlagIcon,
+  StraddleDragonFlagIcon,
+  FullDragonFlagIcon,
   HoldTypeIcon,
   PressTypeIcon,
   PushUpTypeIcon,
 } from "@/components/figureIcons";
 
-type Figure = "planche" | "handstand" | "front_lever";
+type Figure = "planche" | "handstand" | "front_lever" | "dragon_flag";
 type ExerciseType = "hold" | "press" | "push_up";
 type HandstandVariation = "handstand_push_up" | "one_arm_handstand";
 // one_leg_front_lever a rejoint Progression (grid.ts) le 2026-09-01, il
@@ -91,6 +95,13 @@ const FIGURES: {
     available: true,
     Icon: FrontLeverFigureIcon,
     image: "/figures/full-front-lever.png",
+  },
+  {
+    value: "dragon_flag",
+    label: "Dragon Flag",
+    tagline: "Gainage renversé",
+    available: true,
+    Icon: DragonFlagFigureIcon,
   },
 ];
 
@@ -202,6 +213,32 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Suspendu par un seul bras",
       Icon: OneArmFrontLeverIcon,
       available: false,
+    },
+  ],
+  // Dragon flag. Seuls trois paliers : contrairement à la planche ou au front
+  // lever, la progression classique ne passe pas par un advanced tuck, elle va
+  // directement du groupé à l'écarté puis au corps tendu.
+  dragon_flag: [
+    {
+      value: "tuck_dragon_flag",
+      label: "Tuck",
+      cue: "Genoux repliés, le tronc descend d'un bloc",
+      Icon: TuckDragonFlagIcon,
+      available: true,
+    },
+    {
+      value: "straddle_dragon_flag",
+      label: "Straddle",
+      cue: "Jambes tendues et écartées",
+      Icon: StraddleDragonFlagIcon,
+      available: true,
+    },
+    {
+      value: "full_dragon_flag",
+      label: "Full",
+      cue: "Corps entièrement tendu, aucune cassure à la hanche",
+      Icon: FullDragonFlagIcon,
+      available: true,
     },
   ],
 };

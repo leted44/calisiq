@@ -105,7 +105,7 @@ export default function ResultCard({
   scores: CriterionScore[];
   recommendations: Recommendation[] | null;
   holdDurationSeconds?: number | null;
-  figure?: "planche" | "handstand" | "front_lever";
+  figure?: "planche" | "handstand" | "front_lever" | "dragon_flag";
 }) {
   const [view, setView] = useState<"summary" | "details">("summary");
   const globalTier = tierFor(globalScoreValue);

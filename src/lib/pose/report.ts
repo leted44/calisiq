@@ -11,6 +11,9 @@ export const PROGRESSION_LABELS: Record<string, string> = {
   one_leg_front_lever: "Single leg front lever",
   straddle_front_lever: "Straddle front lever",
   full_front_lever: "Full front lever",
+  tuck_dragon_flag: "Tuck dragon flag",
+  straddle_dragon_flag: "Straddle dragon flag",
+  full_dragon_flag: "Full dragon flag",
 };
 
 // Critères effectivement recalibrés dans le code à partir de données
@@ -31,6 +34,11 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   one_leg_front_lever: ["bent_knee_angle", "straightest_leg_hip_angle"],
   straddle_front_lever: ["elbow_angle", "hip_angle", "knee_angle", "body_line_angle"],
   full_front_lever: ["elbow_angle", "hip_angle", "knee_angle", "body_line_angle"],
+  // Aucun échantillon réel : les seuils du dragon flag sont entièrement
+  // raisonnés. Le bloc reste vide tant que la calibration n'a pas eu lieu.
+  tuck_dragon_flag: [],
+  straddle_dragon_flag: [],
+  full_dragon_flag: [],
 };
 
 // Définition générique de ce que mesure chaque critère (indépendante du
@@ -170,25 +178,55 @@ const FRONT_LEVER_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   },
 };
 
+const DRAGON_FLAG_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
+  hip_angle: {
+    optimal: "Ligne du corps verrouillée, aucune cassure à la hanche.",
+    bon: "Légère cassure à la hanche, la ligne reste globalement tenue.",
+    faible:
+      "Le corps casse à la hanche — c'est la compensation classique pour raccourcir le levier et soulager le gainage.",
+  },
+  knee_angle: {
+    optimal: "Jambes bien tendues, levier complet.",
+    bon: "Genoux presque tendus, léger fléchissement.",
+    faible:
+      "Genoux fléchis — le levier est raccourci, la figure est plus facile qu'elle en a l'air.",
+  },
+  body_line_angle: {
+    optimal: "Corps proche de l'horizontale, le levier est maximal.",
+    bon: "Corps bien descendu, il reste quelques degrés à aller chercher.",
+    faible:
+      "Le corps reste trop redressé — l'inclinaison actuelle dépasse ce que ton gainage peut tenir.",
+  },
+  torso_angle: {
+    optimal: "Tronc bas et contrôlé, la rotation se fait bien autour des épaules.",
+    bon: "Tronc correctement descendu, encore un peu de marge.",
+    faible:
+      "Tronc trop vertical — la rotation se fait autour des hanches au lieu des épaules.",
+  },
+};
+
 export function describeCriterion(
   critere: CriterionScore["critere"],
   score: number,
-  figure: "planche" | "handstand" | "front_lever"
+  figure: "planche" | "handstand" | "front_lever" | "dragon_flag"
 ): string {
   const map =
     figure === "handstand"
       ? HANDSTAND_DESCRIPTIONS
       : figure === "front_lever"
       ? FRONT_LEVER_DESCRIPTIONS
+      : figure === "dragon_flag"
+      ? DRAGON_FLAG_DESCRIPTIONS
       : PLANCHE_DESCRIPTIONS;
   return map[critere]?.[tierFor(score)] ?? "";
 }
 
 export function figureFromProgression(
   progression: string
-): "planche" | "handstand" | "front_lever" {
+): "planche" | "handstand" | "front_lever" | "dragon_flag" {
   if (progression === "handstand") return "handstand";
   if (progression.includes("front_lever")) return "front_lever";
+  if (progression.includes("dragon_flag")) return "dragon_flag";
   return "planche";
 }
 

@@ -622,6 +622,103 @@ const TUCK_FAMILY_PROGRESSIONS: Progression[] = [
   "advanced_tuck_front_lever",
 ];
 
+// Dragon flag. La faute dominante est toujours la même : casser à la hanche
+// pour raccourcir le levier, souvent sans s'en rendre compte. Les conseils
+// tournent donc autour du gainage antérieur et du contrôle excentrique, pas
+// autour de la force de bras.
+const DRAGON_FLAG_EXERCISE_MAP: Record<string, TieredRecommendations> = {
+  hip_angle: {
+    faible: [
+      {
+        exercice: "Dragon flag négatif, descente en 5 secondes",
+        raison:
+          "La hanche casse parce que le gainage lâche avant la fin de la descente. L'excentrique lent construit exactement la zone qui cède.",
+      },
+      {
+        exercice: "Hollow body hold, 3 x 30 s",
+        raison:
+          "Sans position creuse tenue au sol, elle ne tiendra pas non plus en suspension inversée.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Dragon flag en tuck, pauses de 3 s à mi-descente",
+        raison:
+          "La ligne est presque là — les pauses forcent à la tenir là où elle commence à céder.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Allonge le temps de maintien plutôt que d'ouvrir davantage",
+        raison: "La hanche est verrouillée, l'enjeu devient l'endurance de gainage.",
+      },
+    ],
+  },
+  knee_angle: {
+    faible: [
+      {
+        exercice: "Dragon flag jambes serrées, orteils pointés",
+        raison:
+          "Des genoux fléchis raccourcissent le levier et faussent la difficulté annoncée.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue « pousse les talons vers le mur d'en face »",
+        raison: "Les jambes se tendent presque complètement, ce cue va chercher les derniers degrés.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Rien à corriger sur les genoux",
+        raison: "Ligne de jambes propre.",
+      },
+    ],
+  },
+  body_line_angle: {
+    faible: [
+      {
+        exercice: "Dragon flag en tuck puis straddle avant la version complète",
+        raison:
+          "Le corps remonte trop haut : le levier actuel dépasse ta force de gainage. Raccourcis-le avant de l'allonger.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Négatifs jusqu'à l'horizontale, remontée assistée",
+        raison: "La descente est bonne, il manque les derniers degrés vers l'horizontale.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Travaille la durée de maintien à cette inclinaison",
+        raison: "L'inclinaison est excellente, c'est le temps qui fera la différence.",
+      },
+    ],
+  },
+  torso_angle: {
+    faible: [
+      {
+        exercice: "Dragon flag négatif en tuck, épaules bien plaquées au banc",
+        raison:
+          "Le tronc reste trop vertical : la rotation doit se faire autour des épaules, pas autour des hanches.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Pauses isométriques en fin de descente",
+        raison: "Le tronc descend bien, il manque du contrôle sur les derniers degrés.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Passe à la variation supérieure",
+        raison: "Le tronc est bas et contrôlé, la tuck ne te fait plus progresser.",
+      },
+    ],
+  },
+};
+
 export function recommendationsFor(
   critere: CriterionScore["critere"],
   score: number,
@@ -635,6 +732,8 @@ export function recommendationsFor(
       ? HANDSTAND_EXERCISE_MAP
       : figure === "front_lever"
       ? FRONT_LEVER_EXERCISE_MAP
+      : figure === "dragon_flag"
+      ? DRAGON_FLAG_EXERCISE_MAP
       : PLANCHE_EXERCISE_MAP;
   const tier = tierFor(score);
   const isTuckFamily = TUCK_FAMILY_PROGRESSIONS.includes(progression);
