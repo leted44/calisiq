@@ -159,6 +159,7 @@ const FIGURES: {
     tagline: "Poussée horizontale",
     available: true,
     Icon: PushUpFigureIcon,
+    image: "/figures/push-up.png",
   },
   {
     value: "pistol",
@@ -166,6 +167,7 @@ const FIGURES: {
     tagline: "Jambes, unilatéral",
     available: true,
     Icon: PistolFigureIcon,
+    image: "/figures/pistol-squat.png",
   },
 ];
 
@@ -395,6 +397,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Corps gainé, parallèle au sol",
       Icon: PushUpFigureIcon,
       available: true,
+      image: "/figures/push-up.png",
     },
     {
       value: "decline_push_up",
@@ -418,6 +421,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Descente complète sur une jambe, sans appui",
       Icon: PistolFigureIcon,
       available: true,
+      image: "/figures/pistol-squat.png",
     },
   ],
 };
