@@ -46,6 +46,7 @@ scoring.
 | Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
 | Illustrations front lever | Tuck, advanced tuck, single leg et full faites | Il manque la straddle, qui affiche encore une icône |
 | Single Leg Front Lever | Actif | Genou de la jambe libre calibré le 2026-09-01 sur 6 échantillons |
+| Dragon Flag (tuck, straddle, full) | Actif, seuils DRAFT | Aucun échantillon réel, seuils entièrement raisonnés |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
 
 Le Front Lever a été réactivé le 2026-08-31, puis recalibré le 2026-09-01
@@ -82,6 +83,16 @@ tuck, 4 en tuck). C’est ce qui apprend à la grille à sanctionner un
 utilisateur qui choisit la mauvaise catégorie. Ces échantillons ne sont
 donc pas des erreurs à supprimer, et ils tombent d’ailleurs parmi les mieux
 ajustés. Ne pas les écarter d’une recalibration.
+
+**Le dragon flag a introduit deux assouplissements du modèle**, tous deux
+justifiés par la figure et réutilisables ailleurs. `elbow_angle` est devenu
+optionnel : les bras y servent d'ancrage derrière la tête et leur angle ne dit
+rien de la qualité du mouvement, l'inclure aurait ajouté une note qui ne mesure
+rien et gonfle le score global. Et les critères d'inclinaison
+(`body_line_angle_from_horizontal`, `torso_angle`) acceptent désormais un mode
+`maximum` : sur un front lever la cible est l'horizontale et s'en écarter des
+deux côtés est une faute, mais sur un dragon flag descendre plus bas n'est
+jamais une faute, c'est toute la difficulté.
 
 **Critères à seuil plutôt qu’à bande.** Le genou de la jambe libre du
 single leg front lever a d’abord été noté comme une bande (80° ± 40) : la
