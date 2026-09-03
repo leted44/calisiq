@@ -27,6 +27,7 @@ export const PROGRESSION_LABELS: Record<string, string> = {
   decline_push_up: "Pompes déclinées",
   box_pistol_squat: "Pistol squat sur boîte",
   pistol_squat: "Pistol squat",
+  handstand_push_up: "Handstand push-up",
 };
 
 // Critères effectivement recalibrés dans le code à partir de données

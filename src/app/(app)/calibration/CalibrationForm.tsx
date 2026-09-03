@@ -8,7 +8,22 @@ import {
   type PoseAnalysisResult,
 } from "@/lib/pose/runAnalysis";
 import { scoreAngles, globalScore } from "@/lib/pose/scoring";
-import { SCORING_GRID, type Progression } from "@/lib/pose/grid";
+import {
+  SCORING_GRID,
+  REP_SCORING_GRID,
+  isRepProgression,
+  type Progression,
+  type RepProgression,
+} from "@/lib/pose/grid";
+
+// Valeur réellement mesurée pour un critère de répétition, ou null si
+// l'exercice n'en est pas un.
+function repMeasure(
+  scores: { critere: string; valeurMesuree: number }[],
+  critere: string
+): number | null {
+  return scores.find((s) => s.critere === critere)?.valeurMesuree ?? null;
+}
 
 const VARIATIONS = [
   { value: "tuck_planche", label: "Tuck Planche", figure: "planche" },
@@ -16,7 +31,7 @@ const VARIATIONS = [
   { value: "straddle_planche", label: "Straddle Planche", figure: "planche" },
   { value: "full_planche", label: "Full Planche", figure: "planche" },
   { value: "handstand", label: "Handstand (statique)", figure: "handstand" },
-  { value: "handstand_push_up", label: "Handstand Push-up", figure: "handstand" },
+  { value: "handstand_push_up", label: "Handstand Push-up (répétitions)", figure: "handstand" },
   { value: "one_arm_handstand", label: "One Arm Handstand", figure: "handstand" },
   { value: "tuck_front_lever", label: "Tuck Front Lever", figure: "front_lever" },
   { value: "advanced_tuck_front_lever", label: "Advanced Tuck Front Lever", figure: "front_lever" },
@@ -331,6 +346,17 @@ export default function CalibrationForm() {
       straightest_knee_angle: result.summaryAngles.straightestKneeAngle,
       straightest_leg_hip_angle: result.summaryAngles.straightestLegHipAngle,
       bent_knee_angle: result.summaryAngles.bentKneeAngle,
+      // Mesures propres aux exercices à répétition, nulles sur un hold. Les
+      // colonnes d'angles ci-dessus restent renseignées mais sont
+      // inexploitables sur une série : elles portent la médiane sur la fenêtre
+      // de hold, or le coude y fait des allers-retours et sa médiane ne décrit
+      // aucune position réelle. Ce sont ces quatre-là qui servent à calibrer un
+      // mouvement dynamique, parce que ce sont elles que note REP_SCORING_GRID.
+      rep_count: result.repCount,
+      rep_lockout: repMeasure(result.scores, "rep_lockout"),
+      rep_peak: repMeasure(result.scores, "rep_peak"),
+      rep_hip_swing: repMeasure(result.scores, "rep_control"),
+      rep_tempo: repMeasure(result.scores, "rep_tempo"),
       user_rating: ratingValue,
       notes: notes || null,
       // En base la colonne n'accepte que 'video' ou 'photo' ; en interne
@@ -538,10 +564,83 @@ export default function CalibrationForm() {
             </p>
           )}
 
+          {/* Sur un exercice à répétition, les angles médians ci-dessous ne
+              veulent rien dire : le coude fait des allers-retours et sa
+              médiane ne décrit aucune position. Ce sont ces quatre mesures qui
+              servent à calibrer, et qui sont enregistrées avec l'échantillon. */}
+          {isRepProgression(variation) && (
+            <div className="space-y-2 rounded-xl border border-cyan-900/50 bg-cyan-500/5 p-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-cyan-300/80">
+                  Mesures de la série
+                </p>
+                <p className="text-[10px] uppercase tracking-wide text-slate-600">
+                  mesuré / cible
+                </p>
+              </div>
+              {(() => {
+                const grid = REP_SCORING_GRID[variation as RepProgression];
+                const rows = [
+                  { label: "Répétitions détectées", value: result.repCount, t: null, unit: "" },
+                  {
+                    label: "Extension (position tendue)",
+                    value: repMeasure(result.scores, "rep_lockout"),
+                    t: grid?.lockout,
+                    unit: "°",
+                  },
+                  {
+                    label: "Amplitude (position fléchie)",
+                    value: repMeasure(result.scores, "rep_peak"),
+                    t: grid?.peak,
+                    unit: "°",
+                  },
+                  {
+                    label: "Oscillation de hanche",
+                    value: repMeasure(result.scores, "rep_control"),
+                    t: grid?.hipSwing,
+                    unit: "°",
+                  },
+                  {
+                    label: "Régularité du tempo",
+                    value: repMeasure(result.scores, "rep_tempo"),
+                    t: grid?.tempo,
+                    unit: "%",
+                  },
+                ];
+                return (
+                  <div className="divide-y divide-slate-800/70">
+                    {rows.map((r) => (
+                      <div
+                        key={r.label}
+                        className="flex items-baseline justify-between gap-3 py-1.5"
+                      >
+                        <span className="text-sm text-slate-300">{r.label}</span>
+                        <span className="text-sm tabular-nums text-white">
+                          {r.value === null || r.value === undefined
+                            ? "—"
+                            : r.value.toFixed(r.unit === "" ? 0 : 1)}
+                          {r.unit}
+                          {r.t && (
+                            <span className="ml-1.5 text-xs text-slate-500">
+                              / {r.t.target}
+                              {r.unit}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900 p-4">
             <div className="flex items-baseline justify-between gap-3">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Angles mesurés
+                {isRepProgression(variation)
+                  ? "Angles médians (sans objet sur une série)"
+                  : "Angles mesurés"}
               </p>
               <p className="text-[10px] uppercase tracking-wide text-slate-600">
                 mesuré / cible

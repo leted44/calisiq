@@ -352,7 +352,8 @@ export type RepProgression =
   | "push_up"
   | "decline_push_up"
   | "box_pistol_squat"
-  | "pistol_squat";
+  | "pistol_squat"
+  | "handstand_push_up";
 
 export type AnyProgression = Progression | RepProgression;
 
@@ -498,6 +499,27 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     minRangeRatio: 0.6,
     lockout: { target: 170, tolerance: 25 },
     peak: { target: 55, tolerance: 45 },
+    tempo: { target: 65, tolerance: 45 },
+  },
+
+  // --- Handstand push-up ---
+  //
+  // Une pompe exécutée en équilibre sur les mains. Rangée ici et non dans
+  // SCORING_GRID malgré son appartenance à la famille handstand : c'est un
+  // mouvement à répétitions, sa qualité est dans la trajectoire et non dans
+  // une position tenue.
+  //
+  // L'oscillation de hanche est conservée et serrée : la triche classique du
+  // HSPU consiste à casser à la hanche pour raccourcir la course, et le corps
+  // doit rester gainé du bassin aux pieds pendant toute la descente.
+  handstand_push_up: {
+    driver: "elbowAngle",
+    extendedValue: 175,
+    flexedValue: 75,
+    minRangeRatio: 0.55,
+    lockout: { target: 172, tolerance: 25 },
+    peak: { target: 80, tolerance: 40 },
+    hipSwing: { target: 8, tolerance: 20 },
     tempo: { target: 65, tolerance: 45 },
   },
 };

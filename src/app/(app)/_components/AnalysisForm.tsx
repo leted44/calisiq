@@ -67,7 +67,10 @@ type Figure =
   | "pompes"
   | "pistol";
 type ExerciseType = "hold" | "press" | "push_up";
-type HandstandVariation = "handstand_push_up" | "one_arm_handstand";
+// handstand_push_up en est sorti : c'est désormais une vraie progression, du
+// côté des exercices à répétition. Ne reste ici que ce qui n'a pas encore de
+// notation.
+type HandstandVariation = "one_arm_handstand";
 // one_leg_front_lever a rejoint Progression (grid.ts) le 2026-09-01, il
 // n'est donc plus un simple libellé sans scoring.
 type FrontLeverPlaceholderVariation = "one_arm_front_lever";
@@ -223,7 +226,13 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       available: true,
       image: "/figures/handstand.png",
     },
-    { value: "handstand_push_up", label: "Handstand Push-up", cue: "Flexion complète des bras en équilibre", Icon: HandstandPushUpIcon, available: false },
+    {
+      value: "handstand_push_up",
+      label: "Handstand Push-up",
+      cue: "Flexion complète des bras en équilibre, corps gainé",
+      Icon: HandstandPushUpIcon,
+      available: true,
+    },
     { value: "one_arm_handstand", label: "One Arm Handstand", cue: "Équilibre tenu sur un seul bras", Icon: OneArmHandstandIcon, available: false },
   ],
   front_lever: [

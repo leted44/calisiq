@@ -417,6 +417,15 @@ les deux ne sont jamais renseignés ensemble, ce qui permet à l'historique
 d'afficher la bonne mesure sans connaître le type d'exercice. L'export vidéo
 remplace le chrono par un compteur qui s'incrémente au fil de la lecture.
 
+**Leur calibration passe par des colonnes dédiées.** Les colonnes d'angles de
+`calibration_samples` stockent la médiane sur la fenêtre de hold : sur une
+série, le coude fait des allers-retours entre 45 et 175 degrés et cette médiane
+ne décrit aucune position réelle. Cinq colonnes ont donc été ajoutées
+(`rep_lockout`, `rep_peak`, `rep_hip_swing`, `rep_tempo`, `rep_count`), qui
+portent exactement ce que note `REP_SCORING_GRID`. La page de calibration
+affiche ces mesures dans un bloc distinct et signale que les angles médians
+sont sans objet, plutôt que de laisser croire à une lecture aberrante.
+
 Le rescoring depuis les valeurs stockées ne fonctionne pas sur ces exercices :
 le contrôle est un écart type sur toute la série, le tempo un pourcentage,
 aucun des deux n'est un angle isolé. Les recalibrer demandera de réanalyser la
