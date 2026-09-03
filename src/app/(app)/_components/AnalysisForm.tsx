@@ -410,6 +410,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Mains surélevées, corps incliné",
       Icon: PushUpFigureIcon,
       available: true,
+      image: "/figures/incline-push-up.png",
     },
     {
       value: "push_up",
@@ -425,6 +426,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Pieds surélevés, charge reportée sur les épaules",
       Icon: PushUpFigureIcon,
       available: true,
+      image: "/figures/decline-push-up.png",
     },
   ],
   pistol: [
@@ -434,6 +436,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Descente jusqu'à un appui, jambe libre tendue devant",
       Icon: PistolFigureIcon,
       available: true,
+      image: "/figures/box-pistol-squat.png",
     },
     {
       value: "pistol_squat",
