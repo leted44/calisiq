@@ -240,8 +240,16 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Flexion complète des bras en équilibre, corps gainé",
       Icon: HandstandPushUpIcon,
       available: true,
+      image: "/figures/handstand-push-up.png",
     },
-    { value: "one_arm_handstand", label: "One Arm Handstand", cue: "Équilibre tenu sur un seul bras", Icon: OneArmHandstandIcon, available: false },
+    {
+      value: "one_arm_handstand",
+      label: "One Arm Handstand",
+      cue: "Équilibre tenu sur un seul bras",
+      Icon: OneArmHandstandIcon,
+      available: false,
+      image: "/figures/one-arm-handstand.png",
+    },
   ],
   front_lever: [
     {
@@ -276,6 +284,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Jambes tendues et écartées",
       Icon: StraddleFrontLeverIcon,
       available: true,
+      image: "/figures/straddle-front-lever.png",
     },
     {
       value: "full_front_lever",
@@ -291,6 +300,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Suspendu par un seul bras",
       Icon: OneArmFrontLeverIcon,
       available: false,
+      image: "/figures/one-arm-front-lever.png",
     },
   ],
   // Dragon flag. Seuls trois paliers : contrairement à la planche ou au front
@@ -380,6 +390,7 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       cue: "Mains derrière soi sur un banc, pieds au sol",
       Icon: DipFigureIcon,
       available: true,
+      image: "/figures/bench-dip.png",
     },
     {
       value: "parallel_dip",
