@@ -246,6 +246,109 @@ export function globalScore(scores: CriterionScore[]): number {
 //                      mieux c'est, et zéro est parfait.
 //   tempo    minimum — au-delà d'une certaine régularité, plus régulier
 //                      n'apporte rien.
+/**
+ * Mesures brutes d'une série, telles que le moteur les calcule.
+ *
+ * Extraites en type à part pour que la notation soit rejouable depuis des
+ * valeurs déjà enregistrées : la page de calibration en a besoin pour
+ * comparer la note de la grille aux notes humaines sans réanalyser la vidéo.
+ */
+export type RepMeasures = {
+  lockout: number;
+  peak: number;
+  hipSwing: number | null;
+  form: number | null;
+  tempo: number;
+};
+
+/**
+ * Note un jeu de mesures de série.
+ *
+ * Les modes sont structurels et non configurables, parce qu'ils découlent de
+ * la nature de chaque critère :
+ *
+ *   lockout  minimum — on ne peut pas dépasser l'extension complète,
+ *                      s'arrêter avant est la faute.
+ *   peak     maximum — descendre plus bas que demandé n'est jamais une faute.
+ *   control  maximum — l'oscillation de hanche mesure l'élan, zéro est parfait.
+ *   form     bande   — la tenue du corps s'écarte de sa cible dans les deux sens.
+ *   tempo    minimum — au-delà d'une certaine régularité, plus régulier
+ *                      n'apporte rien.
+ */
+export function scoreRepMeasures(
+  measures: RepMeasures,
+  thresholds: RepThresholds
+): CriterionScore[] {
+  const flexedIsLow = thresholds.flexedValue < thresholds.extendedValue;
+
+  const scores: CriterionScore[] = [
+    {
+      critere: "rep_lockout",
+      // Sur un mouvement où la position tendue est l'angle haut (coude,
+      // genou), le verrouillage est un minimum. Si l'orientation s'inversait,
+      // la comparaison doit s'inverser avec elle.
+      score: flexedIsLow
+        ? scoreFromMinimum(measures.lockout, thresholds.lockout.target, thresholds.lockout.tolerance)
+        : scoreFromMaximum(measures.lockout, thresholds.lockout.target, thresholds.lockout.tolerance),
+      valeurMesuree: measures.lockout,
+      valeurCible: thresholds.lockout.target,
+    },
+    {
+      critere: "rep_peak",
+      score: flexedIsLow
+        ? scoreFromMaximum(measures.peak, thresholds.peak.target, thresholds.peak.tolerance)
+        : scoreFromMinimum(measures.peak, thresholds.peak.target, thresholds.peak.tolerance),
+      valeurMesuree: measures.peak,
+      valeurCible: thresholds.peak.target,
+    },
+  ];
+
+  if (thresholds.hipSwing && measures.hipSwing !== null) {
+    scores.push({
+      critere: "rep_control",
+      score: scoreFromMaximum(
+        measures.hipSwing,
+        thresholds.hipSwing.target,
+        thresholds.hipSwing.tolerance
+      ),
+      valeurMesuree: measures.hipSwing,
+      valeurCible: thresholds.hipSwing.target,
+    });
+  }
+
+  if (thresholds.form && measures.form !== null) {
+    // Tenue du corps pendant le mouvement, à distinguer du contrôle : le
+    // contrôle voit l'élan (les variations), la forme voit la posture (la
+    // moyenne). Une série entièrement cassée à la hanche a une oscillation
+    // faible et passerait donc pour maîtrisée sans ce critère.
+    scores.push({
+      critere: "rep_form",
+      score: scoreFromThreshold(
+        measures.form,
+        thresholds.form.target,
+        thresholds.form.tolerance
+      ),
+      valeurMesuree: measures.form,
+      valeurCible: thresholds.form.target,
+    });
+  }
+
+  scores.push({
+    critere: "rep_tempo",
+    score: scoreFromMinimum(
+      measures.tempo,
+      thresholds.tempo.target,
+      thresholds.tempo.tolerance
+    ),
+    valeurMesuree: measures.tempo,
+    valeurCible: thresholds.tempo.target,
+  });
+
+  return scores;
+}
+
+// Calcule les mesures d'une série puis les note. La séparation entre les deux
+// permet de rejouer la notation sur des mesures déjà enregistrées.
 export function scoreReps({
   angles,
   reps,
@@ -264,76 +367,15 @@ export function scoreReps({
     reps.reduce((sum, rep) => sum + (angles[pick(rep)]?.[driver] ?? 0), 0) /
     reps.length;
 
-  const flexedIsLow = thresholds.flexedValue < thresholds.extendedValue;
-  const lockoutValue = meanAt((rep) => rep.extendedIndex);
-  const peakValue = meanAt((rep) => rep.flexedIndex);
-
-  const scores: CriterionScore[] = [
+  return scoreRepMeasures(
     {
-      critere: "rep_lockout",
-      // Sur un mouvement où la position tendue est l'angle haut (coude, genou),
-      // le verrouillage est un minimum. Si l'orientation s'inversait, la
-      // comparaison doit s'inverser avec elle.
-      score: flexedIsLow
-        ? scoreFromMinimum(lockoutValue, thresholds.lockout.target, thresholds.lockout.tolerance)
-        : scoreFromMaximum(lockoutValue, thresholds.lockout.target, thresholds.lockout.tolerance),
-      valeurMesuree: lockoutValue,
-      valeurCible: thresholds.lockout.target,
+      lockout: meanAt((rep) => rep.extendedIndex),
+      peak: meanAt((rep) => rep.flexedIndex),
+      hipSwing: thresholds.hipSwing ? hipSwing(angles, reps) : null,
+      form: thresholds.form ? meanHipAngle(angles, reps) : null,
+      // Exprimé en pourcentage pour rester lisible à côté d'angles en degrés.
+      tempo: tempoRegularity(reps) * 100,
     },
-    {
-      critere: "rep_peak",
-      score: flexedIsLow
-        ? scoreFromMaximum(peakValue, thresholds.peak.target, thresholds.peak.tolerance)
-        : scoreFromMinimum(peakValue, thresholds.peak.target, thresholds.peak.tolerance),
-      valeurMesuree: peakValue,
-      valeurCible: thresholds.peak.target,
-    },
-  ];
-
-  if (thresholds.hipSwing) {
-    const swing = hipSwing(angles, reps);
-    scores.push({
-      critere: "rep_control",
-      score: scoreFromMaximum(
-        swing,
-        thresholds.hipSwing.target,
-        thresholds.hipSwing.tolerance
-      ),
-      valeurMesuree: swing,
-      valeurCible: thresholds.hipSwing.target,
-    });
-  }
-
-  if (thresholds.form) {
-    // Tenue du corps pendant le mouvement, à distinguer du contrôle : le
-    // contrôle voit l'élan (les variations), la forme voit la posture (la
-    // moyenne). Une série entièrement cassée à la hanche a une oscillation
-    // faible et passerait donc pour maîtrisée sans ce critère.
-    const posture = meanHipAngle(angles, reps);
-    scores.push({
-      critere: "rep_form",
-      score: scoreFromThreshold(
-        posture,
-        thresholds.form.target,
-        thresholds.form.tolerance
-      ),
-      valeurMesuree: posture,
-      valeurCible: thresholds.form.target,
-    });
-  }
-
-  // Exprimé en pourcentage pour rester lisible à côté d'angles en degrés.
-  const regularity = tempoRegularity(reps) * 100;
-  scores.push({
-    critere: "rep_tempo",
-    score: scoreFromMinimum(
-      regularity,
-      thresholds.tempo.target,
-      thresholds.tempo.tolerance
-    ),
-    valeurMesuree: regularity,
-    valeurCible: thresholds.tempo.target,
-  });
-
-  return scores;
+    thresholds
+  );
 }

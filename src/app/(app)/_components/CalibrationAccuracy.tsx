@@ -4,8 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TrashIcon } from "@/components/icons";
-import { scoreAngles, globalScore } from "@/lib/pose/scoring";
-import { SCORING_GRID, type Progression } from "@/lib/pose/grid";
+import { scoreAngles, globalScore, scoreRepMeasures } from "@/lib/pose/scoring";
+import {
+  SCORING_GRID,
+  REP_SCORING_GRID,
+  isRepProgression,
+  type Progression,
+} from "@/lib/pose/grid";
 import { PROGRESSION_LABELS } from "@/lib/pose/report";
 import type { PoseAngles } from "@/lib/pose/angles";
 
@@ -27,6 +32,15 @@ export type CalibrationSampleRow = {
   straightest_knee_angle: number | null;
   straightest_leg_hip_angle: number | null;
   bent_knee_angle: number | null;
+  // Mesures propres aux exercices à répétition. Null sur un hold, où les
+  // colonnes d'angles ci-dessus prennent le relais : les deux jeux ne sont
+  // jamais renseignés ensemble.
+  rep_count: number | null;
+  rep_lockout: number | null;
+  rep_peak: number | null;
+  rep_hip_swing: number | null;
+  rep_form: number | null;
+  rep_tempo: number | null;
 };
 
 type SampleComparison = {
@@ -67,6 +81,27 @@ type Comparison = {
 // calibration, et ça ne demande aucune re-analyse de vidéo puisque les
 // angles sont stockés.
 function computedScore(sample: CalibrationSampleRow): number | null {
+  // Exercice à répétition : la note se rejoue depuis les mesures de série
+  // enregistrées, pas depuis les angles. Les colonnes d'angles existent
+  // aussi sur ces échantillons mais portent la médiane sur la fenêtre de
+  // hold, qui ne décrit aucune position réelle quand le coude fait des
+  // allers-retours. Les noter avec scoreAngles produirait un chiffre faux.
+  if (isRepProgression(sample.variation)) {
+    if (sample.rep_lockout === null || sample.rep_peak === null) return null;
+    const scores = scoreRepMeasures(
+      {
+        lockout: sample.rep_lockout,
+        peak: sample.rep_peak,
+        hipSwing: sample.rep_hip_swing,
+        form: sample.rep_form,
+        tempo: sample.rep_tempo ?? 0,
+      },
+      REP_SCORING_GRID[sample.variation]
+    ).filter((s) => Number.isFinite(s.score));
+    if (scores.length === 0) return null;
+    return globalScore(scores);
+  }
+
   const progression = sample.variation as Progression;
   if (!SCORING_GRID[progression]) return null;
 

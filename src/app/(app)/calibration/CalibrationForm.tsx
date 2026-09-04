@@ -822,16 +822,29 @@ export default function CalibrationForm() {
                 // Note que la grille ACTUELLE donnerait à cette mesure
                 // précise, affichée avant même que tu notes toi-même : la
                 // comparaison se fait dans le même geste, sans attendre le
-                // bloc récapitulatif de la page. Absent pour les variations
-                // sans grille (handstand_push_up, one_arm_handstand — pas
-                // encore implémentées).
-                const grid = SCORING_GRID[variation as Progression];
-                if (!grid) return null;
-                const scores = scoreAngles(
-                  result.summaryAngles,
-                  variation as Progression
-                );
-                const score = globalScore(scores);
+                // bloc récapitulatif de la page.
+                //
+                // Deux provenances selon le type d'exercice. Sur un hold,
+                // l'analyse tourne sans grille pour ne pas biaiser les angles
+                // collectés : la note est donc recalculée ici à partir des
+                // angles mesurés. Sur une série, l'analyse a déjà reçu la
+                // progression — le découpage en répétitions l'exige — et a
+                // donc déjà produit la note ; la recalculer ici avec
+                // scoreAngles n'aurait aucun sens, cette fonction lit la
+                // grille des holds où ces exercices n'existent pas. C'est
+                // exactement ce qui faisait disparaître le bloc sur le
+                // handstand push-up.
+                const isRep = isRepProgression(variation);
+                const score = isRep
+                  ? result.globalScoreValue
+                  : (() => {
+                      const grid = SCORING_GRID[variation as Progression];
+                      if (!grid) return null;
+                      return globalScore(
+                        scoreAngles(result.summaryAngles, variation as Progression)
+                      );
+                    })();
+                if (score === null) return null;
                 return (
                   <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 p-4">
                     <div>
