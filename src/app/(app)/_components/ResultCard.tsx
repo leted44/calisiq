@@ -12,7 +12,6 @@ import {
   CRITERE_DEFINITIONS,
   type ScoreTier,
 } from "@/lib/pose/report";
-import ScoreRing from "@/components/ScoreRing";
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   rep_lockout: "Extension",
@@ -34,7 +33,7 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
 };
 
 // Titres plus descriptifs pour la vue "Détail par catégorie" — les labels
-// courts ci-dessus restent utilisés sous les ScoreRing du résumé.
+// courts ci-dessus restent utilisés dans les barres du résumé.
 const CRITERE_DETAIL_TITLES: Record<CriterionScore["critere"], string> = {
   rep_lockout: "Extension complète",
   rep_peak: "Amplitude du mouvement",
@@ -128,33 +127,84 @@ export default function ResultCard({
 }) {
   const [view, setView] = useState<"summary" | "details">("summary");
   const globalTier = tierFor(globalScoreValue);
+  // Critères classés du plus faible au plus fort. Cinq anneaux de même taille
+  // ne hiérarchisaient rien : l'œil ne savait pas où se poser et le critère à
+  // corriger se noyait au milieu des autres. Classés, le premier de la liste
+  // est celui sur lequel il faut travailler.
+  const ranked = [...scores].sort((a, b) => a.score - b.score);
+  const weakest = ranked[0];
 
   return (
-    <div className="space-y-5 rounded-xl border border-slate-800 bg-slate-900 p-4">
-      <div className="flex items-center gap-4">
-        {representativeFrame && (
+    <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-4">
+      {/* Bandeau de verdict.
+          L'image de la figure passe en fond plein cadre et le score devient le
+          plus gros élément de l'écran : c'est ce chiffre qu'on retient, qu'on
+          capture et qu'on partage. L'ancienne disposition mettait une vignette
+          de 96 px et un score de même taille que le reste du texte, ce qui ne
+          donnait aucun point d'entrée au regard. */}
+      <div className="relative overflow-hidden rounded-xl border border-slate-800">
+        {representativeFrame ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={representativeFrame}
-            alt="Frame représentative du hold"
-            className="h-24 w-24 rounded-lg object-cover"
+            alt=""
+            className="h-44 w-full object-cover"
           />
+        ) : (
+          <div className="h-44 w-full bg-gradient-to-br from-slate-800 to-slate-900" />
         )}
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Score global
-          </p>
-          <div className="flex items-baseline gap-2">
-            <p className={`text-3xl font-bold ${scoreTextColor(globalScoreValue)}`}>
-              {globalScoreValue.toFixed(1)}
-              <span className="text-base font-normal text-slate-600">/10</span>
+
+        {/* Voile dégradé : sans lui le texte se perd sur une image claire. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-950/10"
+        />
+        {/* Halo teinté par le niveau : le verdict se lit avant même le chiffre. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-20 left-4 h-48 w-48 rounded-full blur-3xl"
+          style={{ backgroundColor: TIER_HEX[globalTier], opacity: 0.2 }}
+        />
+
+        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Score global
             </p>
+            <p className="mt-0.5 flex items-baseline gap-1">
+              <span
+                className="text-5xl font-bold leading-none tabular-nums"
+                style={{ color: TIER_HEX[globalTier] }}
+              >
+                {globalScoreValue.toFixed(1)}
+              </span>
+              <span className="text-lg font-medium text-slate-500">/10</span>
+            </p>
+            <span
+              className={`mt-2 inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${TIER_COLORS[globalTier]}`}
+            >
+              {GLOBAL_TIER_LABELS[globalTier]}
+            </span>
           </div>
-          <span
-            className={`mt-1.5 inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold ${TIER_COLORS[globalTier]}`}
-          >
-            {GLOBAL_TIER_LABELS[globalTier]}
-          </span>
+
+          {/* Mesure secondaire : répétitions ou durée de hold, jamais les deux.
+              Encadrée à part pour ne pas entrer en concurrence avec le score. */}
+          {(repCount !== undefined && repCount !== null) ||
+          (holdDurationSeconds !== undefined && holdDurationSeconds !== null) ? (
+            <div className="shrink-0 rounded-lg border border-white/10 bg-slate-950/70 px-3.5 py-2 text-center backdrop-blur-sm">
+              <p className="text-2xl font-bold leading-none tabular-nums text-white">
+                {repCount !== undefined && repCount !== null
+                  ? repCount
+                  : holdDurationSeconds!.toFixed(1)}
+                {repCount === undefined || repCount === null ? (
+                  <span className="text-sm font-medium text-slate-400">s</span>
+                ) : null}
+              </p>
+              <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                {repCount !== undefined && repCount !== null ? "Répétitions" : "Hold"}
+              </p>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -199,18 +249,53 @@ export default function ResultCard({
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-3">
-            {scores.map((s) => (
-              <ScoreRing key={s.critere} value={s.score} label={CRITERE_LABELS[s.critere]} />
-            ))}
-            {holdDurationSeconds !== undefined && holdDurationSeconds !== null && (
-              <ScoreRing
-                value={Number(holdDurationSeconds.toFixed(1))}
-                label="Hold"
-                suffix="s"
-              />
-            )}
+          {/* Le point faible, nommé. C'est la valeur de l'app : pas « 7,4 sur
+              10 » mais « ce sont tes hanches qui coûtent des points ». */}
+          {weakest && (
+            <div className="rounded-xl border border-slate-800 bg-slate-950/50 px-3.5 py-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+                  Point faible
+                </p>
+                <p
+                  className="text-sm font-bold tabular-nums"
+                  style={{ color: TIER_HEX[tierFor(weakest.score)] }}
+                >
+                  {weakest.score.toFixed(1)}
+                  <span className="text-xs font-normal text-slate-600">/10</span>
+                </p>
+              </div>
+              <p className="mt-0.5 text-[15px] font-semibold text-white">
+                {CRITERE_DETAIL_TITLES[weakest.critere]}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                {describeCriterion(weakest.critere, weakest.score, figure)}
+              </p>
+            </div>
+          )}
 
+          {/* Tous les critères, du plus faible au plus fort. Des barres et non
+              des anneaux : à cinq critères, on compare des longueurs d'un seul
+              regard là où cinq cercles demandent de lire cinq chiffres. C'est
+              aussi la forme qu'utilise déjà la vidéo exportée, donc l'app et ce
+              qu'on partage racontent la même chose. */}
+          <div className="space-y-2.5">
+            {ranked.map((s) => (
+              <div key={s.critere} className="flex items-center gap-3">
+                <span className="w-[92px] shrink-0 truncate text-xs text-slate-400">
+                  {CRITERE_LABELS[s.critere]}
+                </span>
+                <div className="flex-1">
+                  <ScoreBar value={s.score} color={TIER_HEX[tierFor(s.score)]} />
+                </div>
+                <span
+                  className="w-9 shrink-0 text-right text-xs font-semibold tabular-nums"
+                  style={{ color: TIER_HEX[tierFor(s.score)] }}
+                >
+                  {s.score.toFixed(1)}
+                </span>
+              </div>
+            ))}
           </div>
 
           {recommendations && recommendations.length > 0 && (

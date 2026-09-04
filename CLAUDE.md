@@ -169,6 +169,28 @@ mentait sur le rythme.
 
 ## Décisions structurantes prises en cours de route
 
+**La carte de résultat est hiérarchisée, pas égalitaire.** Elle affichait le
+score global dans la même taille que le reste du texte et tous les critères
+dans des anneaux identiques. À cinq critères, cinq cercles de même taille ne
+hiérarchisent rien : l'œil n'a pas de point d'entrée et le critère à corriger
+se noie au milieu des autres.
+
+Trois niveaux désormais. Le **score global** en bandeau plein cadre sur l'image
+de la figure, avec un halo teinté par le niveau : c'est le chiffre qu'on
+retient et qu'on capture. Le **point faible nommé** juste en dessous, avec son
+score et sa description — c'est la valeur réelle de l'app, pas « 7,4 sur 10 »
+mais « ce sont tes hanches qui coûtent des points ». Puis **tous les critères
+en barres, classés du plus faible au plus fort**.
+
+Des barres et non des anneaux, pour deux raisons. On compare des longueurs d'un
+seul regard là où cinq cercles obligent à lire cinq chiffres. Et c'est la forme
+qu'utilise déjà le HUD de la vidéo exportée : l'app et ce qu'on partage
+racontent enfin la même chose.
+
+Le composant `ScoreRing` a été supprimé, il n'avait plus d'usage.
+
+
+
 **La racine est une page publique, l'app vit sur `/analyser`.** Jusque-là
 toutes les routes étaient derrière l'authentification et `/` renvoyait sur
 l'écran de connexion : un visiteur venu d'Instagram tombait sur un formulaire,
