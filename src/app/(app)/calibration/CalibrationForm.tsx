@@ -296,7 +296,22 @@ export default function CalibrationForm() {
       const analysisResult = await runPoseAnalysis({
         video: previewVideoRef.current,
         canvas: canvasRef.current,
-        progression: null,
+        // Les holds sont mesurés sans grille (`null`), pour que les angles
+        // collectés ne soient pas influencés par les seuils qu'on cherche
+        // justement à régler.
+        //
+        // Un exercice à répétition ne peut pas fonctionner ainsi : ses
+        // mesures — extension, amplitude, oscillation, tenue, tempo —
+        // n'existent qu'une fois la série découpée en répétitions, et ce
+        // découpage a besoin de savoir quel angle pilote le mouvement et
+        // entre quelles valeurs il oscille. Sans la progression, la branche
+        // dynamique n'était jamais atteinte et la page n'affichait que des
+        // tirets.
+        //
+        // Les mesures restent malgré tout non biaisées : le découpage dépend
+        // des paramètres de détection (angle pilote, amplitude attendue), pas
+        // des cibles de notation qu'on est en train de calibrer.
+        progression: isRepProgression(variation) ? variation : null,
         rangeStart: trimStart,
         rangeEnd: trimEnd,
         onProgress: setProgressPercent,
