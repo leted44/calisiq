@@ -236,6 +236,16 @@ jambes), `straightestKneeAngle` et `straightestLegHipAngle` (jambe la plus
 tendue, celle qui porte la difficulté). Toute future figure asymétrique
 doit être notée sur ces critères, pas sur les moyennes.
 
+**Tout ce qui est dessiné sur la vidéo exportée doit être proportionnel à la
+largeur de l'image.** Le squelette était tracé en pixels absolus, 3 px de trait
+et 4 px de point. Tant que l'export était plafonné à 1080 le rendu était juste,
+mais depuis qu'il sort en résolution native le même trait sur une image 4K
+devient deux fois plus fin à l'écran, et le squelette cesse d'être lisible une
+fois republié sur les réseaux — ce qui est précisément la raison d'être de la
+vidéo annotée. Les valeurs sont désormais multipliées par `canvas.width / 1080`,
+calibrées sur ce qui était rendu avant. Le HUD, lui, utilisait déjà un facteur
+d'échelle : c'est le squelette qui y avait échappé.
+
 **L'export sort en résolution native, le stockage reste en 1080p.** Ce sont
 deux chemins distincts qu'il ne faut pas confondre. Le fichier téléchargé
 avec le squelette suit désormais la résolution de la vidéo source, plafonnée

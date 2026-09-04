@@ -1,5 +1,5 @@
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
-import { SCORING_GRID, type Progression } from "./grid";
+import { SCORING_GRID, type AnyProgression } from "./grid";
 
 // Indices MediaPipe Pose utilisés ici (mêmes que angles.ts).
 const LEFT_SHOULDER = 11;
@@ -83,10 +83,15 @@ function placeJoint(
 // changent. Un pantin générique serait inutilisable comme repère visuel.
 export function buildTargetPose(
   landmarks: NormalizedLandmark[],
-  progression: Progression
+  progression: AnyProgression
 ): TargetPose | null {
   if (landmarks.length < 29) return null;
-  const grid = SCORING_GRID[progression];
+  const grid = SCORING_GRID[progression as keyof typeof SCORING_GRID];
+  // Un exercice à répétitions n'a pas de grille d'angles tenus : il vit dans
+  // REP_SCORING_GRID, dont les seuils décrivent une trajectoire et non une
+  // position. Aucun fantôme de « position idéale » n'a donc de sens ici, et
+  // sans ce garde-fou la lecture de `grid` plantait tout l'export.
+  if (!grid) return null;
 
   const shoulder = midpoint(landmarks[LEFT_SHOULDER], landmarks[RIGHT_SHOULDER]);
   const hip = midpoint(landmarks[LEFT_HIP], landmarks[RIGHT_HIP]);

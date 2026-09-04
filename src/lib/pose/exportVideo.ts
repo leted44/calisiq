@@ -10,7 +10,7 @@ import { createVideoWriter } from "@/lib/video/writer";
 import { computeAngles } from "./angles";
 import { drawAngleLabels } from "./canvasHud";
 import { buildTargetPose, type TargetPose } from "./targetPose";
-import type { Progression } from "./grid";
+import { isRepProgression, type AnyProgression, type Progression } from "./grid";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -818,7 +818,7 @@ export async function recordAnnotatedVideo({
   scores: CriterionScore[];
   // Nécessaire pour recalculer un score par frame (voir plus bas) : les
   // cibles/tolérances par critère dépendent de la progression.
-  progression: Progression;
+  progression: AnyProgression;
   // Landmarks déjà calculés pendant l'analyse (un par frame échantillonnée
   // dans la plage rangeStart-rangeEnd) — réutilisés ici par recherche
   // proportionnelle plutôt que recalculés, pour ne pas faire tourner
@@ -848,6 +848,11 @@ export async function recordAnnotatedVideo({
   forceLegacyEncoder?: boolean;
   onProgress?: (percent: number) => void;
 }): Promise<{ blob: Blob; writesCorrectDuration: boolean }> {
+  // Un exercice à répétitions n'a pas de grille d'angles tenus : scoreAngles
+  // et buildTargetPose y liraient une grille inexistante et feraient planter
+  // tout l'export. Les scores passés en paramètre, eux, sont déjà les bons —
+  // ils viennent de scoreReps, calculé sur la série entière.
+  const isRepExercise = isRepProgression(progression);
   const hudHoldStart = holdStartSeconds ?? rangeStart;
   const hudHoldEnd = holdEndSeconds ?? rangeEnd;
   const landmarker = landmarksFrames ? null : await getLandmarker();
@@ -949,18 +954,31 @@ export async function recordAnnotatedVideo({
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       if (landmarks) {
         const liveAngles = computeAngles(landmarks);
-        drawingUtils.drawLandmarks(landmarks, { radius: 4, color: "#22d3ee" });
+        // Épaisseur proportionnelle à la largeur de l'image, calibrée sur
+        // 1080 px. Elle était fixée en pixels absolus : tant que l'export
+        // était plafonné à 1080 le rendu était juste, mais depuis qu'il sort
+        // en résolution native un trait de 3 px sur une image 4K devenait
+        // deux fois plus fin à l'écran. Le squelette doit rester lisible une
+        // fois republié, c'est tout l'intérêt de la vidéo annotée.
+        const skeletonScale = canvas.width / 1080;
+        drawingUtils.drawLandmarks(landmarks, {
+          radius: 4 * skeletonScale,
+          color: "#22d3ee",
+        });
         drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
           color: "#22d3ee",
-          lineWidth: 3,
+          lineWidth: 3 * skeletonScale,
         });
         drawAngleLabels(ctx, canvas, landmarks, liveAngles);
 
         // Score recalculé à partir de la pose de cette frame précise tant
         // que le hold est en cours : c'est ce qui fait évoluer les barres
         // par critère en direct pendant la figure plutôt qu'un chiffre figé.
-        if (mediaTime < hudHoldEnd) {
-          liveScores = scoreAngles(liveAngles, progression);
+        // Sur une série, la note se calcule sur l'ensemble des répétitions et
+        // non image par image : on garde donc celle du rapport, qui ne bouge
+        // pas pendant la lecture.
+        if (!isRepExercise && mediaTime < hudHoldEnd) {
+          liveScores = scoreAngles(liveAngles, progression as Progression);
           liveGlobalScoreValue = globalScore(liveScores);
         }
       }
@@ -1024,9 +1042,14 @@ export async function recordAnnotatedVideo({
     for (let i = 0; i < total; i++) {
       const t = timeAt(i);
       if (t < hudHoldStart || t > hudHoldEnd) continue;
-      const frameGlobal = globalScore(
-        scoreAngles(computeAngles(landmarksFrames[i]), progression)
-      );
+      // Sur une série, le score par image n'existe pas : aucune image n'est
+      // « la bonne position », la qualité est dans le mouvement. On prend
+      // celle du milieu de la plage, qui tombe au cœur de la série.
+      const frameGlobal = isRepExercise
+        ? -Math.abs(i - total / 2)
+        : globalScore(
+            scoreAngles(computeAngles(landmarksFrames[i]), progression as Progression)
+          );
       if (frameGlobal > bestGlobal) {
         bestGlobal = frameGlobal;
         bestIndex = i;
@@ -1075,7 +1098,7 @@ export async function recordAnnotatedVideo({
             // au fantôme et aux anneaux du point faible, pas au tracé complet.
             drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
               color: "rgba(34,211,238,0.35)",
-              lineWidth: 2,
+              lineWidth: 2 * (canvas.width / 1080),
             });
 
             // Fantôme de la position idéale : l'écart entre le tracé vert
