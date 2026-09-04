@@ -426,12 +426,21 @@ une bande morte de 40 % qui empêche un signal tremblant de produire de fausses
 répétitions. `REP_SCORING_GRID` porte les seuils, séparée de `SCORING_GRID`
 parce que les deux n'ont pas les mêmes champs.
 
-**Quatre critères communs à tous les mouvements**, seuls les seuils changent :
+**Cinq critères communs à tous les mouvements**, seuls les seuils changent :
 extension atteinte en position tendue (seuil minimum), amplitude atteinte en
 position fléchie (seuil maximum), oscillation de hanche qui mesure l'élan
-(seuil maximum), et régularité du tempo (seuil minimum). Les modes sont
-structurels et non configurables : on ne peut pas dépasser l'extension
-complète, descendre plus bas que demandé n'est jamais une faute.
+(seuil maximum), tenue du corps (bande), et régularité du tempo (seuil
+minimum). Les modes sont structurels et non configurables : on ne peut pas
+dépasser l'extension complète, descendre plus bas que demandé n'est jamais une
+faute.
+
+**Contrôle et forme ne mesurent pas la même chose, et une seule ne suffit
+pas.** Le contrôle est l'écart type de l'angle de hanche, la forme en est la
+moyenne. Quelqu'un qui reste cassé à la hanche du début à la fin d'une série a
+une oscillation faible, donc un excellent score de contrôle, alors que sa
+position est mauvaise sur toutes les répétitions. Le contrôle voit l'élan, la
+forme voit la posture. C'est ce critère qui manquait au handstand push-up, où
+casser à la hanche pour raccourcir la course est la triche classique.
 
 L'oscillation de hanche est **absente des mouvements de jambes** : dans un
 squat la hanche se ferme et s'ouvre par construction, son écart type mesurerait

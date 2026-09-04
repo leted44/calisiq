@@ -258,3 +258,25 @@ export const REP_EXERCISES: Record<string, RepExerciseConfig> = {
     minRangeRatio: 0.6,
   },
 };
+
+/**
+ * Angle de hanche moyen sur l'ensemble des répétitions.
+ *
+ * À ne pas confondre avec `hipSwing`, qui en mesure l'écart type. Les deux
+ * décrivent des fautes différentes et une seule ne suffit pas : quelqu'un qui
+ * reste cassé à la hanche pendant toute la série a une oscillation faible,
+ * donc un bon score de contrôle, alors que sa position est mauvaise du début
+ * à la fin. C'est cette moyenne qui le voit.
+ */
+export function meanHipAngle(angles: PoseAngles[], reps: Rep[]): number {
+  if (reps.length === 0) return 0;
+  let sum = 0;
+  let count = 0;
+  for (const rep of reps) {
+    for (let i = rep.start; i <= rep.end && i < angles.length; i++) {
+      sum += angles[i].hipAngle;
+      count++;
+    }
+  }
+  return count > 0 ? sum / count : 0;
+}

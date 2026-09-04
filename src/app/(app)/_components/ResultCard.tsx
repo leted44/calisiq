@@ -18,6 +18,7 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   rep_lockout: "Extension",
   rep_peak: "Amplitude",
   rep_control: "Contrôle",
+  rep_form: "Forme",
   rep_tempo: "Tempo",
   shoulder_protraction: "Épaules",
   shoulder_flexion: "Épaules",
@@ -38,6 +39,7 @@ const CRITERE_DETAIL_TITLES: Record<CriterionScore["critere"], string> = {
   rep_lockout: "Extension complète",
   rep_peak: "Amplitude du mouvement",
   rep_control: "Contrôle du corps",
+  rep_form: "Tenue du corps",
   rep_tempo: "Régularité du tempo",
   shoulder_protraction: "Protraction des épaules",
   shoulder_flexion: "Ouverture des épaules",
@@ -58,6 +60,7 @@ const CRITERE_TAGS: Record<CriterionScore["critere"], string[]> = {
   rep_lockout: ["Lockout", "Bas de rep"],
   rep_peak: ["Amplitude", "Haut de rep"],
   rep_control: ["Strict", "Kipping"],
+  rep_form: ["Posture", "Gainage"],
   rep_tempo: ["Tempo", "Endurance"],
   shoulder_protraction: ["Protraction", "Charge bras"],
   shoulder_flexion: ["Ouverture", "Stack"],
@@ -182,6 +185,20 @@ export default function ResultCard({
 
       {view === "summary" && (
         <div className="space-y-5">
+          {/* Bandeau distinct, et surtout pas un anneau : ceux-ci affichent une
+              note sur 10, et un « 8 » dans un anneau se lisait comme un score
+              de 8/10 au lieu de huit répétitions. */}
+          {repCount !== undefined && repCount !== null && (
+            <div className="flex items-center justify-center gap-2.5 rounded-xl border border-cyan-900/50 bg-cyan-500/5 px-4 py-3">
+              <span className="text-2xl font-bold tabular-nums text-cyan-300">
+                {repCount}
+              </span>
+              <span className="text-sm text-slate-300">
+                {repCount > 1 ? "répétitions complètes" : "répétition complète"}
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-3">
             {scores.map((s) => (
               <ScoreRing key={s.critere} value={s.score} label={CRITERE_LABELS[s.critere]} />
@@ -193,9 +210,7 @@ export default function ResultCard({
                 suffix="s"
               />
             )}
-            {repCount !== undefined && repCount !== null && (
-              <ScoreRing value={repCount} label="Reps" />
-            )}
+
           </div>
 
           {recommendations && recommendations.length > 0 && (

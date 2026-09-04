@@ -77,6 +77,8 @@ export const CRITERE_DEFINITIONS: Record<CriterionScore["critere"], string> = {
     "Angle atteint en position fléchie, moyenné sur la série. Mesure si chaque répétition est menée jusqu'au bout.",
   rep_control:
     "Écart type de l'angle de hanche sur la série. Mesure l'élan : une hanche qui oscille trahit un mouvement lancé plutôt que tiré.",
+  rep_form:
+    "Angle de hanche moyen sur la série. Mesure la tenue du corps pendant le mouvement, là où le contrôle mesure l'élan.",
   rep_tempo:
     "Régularité de la durée des répétitions, en pourcentage. Une série qui se dégrade s'allonge sur les dernières répétitions.",
   elbow_angle:
@@ -256,6 +258,12 @@ const REP_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
     bon: "Léger balancement du bassin, le mouvement reste globalement tiré.",
     faible:
       "Le bassin oscille nettement — les répétitions sont lancées plutôt que tirées.",
+  },
+  rep_form: {
+    optimal: "Corps tenu droit sur toute la série.",
+    bon: "Position globalement correcte, avec une légère cassure à la hanche.",
+    faible:
+      "Le corps reste cassé à la hanche pendant les répétitions — la course est raccourcie et la figure plus facile qu'elle en a l'air.",
   },
   rep_tempo: {
     optimal: "Tempo régulier d'un bout à l'autre de la série.",

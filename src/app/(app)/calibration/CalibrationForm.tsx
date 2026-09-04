@@ -356,6 +356,7 @@ export default function CalibrationForm() {
       rep_lockout: repMeasure(result.scores, "rep_lockout"),
       rep_peak: repMeasure(result.scores, "rep_peak"),
       rep_hip_swing: repMeasure(result.scores, "rep_control"),
+      rep_form: repMeasure(result.scores, "rep_form"),
       rep_tempo: repMeasure(result.scores, "rep_tempo"),
       user_rating: ratingValue,
       notes: notes || null,
@@ -598,6 +599,12 @@ export default function CalibrationForm() {
                     label: "Oscillation de hanche",
                     value: repMeasure(result.scores, "rep_control"),
                     t: grid?.hipSwing,
+                    unit: "°",
+                  },
+                  {
+                    label: "Tenue du corps (hanche moyenne)",
+                    value: repMeasure(result.scores, "rep_form"),
+                    t: grid?.form,
                     unit: "°",
                   },
                   {

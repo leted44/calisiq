@@ -1,5 +1,5 @@
 import type { PoseAngles } from "./angles";
-import { hipSwing, tempoRegularity, type Rep } from "./repAnalysis";
+import { hipSwing, meanHipAngle, tempoRegularity, type Rep } from "./repAnalysis";
 import { SCORING_GRID, type Progression, type RepThresholds } from "./grid";
 
 export type CriterionScore = {
@@ -21,6 +21,7 @@ export type CriterionScore = {
     | "rep_lockout"
     | "rep_peak"
     | "rep_control"
+    | "rep_form"
     | "rep_tempo";
   score: number;
   valeurMesuree: number;
@@ -300,6 +301,24 @@ export function scoreReps({
       ),
       valeurMesuree: swing,
       valeurCible: thresholds.hipSwing.target,
+    });
+  }
+
+  if (thresholds.form) {
+    // Tenue du corps pendant le mouvement, à distinguer du contrôle : le
+    // contrôle voit l'élan (les variations), la forme voit la posture (la
+    // moyenne). Une série entièrement cassée à la hanche a une oscillation
+    // faible et passerait donc pour maîtrisée sans ce critère.
+    const posture = meanHipAngle(angles, reps);
+    scores.push({
+      critere: "rep_form",
+      score: scoreFromThreshold(
+        posture,
+        thresholds.form.target,
+        thresholds.form.tolerance
+      ),
+      valeurMesuree: posture,
+      valeurCible: thresholds.form.target,
     });
   }
 

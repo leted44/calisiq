@@ -794,6 +794,33 @@ const REP_EXERCISE_MAP: Record<string, TieredRecommendations> = {
       },
     ],
   },
+  rep_form: {
+    faible: [
+      {
+        exercice: "Gainage planche 3 x 40 s, puis reprends la série",
+        raison:
+          "Le corps reste cassé à la hanche pendant tout le mouvement : ce n'est pas un problème de force de bras mais de gainage, et ça raccourcit la course.",
+      },
+      {
+        exercice: "Cue « serre les fessiers, une seule ligne des épaules aux talons »",
+        raison:
+          "La cassure est souvent inconsciente. Un repère verbal avant chaque série suffit souvent à la corriger.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Filme-toi de profil et vérifie la ligne à mi-répétition",
+        raison:
+          "La tenue est correcte mais se relâche par moments — c'est en général au passage le plus dur du mouvement.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Rien à corriger, le corps reste aligné",
+        raison: "La position est tenue d'un bout à l'autre de la série.",
+      },
+    ],
+  },
   rep_tempo: {
     faible: [
       {

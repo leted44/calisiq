@@ -388,6 +388,20 @@ export type RepThresholds = {
    */
   hipSwing?: Threshold;
   /**
+   * Angle de hanche MOYEN sur la série : la tenue du corps pendant le
+   * mouvement. Noté en bande, s'en écarter dans un sens comme dans l'autre
+   * étant une faute.
+   *
+   * Distinct de `hipSwing`, et les deux sont nécessaires. Quelqu'un qui reste
+   * cassé à la hanche du début à la fin d'une série a une oscillation faible,
+   * donc un bon score de contrôle, alors que sa position est mauvaise sur
+   * toutes les répétitions. Le contrôle voit l'élan, la forme voit la posture.
+   *
+   * Absent des mouvements de jambes, où la hanche se ferme et s'ouvre par
+   * construction : sa moyenne y décrirait le milieu du squat, pas une faute.
+   */
+  form?: Threshold;
+  /**
    * Régularité du tempo entre répétitions, en pourcentage. Seuil MINIMUM.
    * Une série qui se dégrade se voit ici avant de se voir ailleurs.
    */
@@ -406,6 +420,7 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     lockout: { target: 170, tolerance: 25 },
     peak: { target: 65, tolerance: 45 },
     hipSwing: { target: 7, tolerance: 20 },
+    form: { target: 175, tolerance: 20 },
     tempo: { target: 70, tolerance: 40 },
   },
   strict_pull_up: {
@@ -418,6 +433,7 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     // Le critère qui sépare une traction stricte d'une traction lancée, et que
     // personne ne peut s'attribuer honnêtement tout seul.
     hipSwing: { target: 8, tolerance: 20 },
+    form: { target: 172, tolerance: 22 },
     tempo: { target: 70, tolerance: 40 },
   },
 
@@ -430,6 +446,9 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     lockout: { target: 170, tolerance: 28 },
     peak: { target: 95, tolerance: 40 },
     hipSwing: { target: 10, tolerance: 25 },
+    // Assis dos au banc, jambes devant : la hanche est fléchie par la position
+    // elle-même, la cible n'est donc pas 180 comme sur les autres dips.
+    form: { target: 110, tolerance: 35 },
     tempo: { target: 70, tolerance: 40 },
   },
   parallel_dip: {
@@ -440,6 +459,7 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     lockout: { target: 172, tolerance: 25 },
     peak: { target: 85, tolerance: 40 },
     hipSwing: { target: 8, tolerance: 22 },
+    form: { target: 168, tolerance: 28 },
     tempo: { target: 70, tolerance: 40 },
   },
 
@@ -452,6 +472,7 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     lockout: { target: 168, tolerance: 28 },
     peak: { target: 85, tolerance: 40 },
     hipSwing: { target: 7, tolerance: 20 },
+    form: { target: 175, tolerance: 18 },
     tempo: { target: 70, tolerance: 40 },
   },
   push_up: {
@@ -464,6 +485,7 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     // Plus serré que sur une traction : en pompe, une hanche qui oscille
     // signale un corps qui se casse, pas de l'élan.
     hipSwing: { target: 6, tolerance: 18 },
+    form: { target: 175, tolerance: 15 },
     tempo: { target: 70, tolerance: 40 },
   },
   decline_push_up: {
@@ -474,6 +496,7 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     lockout: { target: 168, tolerance: 25 },
     peak: { target: 78, tolerance: 38 },
     hipSwing: { target: 5, tolerance: 16 },
+    form: { target: 175, tolerance: 15 },
     tempo: { target: 70, tolerance: 40 },
   },
 
@@ -520,6 +543,11 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     lockout: { target: 172, tolerance: 25 },
     peak: { target: 80, tolerance: 40 },
     hipSwing: { target: 8, tolerance: 20 },
+    // Le critère qui manquait sur le HSPU : le corps doit rester tendu du
+    // bassin aux pieds pendant toute la descente. Casser à la hanche pour
+    // raccourcir la course est la triche classique, et une série entièrement
+    // cassée passait inaperçue du contrôle, qui ne voit que les variations.
+    form: { target: 178, tolerance: 15 },
     tempo: { target: 65, tolerance: 45 },
   },
 };
