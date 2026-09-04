@@ -7,14 +7,21 @@ import {
   measureImage,
   type PoseAnalysisResult,
 } from "@/lib/pose/runAnalysis";
-import { scoreAngles, globalScore } from "@/lib/pose/scoring";
+import { estimateGridScore } from "@/lib/pose/estimatedScore";
 import {
   SCORING_GRID,
   REP_SCORING_GRID,
   isRepProgression,
+  type AnyProgression,
   type Progression,
   type RepProgression,
 } from "@/lib/pose/grid";
+
+// Variations proposées à la calibration mais qui n'ont encore aucun barème,
+// ni en hold ni en répétitions. Les lister explicitement plutôt que de les
+// laisser tomber dans un trou : leurs échantillons servent justement à
+// construire le barème qui leur manque.
+type UngradedVariation = "one_arm_handstand";
 
 // Valeur réellement mesurée pour un critère de répétition, ou null si
 // l'exercice n'en est pas un.
@@ -53,7 +60,16 @@ const VARIATIONS = [
   { value: "decline_push_up", label: "Pompes déclinées", figure: "pompes" },
   { value: "box_pistol_squat", label: "Pistol squat sur boîte", figure: "pistol" },
   { value: "pistol_squat", label: "Pistol squat", figure: "pistol" },
-] as const;
+  // `satisfies` plutôt qu'une annotation : les types littéraux sont conservés
+  // (le sélecteur en dépend) et la contrainte est vérifiée. Une variation
+  // ajoutée ici sans barème et sans être déclarée ci-dessus ne compile pas.
+  // C'est ce qui garantit qu'aucune figure future ne perdra sa note en
+  // silence.
+] as const satisfies readonly {
+  value: AnyProgression | UngradedVariation;
+  label: string;
+  figure: string;
+}[];
 
 // Plus bas que le formulaire principal (2s) : ici on ne mesure qu'une
 // position à un instant donné, pas un hold tenu — même le mode photo
@@ -824,27 +840,31 @@ export default function CalibrationForm() {
                 // comparaison se fait dans le même geste, sans attendre le
                 // bloc récapitulatif de la page.
                 //
-                // Deux provenances selon le type d'exercice. Sur un hold,
-                // l'analyse tourne sans grille pour ne pas biaiser les angles
-                // collectés : la note est donc recalculée ici à partir des
-                // angles mesurés. Sur une série, l'analyse a déjà reçu la
-                // progression — le découpage en répétitions l'exige — et a
-                // donc déjà produit la note ; la recalculer ici avec
-                // scoreAngles n'aurait aucun sens, cette fonction lit la
-                // grille des holds où ces exercices n'existent pas. C'est
-                // exactement ce qui faisait disparaître le bloc sur le
-                // handstand push-up.
-                const isRep = isRepProgression(variation);
-                const score = isRep
-                  ? result.globalScoreValue
-                  : (() => {
-                      const grid = SCORING_GRID[variation as Progression];
-                      if (!grid) return null;
-                      return globalScore(
-                        scoreAngles(result.summaryAngles, variation as Progression)
-                      );
-                    })();
-                if (score === null) return null;
+                // Le calcul vit dans estimatedScore.ts, commun à toutes les
+                // figures. Il renvoie un statut et non un nombre nullable,
+                // pour que le bloc dise pourquoi il n'a pas de note au lieu
+                // de disparaître.
+                const estimate = estimateGridScore({
+                  variation,
+                  angles: result.summaryAngles,
+                  repScore: result.globalScoreValue,
+                });
+
+                if (estimate.status !== "ok") {
+                  return (
+                    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        Pas encore de note automatique
+                      </p>
+                      <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+                        {estimate.status === "no_grid"
+                          ? "Cette variation n'a pas encore de barème. Ta note est justement ce qui servira à le construire, elle compte donc double ici."
+                          : "Les mesures de cette prise sont incomplètes, la grille ne peut pas la noter. Ta note reste utile, mais refilme si tu peux : corps entier visible et de profil."}
+                      </p>
+                    </div>
+                  );
+                }
+
                 return (
                   <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 p-4">
                     <div>
@@ -855,8 +875,8 @@ export default function CalibrationForm() {
                         À comparer à la tienne, pas à recopier
                       </p>
                     </div>
-                    <p className={`text-2xl font-bold ${scoreColor(score)}`}>
-                      {score.toFixed(1)}
+                    <p className={`text-2xl font-bold ${scoreColor(estimate.value)}`}>
+                      {estimate.value.toFixed(1)}
                       <span className="text-sm font-normal text-slate-600">/10</span>
                     </p>
                   </div>
