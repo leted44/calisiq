@@ -123,6 +123,14 @@ function computedScore(sample: CalibrationSampleRow): number | null {
     pelvisSagSign: sample.pelvis_sag_sign ?? 0,
     isInvertedPose: true,
     legOcclusionRisk: false,
+    // Ces reconstructions ne servent qu'aux figures statiques, notées sur
+    // les angles 2D. Les mesures 3D n'ont jamais été enregistrées pour elles
+    // et valent donc NaN, filtré par le scoring plutôt que remplacé par une
+    // valeur inventée.
+    elbowAngle3d: NaN,
+    hipAngle3d: NaN,
+    kneeAngle3d: NaN,
+    shoulderFacing: NaN,
   };
 
   const scores = scoreAngles(angles, progression).filter((s) =>

@@ -179,10 +179,14 @@ export async function runPoseAnalysis({
       const frameTime = video.currentTime;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (const landmarks of result.landmarks) {
+      for (let i = 0; i < result.landmarks.length; i++) {
+        const landmarks = result.landmarks[i];
         frames.push(landmarks);
         frameTimes.push(frameTime);
-        const a = computeAngles(landmarks);
+        // Coordonnées métriques 3D du même corps, quand le modèle les fournit.
+        // Elles rendent les angles articulaires indépendants de la position de
+        // la caméra ; leur absence fait simplement retomber sur le 2D.
+        const a = computeAngles(landmarks, result.worldLandmarks?.[i]);
         angles.push(a);
         onLiveAngles?.(a);
 
@@ -318,7 +322,35 @@ export async function runPoseAnalysis({
   // sans qu'aucune ligne existante n'ait à changer.
   if (isRepProgression(progression)) {
     const thresholds = REP_SCORING_GRID[progression];
-    const reps = detectReps(angles, thresholds);
+
+    // Les mouvements à répétition se notent sur les angles 3D.
+    //
+    // POURQUOI ICI ET PAS PARTOUT
+    //
+    // Un angle 2D est mesuré sur l'image projetée : il change avec l'endroit
+    // où est posée la caméra. Vu de face, un handstand push-up projette
+    // épaule, hanche et genou presque sur une même verticale, et l'angle de
+    // hanche devient si sensible au bruit que le critère de contrôle mesurait
+    // le tremblement de détection avant l'élan de l'athlète.
+    //
+    // La substitution se fait en un seul endroit, sur une copie des angles :
+    // tout l'aval (découpage, oscillation, forme, notation) continue de lire
+    // les mêmes champs sans une ligne de changement.
+    //
+    // Les figures statiques restent en 2D à dessein. Leurs seuils ont été
+    // calibrés sur des valeurs 2D ; basculer en 3D changerait chaque mesure
+    // et invaliderait ce travail sans que rien ne le signale.
+    const has3d = angles.some((a) => Number.isFinite(a.hipAngle3d));
+    const repAngles = has3d
+      ? angles.map((a) => ({
+          ...a,
+          elbowAngle: a.elbowAngle3d,
+          hipAngle: a.hipAngle3d,
+          kneeAngle: a.kneeAngle3d,
+        }))
+      : angles;
+
+    const reps = detectReps(repAngles, thresholds);
 
     if (reps.length === 0) {
       return {
@@ -330,9 +362,40 @@ export async function runPoseAnalysis({
       };
     }
 
-    const repScores = scoreReps({ angles, reps, thresholds });
+    const repScores = scoreReps({
+      angles: repAngles,
+      reps,
+      frameTimes,
+      thresholds,
+    });
     const weakestRep = pickWeakestCriterion(repScores);
     const repWarnings = [...warningParts];
+
+    // Angle de prise de vue. Ces mouvements se jugent dans le plan sagittal
+    // (flexion du coude, ouverture de hanche), donc de profil. Filmé de face,
+    // ce plan est vu par la tranche : le passage en 3D limite les dégâts sur
+    // les angles, mais la détection elle-même reste moins fiable, une épaule
+    // masquant l'autre. Le dire plutôt que d'afficher une note silencieusement
+    // fragile — c'est déjà ce qui est fait pour le straddle.
+    //
+    // Le seuil est provisoire, faute d'échantillons réels : 0,65 correspond à
+    // environ 40 degrés d'écart au profil.
+    // Médiane prise sur TOUTE la vidéo et non sur la fenêtre de hold : la
+    // position de la caméra est une propriété du plan entier, alors que cette
+    // fenêtre n'a aucun sens sur une série et peut ne couvrir que quelques
+    // images.
+    const facings = angles
+      .map((a) => a.shoulderFacing)
+      .filter((v) => Number.isFinite(v))
+      .sort((a, b) => a - b);
+    const facing = facings.length
+      ? facings[Math.floor(facings.length / 2)]
+      : NaN;
+    if (Number.isFinite(facing) && facing > 0.65) {
+      repWarnings.push(
+        "Vidéo filmée trop de face pour cet exercice. Filme de profil, corps entier dans le cadre : la flexion des bras et l'ouverture de hanche se voient de côté, pas de face. Les notes de contrôle et de forme restent approximatives sur cette prise."
+      );
+    }
     if (reps.length < 3) {
       repWarnings.push(
         `Seulement ${reps.length} répétition${reps.length > 1 ? "s" : ""} détectée${reps.length > 1 ? "s" : ""} : la régularité du tempo n'a pas beaucoup de sens sur une série aussi courte.`
@@ -422,7 +485,7 @@ export async function measureImage(
   }
 
   const landmarks = result.landmarks[0];
-  const angles = computeAngles(landmarks);
+  const angles = computeAngles(landmarks, result.worldLandmarks?.[0]);
 
   const canvas = document.createElement("canvas");
   canvas.width = image.naturalWidth;

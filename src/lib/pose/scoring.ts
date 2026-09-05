@@ -352,10 +352,13 @@ export function scoreRepMeasures(
 export function scoreReps({
   angles,
   reps,
+  frameTimes,
   thresholds,
 }: {
   angles: PoseAngles[];
   reps: Rep[];
+  /** Instant réel de chaque image, en secondes. Voir tempoRegularity. */
+  frameTimes: number[];
   thresholds: RepThresholds;
 }): CriterionScore[] {
   if (reps.length === 0) return [];
@@ -374,7 +377,7 @@ export function scoreReps({
       hipSwing: thresholds.hipSwing ? hipSwing(angles, reps) : null,
       form: thresholds.form ? meanHipAngle(angles, reps) : null,
       // Exprimé en pourcentage pour rester lisible à côté d'angles en degrés.
-      tempo: tempoRegularity(reps) * 100,
+      tempo: tempoRegularity(reps, frameTimes) * 100,
     },
     thresholds
   );

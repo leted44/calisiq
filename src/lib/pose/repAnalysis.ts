@@ -35,17 +35,25 @@ import type { PoseAngles } from "./angles";
 // exact avec un bruit de +/- 6 degrés ; aucune répétition inventée sur une
 // suspension immobile ; demi-répétitions (40 % d'amplitude) rejetées ;
 // amplitude mesurée à 70 % sur des répétitions volontairement partielles ;
-// oscillation de hanche nulle en strict contre 18 degrés en lancé. Ce qui
-// reste à valider sur vidéo réelle, c'est la qualité du signal d'angle
+// oscillation de hanche nulle en strict contre 18 degrés en lancé.
+//
+// Ajouté avec la correction du tempo : trois secondes de maintien avant la
+// première répétition ne gonflent plus sa durée (quatre durées à 1,60 s), une
+// cadence de capture volontairement irrégulière laisse le tempo à 1,000 alors
+// qu'une série réellement inégale (1 / 2 / 4 / 1,2 s) tombe à 0,429, et une
+// vidéo qui démarre au milieu d'une descente ne produit plus de répétition
+// fantôme.
+//
+// Ce qui reste à valider sur vidéo réelle, c'est la qualité du signal d'angle
 // lui-même, pas l'algorithme qui le découpe.
 //
-// CE QU'IL RESTE À FAIRE POUR METTRE UN EXERCICE EN LIGNE
+// OÙ CE MODULE EST BRANCHÉ
 //
-// Ce module calcule les répétitions, pas encore les notes. Il manque trois
-// choses : une grille de seuils par exercice (positions basse et haute), la
-// conversion en `CriterionScore[]`, et le branchement dans `runAnalysis`
-// avec la question de ce que devient l'export vidéo, dont le chrono de hold
-// n'a aucun sens sur une série de répétitions.
+// Les seuils par exercice vivent dans `REP_SCORING_GRID` (grid.ts), la
+// conversion en `CriterionScore[]` dans `scoreReps` (scoring.ts), et
+// `runAnalysis` choisit cette voie via `isRepProgression`. C'est là qu'est
+// faite la substitution des angles 2D par leurs équivalents 3D, propre aux
+// exercices à répétition.
 
 // Signal qui pilote la détection : l'angle dont la valeur oscille le plus
 // nettement entre le haut et le bas du mouvement. Pour une traction c'est le
@@ -109,7 +117,24 @@ export function detectReps(
 
   const reps: Rep[] = [];
   let state: "flexed" | "extended" | null = null;
-  let repStart = 0;
+  // Début de la répétition en cours, null tant qu'aucun départ n'a été vu.
+  //
+  // POURQUOI PAS SIMPLEMENT L'INDEX DE LA DERNIÈRE TRANSITION
+  //
+  // La version précédente ouvrait la première répétition à l'instant où l'état
+  // se fixait, c'est-à-dire dès que la personne atteignait la position tendue.
+  // Sur une vidéo de handstand push-up, elle monte, se stabilise deux ou trois
+  // secondes, puis commence : ces secondes d'attente étaient comptées dans la
+  // durée de la première répétition, qui devenait bien plus longue que les
+  // suivantes. Le critère de tempo, qui mesure la régularité des durées,
+  // tombait alors à zéro sur une série pourtant régulière.
+  //
+  // Une répétition commence maintenant à la dernière image encore en position
+  // tendue avant la descente. Conséquence voulue : une vidéo qui démarre au
+  // milieu d'un mouvement ne produit plus de répétition fantôme, puisque son
+  // départ n'a jamais été observé.
+  let repStart: number | null = null;
+  let lastExtendedIndex = 0;
   let flexedIndex = 0;
   let extendedIndex = 0;
   let minValue = Infinity;
@@ -135,6 +160,8 @@ export function detectReps(
       else flexedIndex = i;
     }
 
+    if (isExtended(value)) lastExtendedIndex = i;
+
     // Annotation explicite : `nextState` retombe sur `state` dans la bande
     // morte, et TypeScript ne sait pas inférer un type qui se référence
     // lui-même à travers cette branche.
@@ -147,18 +174,20 @@ export function detectReps(
 
     // Une répétition est comptée au retour en position tendue : c'est le
     // point de départ et d'arrivée naturel du mouvement.
+    if (state === "extended" && nextState === "flexed") {
+      repStart = lastExtendedIndex;
+    }
     if (state === "flexed" && nextState === "extended") {
       const range = maxValue - minValue;
-      if (range >= amplitude * config.minRangeRatio) {
+      if (repStart !== null && range >= amplitude * config.minRangeRatio) {
         reps.push({ start: repStart, end: i, flexedIndex, extendedIndex, range });
       }
-      repStart = i;
+      repStart = null;
       minValue = value;
       maxValue = value;
       flexedIndex = i;
       extendedIndex = i;
     }
-    if (state === null) repStart = i;
     state = nextState;
   }
 
@@ -207,10 +236,22 @@ export function hipSwing(angles: PoseAngles[], reps: Rep[]): number {
  * Régularité du tempo entre répétitions, en fraction (1 = parfaitement
  * régulier). Une série qui se dégrade se voit ici avant de se voir ailleurs :
  * les dernières répétitions s'allongent quand la force baisse.
+ *
+ * Les durées se mesurent EN SECONDES, jamais en nombre d'images. L'analyse
+ * tourne sur requestAnimationFrame pendant une lecture en temps réel, donc
+ * l'écart entre deux images capturées varie avec la charge de l'inférence :
+ * compter les images revenait à noter la puissance du téléphone plutôt que le
+ * rythme de l'athlète, et à faire varier la note d'un appareil à l'autre sur
+ * la même vidéo.
  */
-export function tempoRegularity(reps: Rep[]): number {
+export function tempoRegularity(reps: Rep[], frameTimes: number[]): number {
   if (reps.length < 2) return 1;
-  const durations = reps.map((rep) => rep.end - rep.start);
+  const durations = reps
+    .map((rep) => (frameTimes[rep.end] ?? 0) - (frameTimes[rep.start] ?? 0))
+    .filter((d) => d > 0);
+  // Sans horodatage exploitable, mieux vaut ne pas pénaliser : le critère est
+  // alors neutre plutôt que faux.
+  if (durations.length < 2) return 1;
   const mean = durations.reduce((a, b) => a + b, 0) / durations.length;
   if (mean <= 0) return 1;
   const variance =

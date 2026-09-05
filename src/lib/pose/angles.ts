@@ -15,6 +15,7 @@ const LEFT_ANKLE = 27;
 const RIGHT_ANKLE = 28;
 
 type Point = { x: number; y: number };
+type Point3 = { x: number; y: number; z: number };
 
 function midpoint(a: Point, b: Point): Point {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
@@ -28,6 +29,42 @@ function angleAt(a: Point, b: Point, c: Point): number {
   const dot = v1.x * v2.x + v1.y * v2.y;
   const mag1 = Math.hypot(v1.x, v1.y);
   const mag2 = Math.hypot(v2.x, v2.y);
+
+  if (mag1 === 0 || mag2 === 0) return 0;
+
+  const cos = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
+  return (Math.acos(cos) * 180) / Math.PI;
+}
+
+// Angle en degrés au point b, calculé dans l'espace 3D.
+//
+// POURQUOI UNE SECONDE VERSION
+//
+// Les angles 2D sont mesurés sur l'image projetée : ils dépendent donc de
+// l'endroit où est posée la caméra. Le cas est net sur un handstand push-up
+// filmé de face — épaule, hanche et genou se projettent presque sur une même
+// verticale, et trois points quasi alignés donnent un angle hypersensible au
+// moindre pixel de bruit. Le critère de contrôle, qui mesure justement la
+// stabilité de la hanche, y mesurait le bruit de détection avant l'élan.
+//
+// MediaPipe fournit aussi des coordonnées métriques 3D (worldLandmarks),
+// centrées sur le bassin. Un angle articulaire calculé dessus ne dépend plus
+// de l'orientation de la caméra.
+//
+// CE QUE ÇA NE RÉSOUT PAS
+//
+// La profondeur est estimée par le modèle, c'est sa sortie la moins fiable,
+// et les corps inversés sont rares dans ses données d'entraînement. Et les
+// critères d'orientation par rapport à la gravité (ligne de corps, angle du
+// tronc) doivent RESTER en 2D : ils ont besoin de la verticale de l'image,
+// que le repère 3D centré bassin ne connaît pas.
+function angleAt3(a: Point3, b: Point3, c: Point3): number {
+  const v1 = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+  const v2 = { x: c.x - b.x, y: c.y - b.y, z: c.z - b.z };
+
+  const dot = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+  const mag1 = Math.hypot(v1.x, v1.y, v1.z);
+  const mag2 = Math.hypot(v2.x, v2.y, v2.z);
 
   if (mag1 === 0 || mag2 === 0) return 0;
 
@@ -85,6 +122,21 @@ export type PoseAngles = {
   // suivi d'une des deux (faible visibility) ou les place quasi au même
   // endroit — les angles genou/axe du corps deviennent alors peu fiables.
   legOcclusionRisk: boolean;
+  // Mêmes articulations que ci-dessus, mais calculées en 3D et donc
+  // indépendantes de l'angle de caméra. Retombent sur la valeur 2D quand les
+  // coordonnées 3D ne sont pas fournies, pour qu'aucun appelant ne casse.
+  // Seuls les exercices à répétition les utilisent : les figures statiques
+  // ont été calibrées sur les valeurs 2D, changer d'unité invaliderait ce
+  // travail sans que rien ne le signale.
+  elbowAngle3d: number;
+  hipAngle3d: number;
+  kneeAngle3d: number;
+  // Part de la largeur d'épaules réellement visible dans le plan de l'image,
+  // entre 0 et 1. C'est le sinus de l'angle entre l'axe des épaules et l'axe
+  // de la caméra : 0 = profil parfait (une épaule cache l'autre), 1 = plein
+  // face. La plupart des mouvements à répétition se jugent dans le plan
+  // sagittal et veulent donc une valeur basse. Vaut NaN sans coordonnées 3D.
+  shoulderFacing: number;
 };
 
 // Visibilité moyenne des points utilisés pour un angle, sert de poids de
@@ -109,7 +161,12 @@ function weightedAverage(
   return (aValue * aWeight + bValue * bWeight) / total;
 }
 
-export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
+export function computeAngles(
+  landmarks: NormalizedLandmark[],
+  // Coordonnées métriques 3D du même corps, origine au bassin. Facultatives :
+  // un appelant qui ne les a pas obtient les mêmes angles qu'avant.
+  worldLandmarks?: NormalizedLandmark[]
+): PoseAngles {
   const leftElbowAngle = angleAt(
     landmarks[LEFT_SHOULDER],
     landmarks[LEFT_ELBOW],
@@ -286,7 +343,59 @@ export function computeAngles(landmarks: NormalizedLandmark[]): PoseAngles {
 
   const legOcclusionRisk = lowVisibilityLeg || legsTooClose;
 
+  // --- Mesures 3D ---
+  //
+  // Moyennées à 50/50 plutôt que pondérées par la visibility : celle-ci
+  // décrit la fiabilité du point DANS L'IMAGE, or c'est précisément ce dont
+  // la mesure 3D s'affranchit. Une épaule cachée par l'autre en vue de profil
+  // a une visibility basse alors que sa position 3D reste correcte.
+  const w = worldLandmarks;
+  const mean3 = (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number
+  ) => {
+    if (!w) return NaN;
+    return (
+      (angleAt3(w[a], w[b], w[c]) + angleAt3(w[d], w[e], w[f])) / 2
+    );
+  };
+  const elbowAngle3d = mean3(
+    LEFT_SHOULDER, LEFT_ELBOW, LEFT_WRIST,
+    RIGHT_SHOULDER, RIGHT_ELBOW, RIGHT_WRIST
+  );
+  const hipAngle3d = mean3(
+    LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE,
+    RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE
+  );
+  const kneeAngle3d = mean3(
+    LEFT_HIP, LEFT_KNEE, LEFT_ANKLE,
+    RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE
+  );
+
+  // Orientation de la caméra vis-à-vis du corps. Le rapport entre la largeur
+  // d'épaules vue dans le plan de l'image et sa largeur réelle en 3D ne
+  // dépend ni de la résolution, ni du zoom, ni du format de la vidéo, parce
+  // que les deux termes sont métriques et issus du même repère. Une mesure
+  // en pixels normalisés aurait été faussée par le format de l'image, où un
+  // écart horizontal et un écart vertical ne valent pas la même distance.
+  let shoulderFacing = NaN;
+  if (w) {
+    const dx = w[LEFT_SHOULDER].x - w[RIGHT_SHOULDER].x;
+    const dy = w[LEFT_SHOULDER].y - w[RIGHT_SHOULDER].y;
+    const dz = w[LEFT_SHOULDER].z - w[RIGHT_SHOULDER].z;
+    const full = Math.hypot(dx, dy, dz);
+    if (full > 0) shoulderFacing = Math.hypot(dx, dy) / full;
+  }
+
   return {
+    elbowAngle3d: Number.isFinite(elbowAngle3d) ? elbowAngle3d : NaN,
+    hipAngle3d,
+    kneeAngle3d,
+    shoulderFacing,
     elbowAngle: weightedAverage(
       leftElbowAngle,
       leftElbowConfidence,
@@ -421,5 +530,9 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
       frames.filter((f) => f.isInvertedPose).length >= frames.length / 2,
     legOcclusionRisk:
       frames.filter((f) => f.legOcclusionRisk).length >= frames.length / 2,
+    elbowAngle3d: median(frames.map((f) => f.elbowAngle3d)),
+    hipAngle3d: median(frames.map((f) => f.hipAngle3d)),
+    kneeAngle3d: median(frames.map((f) => f.kneeAngle3d)),
+    shoulderFacing: median(frames.map((f) => f.shoulderFacing)),
   };
 }
