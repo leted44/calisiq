@@ -323,31 +323,44 @@ export async function runPoseAnalysis({
   if (isRepProgression(progression)) {
     const thresholds = REP_SCORING_GRID[progression];
 
-    // Les mouvements à répétition se notent sur les angles 3D.
+    // Seul l'angle de HANCHE passe en 3D. Pas le coude, pas le genou.
     //
-    // POURQUOI ICI ET PAS PARTOUT
+    // CE QUI EST DÉGÉNÉRÉ EN 2D, ET CE QUI NE L'EST PAS
     //
-    // Un angle 2D est mesuré sur l'image projetée : il change avec l'endroit
-    // où est posée la caméra. Vu de face, un handstand push-up projette
-    // épaule, hanche et genou presque sur une même verticale, et l'angle de
-    // hanche devient si sensible au bruit que le critère de contrôle mesurait
-    // le tremblement de détection avant l'élan de l'athlète.
+    // Vu de face, un handstand push-up projette épaule, hanche et genou
+    // presque sur une même verticale. Trois points quasi alignés donnent un
+    // angle hypersensible : quelques pixels de bruit déplacent la mesure de
+    // plusieurs degrés, et le critère de contrôle, qui mesure l'écart type de
+    // cet angle, y mesurait le tremblement de détection avant l'élan.
     //
-    // La substitution se fait en un seul endroit, sur une copie des angles :
-    // tout l'aval (découpage, oscillation, forme, notation) continue de lire
-    // les mêmes champs sans une ligne de changement.
+    // Le coude, lui, se lit très bien sous n'importe quel angle : c'est une
+    // flexion ample entre trois points jamais alignés. Les notes d'extension
+    // et d'amplitude étaient d'ailleurs justes sur la vidéo qui a révélé le
+    // problème, alors que le contrôle était à zéro.
     //
-    // Les figures statiques restent en 2D à dessein. Leurs seuils ont été
-    // calibrés sur des valeurs 2D ; basculer en 3D changerait chaque mesure
-    // et invaliderait ce travail sans que rien ne le signale.
-    const has3d = angles.some((a) => Number.isFinite(a.hipAngle3d));
-    const repAngles = has3d
-      ? angles.map((a) => ({
-          ...a,
-          elbowAngle: a.elbowAngle3d,
-          hipAngle: a.hipAngle3d,
-          kneeAngle: a.kneeAngle3d,
-        }))
+    // POURQUOI NE PAS TOUT BASCULER
+    //
+    // Essayé, et cassé : substituer aussi le coude a fait tomber la détection
+    // à zéro répétition sur cette même vidéo. Le signal 3D du coude ne
+    // franchissait plus les seuils de la grille, qui sont exprimés en valeurs
+    // 2D. Autrement dit l'estimation de profondeur du modèle, sa sortie la
+    // plus fragile, ne tient pas sur un corps inversé — cas rare dans ses
+    // données d'entraînement. On ne s'en remet donc qu'où le 2D est
+    // réellement dégénéré.
+    //
+    // Conséquence utile : aucun exercice n'utilise la hanche comme pilote de
+    // détection (tous sont sur le coude ou le genou, voir REP_SCORING_GRID),
+    // donc cette substitution ne peut pas déplacer une répétition. Elle ne
+    // change que le contrôle et la forme, les deux critères qui en avaient
+    // besoin.
+    const hip3dCount = angles.filter((a) =>
+      Number.isFinite(a.hipAngle3d)
+    ).length;
+    // Exigé sur la grande majorité des images, pas seulement quelques-unes :
+    // un tableau troué mélangerait deux unités de mesure dans la même série.
+    const has3dHip = hip3dCount >= angles.length * 0.8;
+    const repAngles = has3dHip
+      ? angles.map((a) => ({ ...a, hipAngle: a.hipAngle3d }))
       : angles;
 
     const reps = detectReps(repAngles, thresholds);
