@@ -17,7 +17,8 @@ import {
   figureFromProgression,
   isCalibrated,
 } from "@/lib/pose/report";
-import { LockIcon, ApproximateIcon } from "@/components/icons";
+import { LockIcon, ApproximateIcon, StarIcon } from "@/components/icons";
+import { useFavorites, toggleFavorite } from "./favorites";
 import {
   UploadCloudIcon,
   CameraIcon,
@@ -176,6 +177,14 @@ const FIGURES: {
     image: "/figures/pistol-squat.png",
   },
 ];
+
+// Index inverses, construits une fois au chargement du module.
+//
+// Un favori est enregistré au niveau de la VARIATION et non de la figure :
+// c'est la variation qu'on travaille pendant des semaines, et la retrouver
+// d'un geste évite les deux sélections successives (figure, puis variation).
+// Retrouver sa figure demande donc ce chemin de retour.
+type VariationIndexEntry = { figure: Figure; option: VariationOption };
 
 type VariationOption = {
   value: Variation;
@@ -449,6 +458,16 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   ],
 };
 
+const VARIATION_INDEX: Record<string, VariationIndexEntry> = Object.fromEntries(
+  Object.entries(VARIATIONS_BY_FIGURE).flatMap(([figure, options]) =>
+    options.map((option) => [option.value, { figure: figure as Figure, option }])
+  )
+);
+
+const FIGURE_LABEL: Record<string, string> = Object.fromEntries(
+  FIGURES.map((f) => [f.value, f.label])
+);
+
 // Marque d'état d'une figure, en pastille de coin.
 //
 // Deux états distincts, et il ne faut pas les confondre. Le cadenas dit que
@@ -529,6 +548,8 @@ function VariationRail({
   const currentIndex = options.findIndex((o) => o.value === value);
   const current = options[currentIndex];
   const count = options.length;
+  const favorites = useFavorites();
+  const isFavorite = current ? favorites.includes(current.value) : false;
   // Le rail relie les centres des pastilles, pas les bords de la grille :
   // il commence donc à un demi-pas du bord, quel que soit le nombre d'étapes.
   const halfStep = 50 / count;
@@ -647,8 +668,36 @@ function VariationRail({
       {current && (
         <div className="rounded-xl border border-slate-800 bg-gradient-to-b from-slate-900 to-slate-900/30 px-3.5 py-3">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-white">{current.label}</p>
-            <span className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              {/* L'étoile est ici, sur la variation sélectionnée, et non sur
+                  chaque tuile de figure. Les tuiles portent déjà une image,
+                  un nom, une accroche et une pastille d'état ; une étoile de
+                  plus sur chacune des neuf en ferait un tableau de bord. Ici
+                  elle est unique, sans ambiguïté sur ce qu'elle marque, et
+                  elle vise la variation, qui est ce qu'on travaille
+                  réellement pendant des semaines. */}
+              <button
+                type="button"
+                onClick={() => toggleFavorite(current.value)}
+                aria-pressed={isFavorite}
+                aria-label={
+                  isFavorite
+                    ? `Retirer ${current.label} des favoris`
+                    : `Ajouter ${current.label} aux favoris`
+                }
+                className={`-m-1.5 shrink-0 rounded-lg p-1.5 transition-colors ${
+                  isFavorite
+                    ? "text-amber-400 hover:text-amber-300"
+                    : "text-slate-600 hover:text-slate-400"
+                }`}
+              >
+                <StarIcon className="h-4 w-4" filled={isFavorite} />
+              </button>
+              <p className="truncate text-sm font-semibold text-white">
+                {current.label}
+              </p>
+            </div>
+            <span className="flex shrink-0 items-center gap-2">
               <span className="text-[10px] uppercase tracking-[0.15em] text-slate-500">
                 Difficulté
               </span>
@@ -777,6 +826,14 @@ export default function AnalysisForm() {
   const [exerciseType, setExerciseType] = useState<ExerciseType>(
     EXERCISE_TYPES[0].value
   );
+
+  // Favoris résolus vers leur figure et leur option. Un favori enregistré
+  // pour une variation qui n'existerait plus est simplement ignoré, plutôt
+  // que de faire planter l'accueil.
+  const favorites = useFavorites();
+  const favoriteEntries = favorites
+    .map((value) => VARIATION_INDEX[value])
+    .filter((entry): entry is VariationIndexEntry => entry !== undefined);
 
   function selectFigure(next: Figure) {
     setFigure((current) => {
@@ -1338,6 +1395,69 @@ export default function AnalysisForm() {
         onChange={handleFileChange}
         className="hidden"
       />
+
+      {favoriteEntries.length > 0 && (
+        <div className="space-y-3">
+          <SectionHeading>Favoris</SectionHeading>
+          {/* Défilement horizontal plutôt qu'une grille : la rangée garde la
+              même hauteur qu'il y ait un favori ou huit, et ne repousse
+              jamais les figures hors de l'écran. */}
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            {favoriteEntries.map(({ figure: favFigure, option }) => {
+              const active = figure === favFigure && progression === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  // Sélection directe des deux niveaux d'un coup, là où
+                  // `selectFigure` referme la figure déjà ouverte : c'est
+                  // tout l'intérêt du raccourci.
+                  onClick={() => {
+                    setFigure(favFigure);
+                    setProgression(option.value);
+                  }}
+                  className={`flex shrink-0 items-center gap-2.5 rounded-xl border py-2 pl-2 pr-3.5 transition-colors ${
+                    active
+                      ? "border-cyan-400/60 bg-slate-900"
+                      : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+                  }`}
+                >
+                  {option.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={option.image}
+                      alt=""
+                      className={`h-9 w-12 shrink-0 object-contain ${
+                        active ? "" : "opacity-70 saturate-50"
+                      }`}
+                    />
+                  ) : (
+                    <span className="flex h-9 w-12 items-center justify-center">
+                      <option.Icon
+                        className={`h-5 w-5 ${
+                          active ? "text-cyan-400" : "text-slate-600"
+                        }`}
+                      />
+                    </span>
+                  )}
+                  <span className="min-w-0 text-left">
+                    <span
+                      className={`block truncate text-[13px] font-semibold leading-tight ${
+                        active ? "text-white" : "text-slate-300"
+                      }`}
+                    >
+                      {option.label}
+                    </span>
+                    <span className="block truncate text-[11px] leading-tight text-slate-500">
+                      {FIGURE_LABEL[favFigure]}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         <SectionHeading>Figures</SectionHeading>

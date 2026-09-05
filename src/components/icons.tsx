@@ -662,3 +662,24 @@ export function ApproximateIcon({ className = base }: IconProps) {
     </svg>
   );
 }
+
+// Étoile de favori. Deux états dans une seule icône : le contour seul quand
+// la variation n'est pas en favori, le contour rempli quand elle l'est. Un
+// aplat sans contour perdrait sa lisibilité sur les fonds clairs des
+// illustrations.
+export function StarIcon({
+  className = base,
+  filled = false,
+}: IconProps & { filled?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M12 3.6l2.6 5.3 5.8.85-4.2 4.1 1 5.75L12 16.9l-5.2 2.7 1-5.75-4.2-4.1 5.8-.85L12 3.6z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+        fill={filled ? "currentColor" : "none"}
+      />
+    </svg>
+  );
+}
