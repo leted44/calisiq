@@ -4,7 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TrashIcon } from "@/components/icons";
-import { scoreAngles, globalScore, scoreRepMeasures } from "@/lib/pose/scoring";
+import {
+  scoreAngles,
+  globalScore,
+  scoreRepMeasures,
+  type CriterionScore,
+} from "@/lib/pose/scoring";
 import {
   SCORING_GRID,
   REP_SCORING_GRID,
@@ -41,6 +46,10 @@ export type CalibrationSampleRow = {
   rep_hip_swing: number | null;
   rep_form: number | null;
   rep_tempo: number | null;
+  // Notes humaines par critère, facultatives. Une note globale seule ne dit
+  // pas QUEL seuil recaler quand elle s'écarte de celle de la grille.
+  rating_form: number | null;
+  rating_depth: number | null;
 };
 
 type SampleComparison = {
@@ -50,6 +59,9 @@ type SampleComparison = {
   computed: number;
   gap: number;
   incoherence: string | null;
+  // Comparaisons par critère, présentes seulement quand l'échantillon porte
+  // les notes détaillées correspondantes.
+  details: { label: string; userRating: number; computed: number }[];
 };
 
 // Un échantillon peut être mesuré correctement et montrer la position
@@ -80,7 +92,7 @@ type Comparison = {
 // barème automatique à la note humaine : c'est tout l'intérêt de la
 // calibration, et ça ne demande aucune re-analyse de vidéo puisque les
 // angles sont stockés.
-function computedScore(sample: CalibrationSampleRow): number | null {
+function sampleScores(sample: CalibrationSampleRow): CriterionScore[] | null {
   // Exercice à répétition : la note se rejoue depuis les mesures de série
   // enregistrées, pas depuis les angles. Les colonnes d'angles existent
   // aussi sur ces échantillons mais portent la médiane sur la fenêtre de
@@ -99,7 +111,7 @@ function computedScore(sample: CalibrationSampleRow): number | null {
       REP_SCORING_GRID[sample.variation]
     ).filter((s) => Number.isFinite(s.score));
     if (scores.length === 0) return null;
-    return globalScore(scores);
+    return scores;
   }
 
   const progression = sample.variation as Progression;
@@ -139,7 +151,41 @@ function computedScore(sample: CalibrationSampleRow): number | null {
   // Un échantillon capturé avant l'ajout d'un critère n'a pas toutes les
   // mesures : on ne compare que s'il en reste assez pour un score sensé.
   if (scores.length === 0) return null;
-  return globalScore(scores);
+  return scores;
+}
+
+// Confrontations critère par critère, quand l'humain a détaillé sa note.
+//
+// C'est ce qui rend une recalibration décidable : un désaccord global peut
+// venir de n'importe lequel des cinq critères, alors qu'un désaccord sur la
+// forme désigne le seuil de forme et lui seul.
+function detailComparisons(
+  sample: CalibrationSampleRow,
+  scores: CriterionScore[]
+): { label: string; userRating: number; computed: number }[] {
+  const pick = (critere: string) =>
+    scores.find((s) => s.critere === critere)?.score ?? null;
+  const details: { label: string; userRating: number; computed: number }[] = [];
+  const formScore = pick("rep_form");
+  if (sample.rating_form !== null && formScore !== null) {
+    details.push({
+      label: "forme",
+      userRating: sample.rating_form,
+      computed: formScore,
+    });
+  }
+  // La profondeur atteinte en position basse est notée par le critère
+  // d'amplitude : c'est la même chose vue de deux côtés, l'angle du coude au
+  // point bas.
+  const depthScore = pick("rep_peak");
+  if (sample.rating_depth !== null && depthScore !== null) {
+    details.push({
+      label: "profondeur",
+      userRating: sample.rating_depth,
+      computed: depthScore,
+    });
+  }
+  return details;
 }
 
 function gapColor(absGap: number): string {
@@ -202,14 +248,16 @@ export default function CalibrationAccuracy({
   const byVariation = new Map<string, SampleComparison[]>();
 
   for (const sample of samples) {
-    const computed = computedScore(sample);
-    if (computed === null) continue;
+    const scores = sampleScores(sample);
+    if (scores === null) continue;
+    const computed = globalScore(scores);
     const list = byVariation.get(sample.variation) ?? [];
     list.push({
       id: sample.id,
       index: list.length + 1,
       userRating: sample.user_rating,
       computed,
+      details: detailComparisons(sample, scores),
       incoherence: autreVariation(sample),
       // Écart signé : positif = la grille est plus généreuse que toi.
       gap: computed - sample.user_rating,
@@ -314,6 +362,33 @@ export default function CalibrationAccuracy({
                       <TrashIcon className="h-3.5 w-3.5" />
                     </button>
                   </div>
+
+                  {s.details.length > 0 && (
+                    // Décalé sous la ligne principale et en plus petit : le
+                    // détail sert à décider QUEL seuil bouger, il ne doit pas
+                    // concurrencer la comparaison globale du regard.
+                    <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 pl-9 text-[11px]">
+                      {s.details.map((d) => {
+                        const gap = d.computed - d.userRating;
+                        return (
+                          <span key={d.label} className="text-slate-500">
+                            {d.label}{" "}
+                            <span className="text-slate-300">
+                              {d.userRating.toFixed(1)}
+                            </span>{" "}
+                            vs{" "}
+                            <span className="text-slate-300">
+                              {d.computed.toFixed(1)}
+                            </span>{" "}
+                            <span className={`font-semibold ${gapColor(Math.abs(gap))}`}>
+                              {gap > 0 ? "+" : ""}
+                              {gap.toFixed(1)}
+                            </span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                   {s.incoherence && (
                     <p className="mt-1 pl-9 text-[11px] leading-snug text-slate-500">
                       Contre-exemple : {s.incoherence}, ce n&apos;est pas la

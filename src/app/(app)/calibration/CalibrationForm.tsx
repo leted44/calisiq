@@ -194,6 +194,11 @@ export default function CalibrationForm() {
   const [progressPercent, setProgressPercent] = useState(0);
   const [result, setResult] = useState<PoseAnalysisResult | null>(null);
   const [rating, setRating] = useState("");
+  // Notes par critère, propres aux exercices à répétition. Vides sur un hold,
+  // et facultatives partout : sans elles l'échantillon reste exploitable, il
+  // renseigne simplement moins.
+  const [ratingForm, setRatingForm] = useState("");
+  const [ratingDepth, setRatingDepth] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -243,6 +248,8 @@ export default function CalibrationForm() {
     setTrimEnd(0);
     setResult(null);
     setRating("");
+    setRatingForm("");
+    setRatingDepth("");
     setNotes("");
     setSaved(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -253,6 +260,8 @@ export default function CalibrationForm() {
   function handleRemeasure() {
     setResult(null);
     setRating("");
+    setRatingForm("");
+    setRatingDepth("");
     setNotes("");
     setSaved(false);
     setError(null);
@@ -347,6 +356,21 @@ export default function CalibrationForm() {
       setError("Indique une note entre 0 et 10.");
       return;
     }
+    // Une note par critère laissée vide est une absence d'avis, pas un zéro.
+    // Une note saisie hors barème est en revanche une faute de frappe, et
+    // l'enregistrer fausserait la calibration en silence.
+    function optionalRating(raw: string): number | null | "invalide" {
+      if (!raw) return null;
+      const value = Number(raw);
+      if (Number.isNaN(value) || value < 0 || value > 10) return "invalide";
+      return value;
+    }
+    const formValue = optionalRating(ratingForm);
+    const depthValue = optionalRating(ratingDepth);
+    if (formValue === "invalide" || depthValue === "invalide") {
+      setError("Les notes de forme et de profondeur vont de 0 à 10.");
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -390,6 +414,10 @@ export default function CalibrationForm() {
       rep_form: repMeasure(result.scores, "rep_form"),
       rep_tempo: repMeasure(result.scores, "rep_tempo"),
       user_rating: ratingValue,
+      // Notes humaines détaillées : c'est ce qui permet de savoir QUEL seuil
+      // recaler quand la grille et l'œil ne sont pas d'accord.
+      rating_form: formValue,
+      rating_depth: depthValue,
       notes: notes || null,
       // En base la colonne n'accepte que 'video' ou 'photo' ; en interne
       // l'état s'appelle "image" parce que c'est le type de l'élément HTML.
@@ -412,6 +440,8 @@ export default function CalibrationForm() {
   // réimport ni réanalyse.
   function handleRateAnotherVariation() {
     setRating("");
+    setRatingForm("");
+    setRatingDepth("");
     setNotes("");
     setSaved(false);
     setError(null);
@@ -899,6 +929,53 @@ export default function CalibrationForm() {
                   className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
                 />
               </div>
+              {isRepProgression(variation) && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Détail par critère (facultatif)
+                  </label>
+                  <p className="text-[11px] leading-relaxed text-slate-500">
+                    Note séparément ce que l&apos;œil juge vraiment. Sans ce
+                    détail, un désaccord avec la grille ne dit pas quel seuil
+                    est en cause.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        max={10}
+                        step={0.5}
+                        value={ratingForm}
+                        onChange={(e) => setRatingForm(e.target.value)}
+                        placeholder="Forme"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
+                      />
+                      <p className="text-[10px] leading-tight text-slate-600">
+                        Corps aligné ou cassé à la hanche
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        max={10}
+                        step={0.5}
+                        value={ratingDepth}
+                        onChange={(e) => setRatingDepth(e.target.value)}
+                        placeholder="Profondeur"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
+                      />
+                      <p className="text-[10px] leading-tight text-slate-600">
+                        Jusqu&apos;où descend la position basse
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   Notes (facultatif)
