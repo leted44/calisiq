@@ -300,13 +300,28 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     hip_angle: { target: 100, tolerance: 35 },
     knee_angle: { target: 70, tolerance: 40 },
   },
-  // SEUILS DRAFT, aucun échantillon réel.
-  //
   // Construits sur le même patron que la Single Leg Front Lever, pour la
   // même raison : avec une jambe tendue et l'autre repliée, hip_angle et
   // knee_angle sont des moyennes gauche/droite qui ne décrivent aucune des
   // deux jambes. Les critères ci-dessous isolent celle qui porte la
   // difficulté.
+  //
+  // CONFRONTÉS À DEUX ÉCHANTILLONS le 2026-09-07, sans qu'aucune valeur ait
+  // eu à bouger : écart absolu moyen de 0,33 entre la grille et l'œil, et
+  // symétrique — une note au-dessus, une en dessous, donc pas de biais à
+  // corriger. Les deux échantillons encadrent exactement ce que mesure
+  // bent_knee_angle, une jambe repliée à 108 degrés notée 9,8 et deux jambes
+  // tendues notées 7, et le critère les sépare correctement (8,7 contre 0).
+  //
+  // Reste en brouillon malgré ce bon résultat : sur les deux échantillons un
+  // seul est une exécution réelle de la figure, l'autre est un full soumis
+  // dans cette catégorie. Une variation ne se déclare pas calibrée sur une
+  // exécution.
+  //
+  // Déplacer la cible de bent_knee_angle de 100 à 110 ferait tomber l'écart
+  // moyen à 0,17. Non fait : ça revient à régler un seuil sur un unique
+  // point, et la calibration de la Single Leg Front Lever avait montré que
+  // toute valeur entre 90 et 120 y donnait le même résultat.
   //
   // torso_angle plutôt que body_line_angle_from_horizontal, comme sur le
   // tuck : la ligne épaule-cheville suppose deux jambes dans la même
