@@ -11,7 +11,13 @@ import {
   type PoseAngles,
   type HoldWindow,
 } from "./angles";
-import { scoreAngles, globalScore, type CriterionScore, scoreReps } from "./scoring";
+import {
+  scoreAngles,
+  globalScore,
+  globalScoreWithMajorFault,
+  scoreReps,
+  type CriterionScore,
+} from "./scoring";
 import {
   pickWeakestCriterion,
   recommendationsFor,
@@ -431,7 +437,7 @@ export async function runPoseAnalysis({
       ),
       summaryAngles: median,
       scores: repScores,
-      globalScoreValue: globalScore(repScores),
+      globalScoreValue: globalScoreWithMajorFault(repScores),
       recommendations: recommendationsFor(
         weakestRep.critere,
         weakestRep.score,

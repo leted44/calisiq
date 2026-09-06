@@ -8,6 +8,7 @@ import {
   scoreAngles,
   globalScore,
   scoreRepMeasures,
+  globalScoreWithMajorFault,
   type CriterionScore,
 } from "@/lib/pose/scoring";
 import {
@@ -254,7 +255,11 @@ export default function CalibrationAccuracy({
   for (const sample of samples) {
     const scores = sampleScores(sample);
     if (scores === null) continue;
-    const computed = globalScore(scores);
+    // Même agrégation qu'à l'analyse, sinon la page de justesse jugerait la
+    // grille sur une note que l'application n'affiche pas.
+    const computed = isRepProgression(sample.variation)
+      ? globalScoreWithMajorFault(scores)
+      : globalScore(scores);
     const list = byVariation.get(sample.variation) ?? [];
     list.push({
       id: sample.id,

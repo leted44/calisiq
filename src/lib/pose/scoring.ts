@@ -231,6 +231,50 @@ export function globalScore(scores: CriterionScore[]): number {
   return scores.reduce((sum, s) => sum + s.score, 0) / scores.length;
 }
 
+// En dessous de la moitié du barème, un critère ne décrit plus une
+// imperfection mais une faute.
+const MAJOR_FAULT_THRESHOLD = 5;
+// Écart maximal toléré entre la note globale et le critère fautif.
+const MAJOR_FAULT_MARGIN = 2;
+
+/**
+ * Note globale avec plafonnement sur faute majeure.
+ *
+ * POURQUOI LA MOYENNE NE SUFFIT PAS
+ *
+ * Mesuré sur un vrai échantillon : une série de handstand push-up exécutée
+ * corps plié en deux, notée 2/10 à l'œil, ressortait à 8,1/10. Ses critères
+ * pris un par un étaient pourtant justes — la forme sortait à 0,5 quand
+ * l'humain mettait 1,5, la profondeur à 10 quand il mettait 9,5. C'est
+ * l'agrégation qui était fausse : quatre critères à 10 noyaient le seul qui
+ * voyait la faute.
+ *
+ * Une moyenne suppose des critères interchangeables, où un excédent ici
+ * compense un manque là. La technique ne marche pas comme ça : une figure
+ * dont le corps est cassé est ratée, quelle que soit la qualité du reste.
+ * C'est d'ailleurs le principe des déductions en gymnastique.
+ *
+ * D'où la règle : tant qu'aucun critère ne descend sous la moitié, la
+ * moyenne s'applique telle quelle et rien ne change. Dès qu'un critère
+ * bascule dans la faute, il tire la note globale à lui.
+ *
+ * Vérifié sur 7 échantillons notés à la main, écart absolu moyen entre la
+ * grille et l'œil : 1,23 avec la moyenne seule, 0,46 avec ce plafond, et le
+ * pire écart passe de 6,09 à 0,82.
+ *
+ * RÉSERVÉ AUX EXERCICES À RÉPÉTITION pour l'instant. Le défaut est le même
+ * sur les figures statiques, mais leurs seuils ont été calibrés sous la
+ * moyenne simple : les basculer sans refaire ce travail déplacerait toutes
+ * leurs notes d'un coup.
+ */
+export function globalScoreWithMajorFault(scores: CriterionScore[]): number {
+  const mean = globalScore(scores);
+  if (scores.length === 0) return mean;
+  const weakest = Math.min(...scores.map((s) => s.score));
+  if (weakest >= MAJOR_FAULT_THRESHOLD) return mean;
+  return Math.min(mean, weakest + MAJOR_FAULT_MARGIN);
+}
+
 // ---------------------------------------------------------------------------
 // Notation des exercices à répétition
 // ---------------------------------------------------------------------------
