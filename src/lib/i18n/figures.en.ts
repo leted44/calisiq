@@ -1,0 +1,48 @@
+import type { figuresFr } from "./figures.fr";
+
+// Les noms de figures restent en anglais dans les deux langues : « planche »,
+// « front lever » ou « dragon flag » sont les termes employés partout dans le
+// milieu, y compris en français. Ce sont les descriptions qui se traduisent.
+export const figuresEn: typeof figuresFr = {
+  figures: {
+    planche: { label: "Planche", tagline: "Horizontal push" },
+    handstand: { label: "Handstand", tagline: "Inverted balance" },
+    front_lever: { label: "Front Lever", tagline: "Horizontal pull" },
+    dragon_flag: { label: "Dragon Flag", tagline: "Inverted core hold" },
+    human_flag: { label: "Human Flag", tagline: "Lateral core hold" },
+    traction: { label: "Pull-up", tagline: "Vertical pull" },
+    dips: { label: "Dips", tagline: "Vertical push" },
+    pompes: { label: "Push-ups", tagline: "Horizontal push" },
+    pistol: { label: "Pistol Squat", tagline: "Single-leg squat" },
+  },
+  variations: {
+    tuck_planche: { label: "Tuck", cue: "Knees drawn in to the chest" },
+    advanced_tuck_planche: { label: "Advanced tuck", cue: "Hips open, knees still tucked" },
+    straddle_planche: { label: "Straddle", cue: "Legs straight and spread wide" },
+    full_planche: { label: "Full", cue: "Body fully extended and horizontal" },
+    handstand: { label: "Handstand", cue: "Body stacked in balance on the hands" },
+    handstand_push_up: { label: "Handstand Push-up", cue: "Full arm bend in balance, body braced" },
+    one_arm_handstand: { label: "One Arm Handstand", cue: "Balance held on a single arm" },
+    tuck_front_lever: { label: "Tuck", cue: "Knees drawn in to the chest" },
+    advanced_tuck_front_lever: { label: "Advanced tuck", cue: "Hips open, knees still tucked" },
+    one_leg_front_lever: { label: "Single Leg", cue: "One leg straight, the other tucked" },
+    straddle_front_lever: { label: "Straddle", cue: "Legs straight and spread wide" },
+    full_front_lever: { label: "Full", cue: "Body fully extended under the bar" },
+    one_arm_front_lever: { label: "One Arm", cue: "Hanging from a single arm" },
+    tuck_dragon_flag: { label: "Tuck", cue: "Knees tucked, the torso lowers as one block" },
+    one_leg_dragon_flag: { label: "Single Leg", cue: "One leg in line with the body, the other tucked" },
+    full_dragon_flag: { label: "Full", cue: "Body fully extended, no break at the hips" },
+    tuck_human_flag: { label: "Tuck", cue: "Knees tucked, body horizontal against the pole" },
+    straddle_human_flag: { label: "Straddle", cue: "Legs straight and spread wide" },
+    full_human_flag: { label: "Full", cue: "Body fully extended and horizontal" },
+    australian_pull_up: { label: "Australian", cue: "Body angled under a low bar, feet on the ground" },
+    strict_pull_up: { label: "Strict", cue: "Hanging, no swing, chin over the bar" },
+    bench_dip: { label: "Bench", cue: "Hands behind you on a bench, feet on the ground" },
+    parallel_dip: { label: "Bars", cue: "Body suspended between two parallel bars" },
+    incline_push_up: { label: "Incline", cue: "Hands raised, body angled" },
+    push_up: { label: "Floor", cue: "Body braced, parallel to the ground" },
+    decline_push_up: { label: "Decline", cue: "Feet raised, load shifted onto the shoulders" },
+    box_pistol_squat: { label: "To a box", cue: "Lower to a support, free leg straight in front" },
+    pistol_squat: { label: "Full", cue: "Full descent on one leg, no support" },
+  },
+};

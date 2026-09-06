@@ -1,4 +1,5 @@
 import type { Dictionary } from "./fr";
+import { figuresEn } from "./figures.en";
 
 // Dictionnaire anglais. Son type est celui du français : toute clé ajoutée
 // là-bas et absente ici casse la compilation, ce qui évite les traductions
@@ -7,6 +8,7 @@ import type { Dictionary } from "./fr";
 // Traduit dans le registre de l'app : tutoiement français rendu par un ton
 // direct en anglais, pas de vouvoiement guindé ni de jargon.
 export const en: Dictionary = {
+  ...figuresEn,
   meta: {
     description: "Biomechanical analysis of your calisthenics movements",
   },
@@ -28,6 +30,11 @@ export const en: Dictionary = {
     no: "No",
     optional: "optional",
     seconds: (n: number) => `${n}s`,
+  },
+  analysis: {
+    comingSoon: "Coming soon",
+    addFavorite: (name: string) => `Add ${name} to favourites`,
+    removeFavorite: (name: string) => `Remove ${name} from favourites`,
   },
   install: {
     installedTitle: "CalisIQ is installed",

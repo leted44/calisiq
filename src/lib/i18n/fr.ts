@@ -1,3 +1,5 @@
+import { figuresFr } from "./figures.fr";
+
 // Dictionnaire français, source de vérité.
 //
 // Le type du dictionnaire anglais est dérivé de celui-ci (`typeof fr`), donc
@@ -8,6 +10,7 @@
 // l'ordre des mots change d'une langue à l'autre, et une fonction laisse
 // chaque langue placer ses variables où sa grammaire l'exige.
 export const fr = {
+  ...figuresFr,
   meta: {
     description: "Analyse biomécanique de tes mouvements de calisthénie",
   },
@@ -29,6 +32,11 @@ export const fr = {
     no: "Non",
     optional: "facultatif",
     seconds: (n: number) => `${n} s`,
+  },
+  analysis: {
+    comingSoon: "Bientôt disponible",
+    addFavorite: (name: string) => `Ajouter ${name} aux favoris`,
+    removeFavorite: (name: string) => `Retirer ${name} des favoris`,
   },
   install: {
     installedTitle: "CalisIQ est bien installé",

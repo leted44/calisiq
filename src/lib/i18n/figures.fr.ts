@@ -1,0 +1,49 @@
+// Noms et descriptions des figures et de leurs variations.
+//
+// Séparés du dictionnaire principal parce que ce sont des données du domaine
+// et non de l'habillage : elles suivent le catalogue de figures, pas
+// l'interface. Les clés reprennent exactement celles de la grille de
+// notation, donc une figure ajoutée là-bas se réclame ici d'elle-même.
+export const figuresFr = {
+  figures: {
+    planche: { label: "Planche", tagline: "Poussée horizontale" },
+    handstand: { label: "Handstand", tagline: "Équilibre inversé" },
+    front_lever: { label: "Front Lever", tagline: "Tirage horizontal" },
+    dragon_flag: { label: "Dragon Flag", tagline: "Gainage renversé" },
+    human_flag: { label: "Drapeau", tagline: "Gainage latéral" },
+    traction: { label: "Traction", tagline: "Tirage vertical" },
+    dips: { label: "Dips", tagline: "Poussée verticale" },
+    pompes: { label: "Pompes", tagline: "Poussée horizontale" },
+    pistol: { label: "Pistol Squat", tagline: "Jambes, unilatéral" },
+  },
+  variations: {
+    tuck_planche: { label: "Tuck", cue: "Genoux ramenés contre la poitrine" },
+    advanced_tuck_planche: { label: "Advanced tuck", cue: "Hanches ouvertes, genoux encore repliés" },
+    straddle_planche: { label: "Straddle", cue: "Jambes tendues et écartées" },
+    full_planche: { label: "Full", cue: "Corps entièrement tendu à l’horizontale" },
+    handstand: { label: "Handstand", cue: "Corps aligné en équilibre sur les mains" },
+    handstand_push_up: { label: "Handstand Push-up", cue: "Flexion complète des bras en équilibre, corps gainé" },
+    one_arm_handstand: { label: "One Arm Handstand", cue: "Équilibre tenu sur un seul bras" },
+    tuck_front_lever: { label: "Tuck", cue: "Genoux ramenés contre la poitrine" },
+    advanced_tuck_front_lever: { label: "Advanced tuck", cue: "Hanches ouvertes, genoux encore repliés" },
+    one_leg_front_lever: { label: "Single Leg", cue: "Une jambe tendue, l’autre repliée" },
+    straddle_front_lever: { label: "Straddle", cue: "Jambes tendues et écartées" },
+    full_front_lever: { label: "Full", cue: "Corps entièrement tendu sous la barre" },
+    one_arm_front_lever: { label: "One Arm", cue: "Suspendu par un seul bras" },
+    tuck_dragon_flag: { label: "Tuck", cue: "Genoux repliés, le tronc descend d'un bloc" },
+    one_leg_dragon_flag: { label: "Single Leg", cue: "Une jambe tendue dans l'axe du corps, l'autre repliée" },
+    full_dragon_flag: { label: "Full", cue: "Corps entièrement tendu, aucune cassure à la hanche" },
+    tuck_human_flag: { label: "Tuck", cue: "Genoux repliés, corps à l'horizontale contre le mât" },
+    straddle_human_flag: { label: "Straddle", cue: "Jambes tendues et écartées" },
+    full_human_flag: { label: "Full", cue: "Corps entièrement tendu à l'horizontale" },
+    australian_pull_up: { label: "Australienne", cue: "Corps incliné sous une barre basse, pieds au sol" },
+    strict_pull_up: { label: "Stricte", cue: "Suspendu, sans élan, menton au-dessus de la barre" },
+    bench_dip: { label: "Sur banc", cue: "Mains derrière soi sur un banc, pieds au sol" },
+    parallel_dip: { label: "Barres", cue: "Corps suspendu entre deux barres parallèles" },
+    incline_push_up: { label: "Inclinées", cue: "Mains surélevées, corps incliné" },
+    push_up: { label: "Au sol", cue: "Corps gainé, parallèle au sol" },
+    decline_push_up: { label: "Déclinées", cue: "Pieds surélevés, charge reportée sur les épaules" },
+    box_pistol_squat: { label: "Sur boîte", cue: "Descente jusqu'à un appui, jambe libre tendue devant" },
+    pistol_squat: { label: "Complet", cue: "Descente complète sur une jambe, sans appui" },
+  },
+};

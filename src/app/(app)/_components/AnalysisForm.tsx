@@ -19,6 +19,7 @@ import {
 } from "@/lib/pose/report";
 import { LockIcon, ApproximateIcon, StarIcon } from "@/components/icons";
 import { useFavorites, toggleFavorite } from "./favorites";
+import { useT } from "@/lib/i18n/client";
 import {
   UploadCloudIcon,
   CameraIcon,
@@ -88,27 +89,21 @@ type Variation =
 
 const FIGURES: {
   value: Figure;
-  label: string;
   // Nature du geste, en deux mots. Sert à séparer une figure d'une variation
   // au premier coup d'œil : la figure dit quel mouvement on travaille, la
   // variation dit à quel stade on en est.
-  tagline: string;
   available: boolean;
   Icon: typeof PlancheFigureIcon;
   image?: string;
 }[] = [
   {
     value: "planche",
-    label: "Planche",
-    tagline: "Poussée horizontale",
     available: true,
     Icon: PlancheFigureIcon,
     image: "/figures/planche.png",
   },
   {
     value: "handstand",
-    label: "Handstand",
-    tagline: "Équilibre inversé",
     available: true,
     Icon: HandstandFigureIcon,
     image: "/figures/handstand.png",
@@ -122,56 +117,42 @@ const FIGURES: {
     // de tuck_front_lever) : les scores affichés sont donc à prendre avec
     // prudence tant que la recalibration n'a pas été faite. Suivre la
     // justesse dans le bloc "Justesse de la grille" de /calibration.
-    label: "Front Lever",
-    tagline: "Traction horizontale",
     available: true,
     Icon: FrontLeverFigureIcon,
     image: "/figures/full-front-lever.png",
   },
   {
     value: "dragon_flag",
-    label: "Dragon Flag",
-    tagline: "Gainage renversé",
     available: true,
     Icon: DragonFlagFigureIcon,
     image: "/figures/dragon-flag.png",
   },
   {
     value: "human_flag",
-    label: "Drapeau",
-    tagline: "Gainage latéral",
     available: true,
     Icon: HumanFlagFigureIcon,
     image: "/figures/human-flag.png",
   },
   {
     value: "traction",
-    label: "Traction",
-    tagline: "Tirage vertical",
     available: true,
     Icon: PullUpFigureIcon,
     image: "/figures/strict-pull-up.png",
   },
   {
     value: "dips",
-    label: "Dips",
-    tagline: "Poussée verticale",
     available: true,
     Icon: DipFigureIcon,
     image: "/figures/parallel-dip.png",
   },
   {
     value: "pompes",
-    label: "Pompes",
-    tagline: "Poussée horizontale",
     available: true,
     Icon: PushUpFigureIcon,
     image: "/figures/push-up.png",
   },
   {
     value: "pistol",
-    label: "Pistol Squat",
-    tagline: "Jambes, unilatéral",
     available: true,
     Icon: PistolFigureIcon,
     image: "/figures/pistol-squat.png",
@@ -188,12 +169,6 @@ type VariationIndexEntry = { figure: Figure; option: VariationOption };
 
 type VariationOption = {
   value: Variation;
-  label: string;
-  // Ce qui définit la position, en une ligne. C'est le seul moyen fiable de
-  // distinguer les variations entre elles : de profil et à la taille d'une
-  // vignette, une straddle et une full planche sont deux silhouettes quasi
-  // identiques. La description tranche là où l'illustration ne peut pas.
-  cue: string;
   Icon: typeof TuckPlancheIcon;
   available: boolean;
   image?: string;
@@ -203,32 +178,24 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   planche: [
     {
       value: "tuck_planche",
-      label: "Tuck",
-      cue: "Genoux ramenés contre la poitrine",
       Icon: TuckPlancheIcon,
       available: true,
       image: "/figures/tuck-planche.png",
     },
     {
       value: "advanced_tuck_planche",
-      label: "Advanced tuck",
-      cue: "Hanches ouvertes, genoux encore repliés",
       Icon: AdvancedTuckIcon,
       available: true,
       image: "/figures/advanced-tuck-planche.png",
     },
     {
       value: "straddle_planche",
-      label: "Straddle",
-      cue: "Jambes tendues et écartées",
       Icon: StraddlePlancheIcon,
       available: true,
       image: "/figures/straddle-planche.png",
     },
     {
       value: "full_planche",
-      label: "Full",
-      cue: "Corps entièrement tendu à l’horizontale",
       Icon: FullPlancheIcon,
       available: true,
       image: "/figures/planche.png",
@@ -237,24 +204,18 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   handstand: [
     {
       value: "handstand",
-      label: "Handstand",
-      cue: "Corps aligné en équilibre sur les mains",
       Icon: HandstandFigureIcon,
       available: true,
       image: "/figures/handstand.png",
     },
     {
       value: "handstand_push_up",
-      label: "Handstand Push-up",
-      cue: "Flexion complète des bras en équilibre, corps gainé",
       Icon: HandstandPushUpIcon,
       available: true,
       image: "/figures/handstand-push-up.png",
     },
     {
       value: "one_arm_handstand",
-      label: "One Arm Handstand",
-      cue: "Équilibre tenu sur un seul bras",
       Icon: OneArmHandstandIcon,
       available: false,
       image: "/figures/one-arm-handstand.png",
@@ -263,16 +224,12 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   front_lever: [
     {
       value: "tuck_front_lever",
-      label: "Tuck",
-      cue: "Genoux ramenés contre la poitrine",
       Icon: TuckFrontLeverIcon,
       available: true,
       image: "/figures/tuck-front-lever.png",
     },
     {
       value: "advanced_tuck_front_lever",
-      label: "Advanced tuck",
-      cue: "Hanches ouvertes, genoux encore repliés",
       Icon: AdvancedTuckFrontLeverIcon,
       available: true,
       image: "/figures/advanced-tuck-front-lever.png",
@@ -281,32 +238,24 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     // l'advanced tuck et le straddle.
     {
       value: "one_leg_front_lever",
-      label: "Single Leg",
-      cue: "Une jambe tendue, l’autre repliée",
       Icon: OneLegFrontLeverIcon,
       available: true,
       image: "/figures/one-leg-front-lever.png",
     },
     {
       value: "straddle_front_lever",
-      label: "Straddle",
-      cue: "Jambes tendues et écartées",
       Icon: StraddleFrontLeverIcon,
       available: true,
       image: "/figures/straddle-front-lever.png",
     },
     {
       value: "full_front_lever",
-      label: "Full",
-      cue: "Corps entièrement tendu sous la barre",
       Icon: FullFrontLeverIcon,
       available: true,
       image: "/figures/full-front-lever.png",
     },
     {
       value: "one_arm_front_lever",
-      label: "One Arm",
-      cue: "Suspendu par un seul bras",
       Icon: OneArmFrontLeverIcon,
       available: false,
       image: "/figures/one-arm-front-lever.png",
@@ -318,23 +267,17 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   dragon_flag: [
     {
       value: "tuck_dragon_flag",
-      label: "Tuck",
-      cue: "Genoux repliés, le tronc descend d'un bloc",
       Icon: TuckDragonFlagIcon,
       available: true,
       image: "/figures/tuck-dragon-flag.png",
     },
     {
       value: "one_leg_dragon_flag",
-      label: "Single Leg",
-      cue: "Une jambe tendue dans l'axe du corps, l'autre repliée",
       Icon: OneLegDragonFlagIcon,
       available: true,
     },
     {
       value: "full_dragon_flag",
-      label: "Full",
-      cue: "Corps entièrement tendu, aucune cassure à la hanche",
       Icon: FullDragonFlagIcon,
       available: true,
       image: "/figures/dragon-flag.png",
@@ -346,22 +289,16 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   human_flag: [
     {
       value: "tuck_human_flag",
-      label: "Tuck",
-      cue: "Genoux repliés, corps à l'horizontale contre le mât",
       Icon: TuckHumanFlagIcon,
       available: true,
     },
     {
       value: "straddle_human_flag",
-      label: "Straddle",
-      cue: "Jambes tendues et écartées",
       Icon: StraddleHumanFlagIcon,
       available: true,
     },
     {
       value: "full_human_flag",
-      label: "Full",
-      cue: "Corps entièrement tendu à l'horizontale",
       Icon: FullHumanFlagIcon,
       available: true,
       image: "/figures/human-flag.png",
@@ -378,16 +315,12 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   traction: [
     {
       value: "australian_pull_up",
-      label: "Australienne",
-      cue: "Corps incliné sous une barre basse, pieds au sol",
       Icon: PullUpFigureIcon,
       available: true,
       image: "/figures/australian-pull-up.png",
     },
     {
       value: "strict_pull_up",
-      label: "Stricte",
-      cue: "Suspendu, sans élan, menton au-dessus de la barre",
       Icon: PullUpFigureIcon,
       available: true,
       image: "/figures/strict-pull-up.png",
@@ -396,16 +329,12 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   dips: [
     {
       value: "bench_dip",
-      label: "Sur banc",
-      cue: "Mains derrière soi sur un banc, pieds au sol",
       Icon: DipFigureIcon,
       available: true,
       image: "/figures/bench-dip.png",
     },
     {
       value: "parallel_dip",
-      label: "Barres",
-      cue: "Corps suspendu entre deux barres parallèles",
       Icon: DipFigureIcon,
       available: true,
       image: "/figures/parallel-dip.png",
@@ -414,24 +343,18 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   pompes: [
     {
       value: "incline_push_up",
-      label: "Inclinées",
-      cue: "Mains surélevées, corps incliné",
       Icon: PushUpFigureIcon,
       available: true,
       image: "/figures/incline-push-up.png",
     },
     {
       value: "push_up",
-      label: "Au sol",
-      cue: "Corps gainé, parallèle au sol",
       Icon: PushUpFigureIcon,
       available: true,
       image: "/figures/push-up.png",
     },
     {
       value: "decline_push_up",
-      label: "Déclinées",
-      cue: "Pieds surélevés, charge reportée sur les épaules",
       Icon: PushUpFigureIcon,
       available: true,
       image: "/figures/decline-push-up.png",
@@ -440,16 +363,12 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
   pistol: [
     {
       value: "box_pistol_squat",
-      label: "Sur boîte",
-      cue: "Descente jusqu'à un appui, jambe libre tendue devant",
       Icon: PistolFigureIcon,
       available: true,
       image: "/figures/box-pistol-squat.png",
     },
     {
       value: "pistol_squat",
-      label: "Complet",
-      cue: "Descente complète sur une jambe, sans appui",
       Icon: PistolFigureIcon,
       available: true,
       image: "/figures/pistol-squat.png",
@@ -463,9 +382,7 @@ const VARIATION_INDEX: Record<string, VariationIndexEntry> = Object.fromEntries(
   )
 );
 
-const FIGURE_LABEL: Record<string, string> = Object.fromEntries(
-  FIGURES.map((f) => [f.value, f.label])
-);
+
 
 // Marque d'état d'une figure, en pastille de coin.
 //
@@ -547,6 +464,7 @@ function VariationRail({
   const currentIndex = options.findIndex((o) => o.value === value);
   const current = options[currentIndex];
   const count = options.length;
+  const t = useT();
   const favorites = useFavorites();
   const isFavorite = current ? favorites.includes(current.value) : false;
   // Le rail relie les centres des pastilles, pas les bords de la grille :
@@ -656,7 +574,7 @@ function VariationRail({
                       : "text-slate-400"
                   }`}
                 >
-                  {o.label}
+                  {t.variations[o.value].label}
                 </span>
               </button>
             );
@@ -681,8 +599,8 @@ function VariationRail({
                 aria-pressed={isFavorite}
                 aria-label={
                   isFavorite
-                    ? `Retirer ${current.label} des favoris`
-                    : `Ajouter ${current.label} aux favoris`
+                    ? t.analysis.removeFavorite(t.variations[current.value].label)
+                    : t.analysis.addFavorite(t.variations[current.value].label)
                 }
                 className={`-m-1.5 shrink-0 rounded-lg p-1.5 transition-colors ${
                   isFavorite
@@ -693,7 +611,7 @@ function VariationRail({
                 <StarIcon className="h-4 w-4" filled={isFavorite} />
               </button>
               <p className="truncate text-sm font-semibold text-white">
-                {current.label}
+                {t.variations[current.value].label}
               </p>
             </div>
             <span className="flex shrink-0 items-center gap-2">
@@ -717,7 +635,7 @@ function VariationRail({
             </span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
-            {current.cue}
+            {t.variations[current.value].cue}
           </p>
           {!current.available ? (
             <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-500">
@@ -829,6 +747,7 @@ export default function AnalysisForm() {
   // Favoris résolus vers leur figure et leur option. Un favori enregistré
   // pour une variation qui n'existerait plus est simplement ignoré, plutôt
   // que de faire planter l'accueil.
+  const t = useT();
   const favorites = useFavorites();
   const favoriteEntries = favorites
     .map((value) => VARIATION_INDEX[value])
@@ -1445,10 +1364,10 @@ export default function AnalysisForm() {
                         active ? "text-white" : "text-slate-300"
                       }`}
                     >
-                      {option.label}
+                      {t.variations[option.value].label}
                     </span>
                     <span className="block truncate text-[11px] leading-tight text-slate-500">
-                      {FIGURE_LABEL[favFigure]}
+                      {t.figures[favFigure].label}
                     </span>
                   </span>
                 </button>
@@ -1548,14 +1467,14 @@ export default function AnalysisForm() {
                       !f.available ? "text-slate-600" : selected ? "text-white" : "text-slate-300"
                     }`}
                   >
-                    {f.label}
+                    {t.figures[f.value].label}
                   </span>
                   <span
                     className={`block truncate text-[11px] leading-tight ${
                       selected ? "text-cyan-300/80" : "text-slate-500"
                     }`}
                   >
-                    {f.available ? f.tagline : "Bientôt disponible"}
+                    {f.available ? t.figures[f.value].tagline : t.analysis.comingSoon}
                   </span>
                 </span>
               </div>
