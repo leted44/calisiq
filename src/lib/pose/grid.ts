@@ -552,7 +552,22 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     // bassin aux pieds pendant toute la descente. Casser à la hanche pour
     // raccourcir la course est la triche classique, et une série entièrement
     // cassée passait inaperçue du contrôle, qui ne voit que les variations.
-    form: { target: 178, tolerance: 15 },
+    //
+    // RECALÉ SUR 6 ÉCHANTILLONS. Cible descendue de 178 à 170 degrés, rampe
+    // inchangée. 178 décrit un corps parfaitement empilé, que ne produit
+    // aucun HSPU réel : les six prises mesurent de 156 à 173 degrés alors que
+    // l'œil les note toutes entre 8,5 et 10. La forme était systématiquement
+    // le critère le plus bas, entre 3,2 et 8,9, et tirait la note vers le bas
+    // sur des exécutions jugées bonnes. Écart absolu moyen entre grille et
+    // notes humaines : 0,51 avant, 0,43 après, et les erreurs cessent d'être
+    // toutes du même côté.
+    //
+    // Pas descendu plus bas, malgré un écart moyen qui continuait de baisser
+    // jusqu'à 0,35 à 166 degrés : les six prises sont notées de 8,5 à 10, si
+    // bien que minimiser l'écart sur cet échantillon revient à tout faire
+    // tendre vers 10. À 170 une hanche à 150 degrés vaut encore 3,6 et une
+    // hanche à 140 vaut 2,0 ; le critère garde des dents.
+    form: { target: 170, tolerance: 15 },
     tempo: { target: 65, tolerance: 45 },
   },
 };
