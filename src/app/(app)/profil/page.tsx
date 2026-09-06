@@ -13,19 +13,26 @@ import {
   ProfileIcon,
   TrendUpIcon,
 } from "@/components/icons";
+import { getDictionary } from "@/lib/i18n/server";
+import type { Dictionary } from "@/lib/i18n/fr";
 
-const SUBSCRIPTION_LABELS: Record<string, string> = {
-  free: "Gratuit",
-  pro: "Pro",
-};
+// Résolus depuis le dictionnaire au rendu : ces libellés traduisent une
+// valeur stockée en base, dont les clés restent françaises et le resteront —
+// renommer des données pour une question d'affichage serait payer très cher
+// une traduction.
+function subscriptionLabel(tier: string | null | undefined, t: Dictionary) {
+  return tier === "pro" ? t.profile.tierPro : t.profile.tierFree;
+}
 
-const GENDER_LABELS: Record<string, string> = {
-  homme: "Homme",
-  femme: "Femme",
-  autre: "Autre",
-};
+function genderLabel(gender: string | null | undefined, t: Dictionary) {
+  if (gender === "homme") return t.profile.genderMale;
+  if (gender === "femme") return t.profile.genderFemale;
+  if (gender === "autre") return t.profile.genderOther;
+  return "—";
+}
 
 export default async function ProfilPage() {
+  const t = await getDictionary();
   const supabase = await createClient();
   const {
     data: { user },
@@ -65,13 +72,13 @@ export default async function ProfilPage() {
           )}
           <div className="flex-1">
             <p className="text-xs uppercase tracking-wide text-slate-500">
-              Connecté en tant que
+              {t.profile.signedInAs}
             </p>
             <p className="mt-1 font-medium text-white">{user?.email}</p>
           </div>
           <Link
             href="/onboarding"
-            aria-label="Modifier mon profil"
+            aria-label={t.profile.editProfile}
             className="rounded-lg border border-slate-700 p-2 text-slate-300 hover:border-slate-600"
           >
             <EditIcon className="h-4 w-4" />
@@ -80,7 +87,7 @@ export default async function ProfilPage() {
 
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-            Abonnement
+            {t.profile.subscription}
           </p>
           <div className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-cyan-400">
@@ -88,35 +95,35 @@ export default async function ProfilPage() {
             </div>
             <div className="flex-1">
               <p className="font-medium text-white">
-                CalisIQ {SUBSCRIPTION_LABELS[profile?.subscription_tier ?? "free"] ?? "Gratuit"}
+                CalisIQ {subscriptionLabel(profile?.subscription_tier, t)}
               </p>
-              <p className="text-xs text-slate-500">Débloquer l&apos;analyse illimitée</p>
+              <p className="text-xs text-slate-500">{t.profile.subscriptionHint}</p>
             </div>
           </div>
         </div>
 
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-            Informations
+            {t.profile.info}
           </p>
           <div className="divide-y divide-slate-800 rounded-xl border border-slate-800 bg-slate-900">
             <div className="flex items-center gap-3 p-4">
               <RulerIcon className="h-4 w-4 text-slate-500" />
-              <p className="flex-1 text-sm text-slate-300">Taille</p>
+              <p className="flex-1 text-sm text-slate-300">{t.profile.height}</p>
               <p className="text-sm text-white">
                 {profile?.height_cm ? `${profile.height_cm} cm` : "—"}
               </p>
             </div>
             <div className="flex items-center gap-3 p-4">
               <ScaleIcon className="h-4 w-4 text-slate-500" />
-              <p className="flex-1 text-sm text-slate-300">Poids</p>
+              <p className="flex-1 text-sm text-slate-300">{t.profile.weight}</p>
               <p className="text-sm text-white">
                 {profile?.weight_kg ? `${profile.weight_kg} kg` : "—"}
               </p>
             </div>
             <div className="flex items-center gap-3 p-4">
               <CalendarIcon className="h-4 w-4 text-slate-500" />
-              <p className="flex-1 text-sm text-slate-300">Date de naissance</p>
+              <p className="flex-1 text-sm text-slate-300">{t.profile.birthDate}</p>
               <p className="text-sm text-white">
                 {profile?.birth_date
                   ? new Date(profile.birth_date).toLocaleDateString("fr-FR", {
@@ -130,9 +137,9 @@ export default async function ProfilPage() {
             </div>
             <div className="flex items-center gap-3 p-4">
               <ProfileIcon className="h-4 w-4 text-slate-500" />
-              <p className="flex-1 text-sm text-slate-300">Sexe</p>
+              <p className="flex-1 text-sm text-slate-300">{t.profile.gender}</p>
               <p className="text-sm text-white">
-                {profile?.gender ? GENDER_LABELS[profile.gender] : "—"}
+                {genderLabel(profile?.gender, t)}
               </p>
             </div>
           </div>
@@ -147,8 +154,8 @@ export default async function ProfilPage() {
               <TrendUpIcon className="h-4 w-4" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-white">Statistiques</p>
-              <p className="text-xs text-slate-500">Usage réel de l&apos;application</p>
+              <p className="font-medium text-white">{t.profile.stats}</p>
+              <p className="text-xs text-slate-500">{t.profile.statsHint}</p>
             </div>
           </Link>
         )}
@@ -162,7 +169,7 @@ export default async function ProfilPage() {
               <RulerIcon className="h-4 w-4" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-white">Calibration</p>
+              <p className="font-medium text-white">{t.profile.calibration}</p>
               <p className="text-xs text-slate-500">Mesurer et noter des figures</p>
             </div>
           </Link>

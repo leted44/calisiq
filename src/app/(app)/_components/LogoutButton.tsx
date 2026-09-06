@@ -1,11 +1,13 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LogoutIcon } from "@/components/icons";
 
 export default function LogoutButton() {
+  const t = useT();
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export default function LogoutButton() {
       className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-900/50 bg-red-500/10 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50"
     >
       <LogoutIcon className="h-4 w-4" />
-      {loading ? "Déconnexion..." : "Se déconnecter"}
+      {loading ? t.auth.signingOut : t.profile.logout}
     </button>
   );
 }

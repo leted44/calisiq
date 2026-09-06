@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useState, useSyncExternalStore } from "react";
 import {
   InstallAppIcon,
@@ -90,6 +91,7 @@ function Step({
 }
 
 export default function InstallAppButton() {
+  const t = useT();
   const standalone = useSyncExternalStore(
     subscribeToDisplayMode,
     readStandalone,
@@ -144,10 +146,8 @@ export default function InstallAppButton() {
           <CheckIcon className="h-4 w-4" />
         </div>
         <div className="flex-1">
-          <p className="font-medium text-white">CalisIQ est bien installé</p>
-          <p className="text-xs text-slate-500">
-            Tu la lances depuis ton écran d&apos;accueil
-          </p>
+          <p className="font-medium text-white">{t.install.installedTitle}</p>
+          <p className="text-xs text-slate-500">{t.install.installedHint}</p>
         </div>
       </div>
     );
@@ -165,21 +165,20 @@ export default function InstallAppButton() {
             <InstallAppIcon className="h-4 w-4" />
           </div>
           <div className="flex-1">
-            <p className="font-medium text-white">Installer CalisIQ</p>
-            <p className="text-xs text-slate-500">Deux gestes, dans Safari</p>
+            <p className="font-medium text-white">{t.install.title}</p>
+            <p className="text-xs text-slate-500">{t.install.iosSafariHint}</p>
           </div>
         </div>
 
         <ul className="mt-4 space-y-3">
           <Step index={1} icon={<IosShareIcon className="h-5 w-5" />}>
-            Touche <span className="font-medium text-white">Partager</span>, dans
-            la barre en bas de l&apos;écran
+            {t.install.iosStep1Before}
+            <span className="font-medium text-white">{t.install.iosStep1Action}</span>
+            {t.install.iosStep1After}
           </Step>
           <Step index={2} icon={<AddToHomeIcon className="h-5 w-5" />}>
-            Choisis{" "}
-            <span className="font-medium text-white">
-              Sur l&apos;écran d&apos;accueil
-            </span>
+            {t.install.iosStep2Before}
+            <span className="font-medium text-white">{t.install.iosStep2Action}</span>
           </Step>
         </ul>
       </div>
@@ -196,16 +195,13 @@ export default function InstallAppButton() {
             <InstallAppIcon className="h-4 w-4" />
           </div>
           <div className="flex-1">
-            <p className="font-medium text-white">Installer CalisIQ</p>
-            <p className="text-xs text-slate-500">
-              Sur iPhone, l&apos;installation passe par Safari
-            </p>
+            <p className="font-medium text-white">{t.install.title}</p>
+            <p className="text-xs text-slate-500">{t.install.iosOtherHint}</p>
           </div>
         </div>
 
         <p className="mt-3 text-sm leading-relaxed text-slate-400">
-          Ouvre cette adresse dans Safari, puis reviens ici : le mode
-          d&apos;emploi s&apos;affichera.
+          {t.install.iosOtherBody}
         </p>
 
         <button
@@ -214,7 +210,7 @@ export default function InstallAppButton() {
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 py-2.5 text-sm font-medium text-slate-200"
         >
           <LinkIcon className="h-4 w-4" />
-          {copied ? "Adresse copiée" : "Copier l'adresse"}
+          {copied ? t.install.linkCopied : t.install.copyLink}
         </button>
       </div>
     );
@@ -233,10 +229,8 @@ export default function InstallAppButton() {
           <InstallAppIcon className="h-4 w-4" />
         </div>
         <div className="flex-1">
-          <p className="font-medium text-white">Installer CalisIQ</p>
-          <p className="text-xs text-cyan-300/80">
-            Un seul geste, directement depuis ici
-          </p>
+          <p className="font-medium text-white">{t.install.title}</p>
+          <p className="text-xs text-cyan-300/80">{t.install.promptHint}</p>
         </div>
       </button>
     );
@@ -255,10 +249,8 @@ export default function InstallAppButton() {
           <InstallAppIcon className="h-4 w-4" />
         </div>
         <div className="flex-1">
-          <p className="font-medium text-white">Installer CalisIQ</p>
-          <p className="text-xs text-slate-500">
-            Voir comment l&apos;ajouter à ton écran d&apos;accueil
-          </p>
+          <p className="font-medium text-white">{t.install.title}</p>
+          <p className="text-xs text-slate-500">{t.install.helpHint}</p>
         </div>
       </button>
 
@@ -266,18 +258,16 @@ export default function InstallAppButton() {
         <div className="border-t border-slate-800 px-4 py-3">
           <ol className="space-y-2 text-xs leading-relaxed text-slate-400">
             <li>
-              <span className="font-semibold text-slate-200">1.</span> Ouvre le
-              menu de ton navigateur, les trois points en haut à droite.
+              <span className="font-semibold text-slate-200">1.</span>{" "}
+              {t.install.helpStep1}
             </li>
             <li>
-              <span className="font-semibold text-slate-200">2.</span> Choisis
-              « Installer l&apos;application » ou « Ajouter à l&apos;écran
-              d&apos;accueil ».
+              <span className="font-semibold text-slate-200">2.</span>{" "}
+              {t.install.helpStep2}
             </li>
           </ol>
           <p className="mt-2.5 text-[11px] text-slate-500">
-            Cette option n&apos;existe pas dans les navigateurs intégrés à
-            Instagram ou TikTok : ouvre le lien dans Chrome d&apos;abord.
+            {t.install.helpWarning}
           </p>
         </div>
       )}
