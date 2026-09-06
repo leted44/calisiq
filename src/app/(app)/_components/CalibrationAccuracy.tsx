@@ -106,7 +106,11 @@ function sampleScores(sample: CalibrationSampleRow): CriterionScore[] | null {
         peak: sample.rep_peak,
         hipSwing: sample.rep_hip_swing,
         form: sample.rep_form,
-        tempo: sample.rep_tempo ?? 0,
+        // Même règle qu'à l'analyse : sous trois répétitions le tempo n'est
+        // pas noté, sinon la grille se jugerait ici sur un critère qu'elle
+        // n'applique plus.
+        tempo:
+          (sample.rep_count ?? 0) >= 3 ? sample.rep_tempo ?? null : null,
       },
       REP_SCORING_GRID[sample.variation]
     ).filter((s) => Number.isFinite(s.score));

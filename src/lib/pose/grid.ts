@@ -540,7 +540,12 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     extendedValue: 175,
     flexedValue: 75,
     minRangeRatio: 0.55,
-    lockout: { target: 172, tolerance: 25 },
+    // Rampe resserrée de 25 à 15 degrés. À 25, un coude à 147 degrés — soit
+    // un bras à mi-chemin du droit — gardait encore des points, alors qu'un
+    // verrouillage est presque binaire : les bras sont tendus ou ils ne le
+    // sont pas. Une prise mesurée à 163 degrés passe ainsi de 6,4 à 4,0.
+    // Resserrement, jamais élargissement : la règle de recalibration tient.
+    lockout: { target: 172, tolerance: 15 },
     peak: { target: 80, tolerance: 40 },
     hipSwing: { target: 8, tolerance: 20 },
     // Le critère qui manquait sur le HSPU : le corps doit rester tendu du

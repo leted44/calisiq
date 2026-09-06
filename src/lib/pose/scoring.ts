@@ -258,7 +258,11 @@ export type RepMeasures = {
   peak: number;
   hipSwing: number | null;
   form: number | null;
-  tempo: number;
+  // Null quand la série est trop courte pour que la régularité veuille dire
+  // quelque chose. Le critère est alors ÉCARTÉ de la moyenne, et non noté 10 :
+  // sur une seule répétition il n'y a rien à comparer, et créditer un 10
+  // offrait un cinquième de la note globale sans la moindre preuve.
+  tempo: number | null;
 };
 
 /**
@@ -333,16 +337,18 @@ export function scoreRepMeasures(
     });
   }
 
-  scores.push({
-    critere: "rep_tempo",
-    score: scoreFromMinimum(
-      measures.tempo,
-      thresholds.tempo.target,
-      thresholds.tempo.tolerance
-    ),
-    valeurMesuree: measures.tempo,
-    valeurCible: thresholds.tempo.target,
-  });
+  if (measures.tempo !== null) {
+    scores.push({
+      critere: "rep_tempo",
+      score: scoreFromMinimum(
+        measures.tempo,
+        thresholds.tempo.target,
+        thresholds.tempo.tolerance
+      ),
+      valeurMesuree: measures.tempo,
+      valeurCible: thresholds.tempo.target,
+    });
+  }
 
   return scores;
 }
@@ -377,7 +383,9 @@ export function scoreReps({
       hipSwing: thresholds.hipSwing ? hipSwing(angles, reps) : null,
       form: thresholds.form ? meanHipAngle(angles, reps) : null,
       // Exprimé en pourcentage pour rester lisible à côté d'angles en degrés.
-      tempo: tempoRegularity(reps, frameTimes) * 100,
+      // Sous trois répétitions, l'écart type des durées porte sur un ou deux
+      // écarts : le chiffre existe mais ne décrit rien.
+      tempo: reps.length >= 3 ? tempoRegularity(reps, frameTimes) * 100 : null,
     },
     thresholds
   );
