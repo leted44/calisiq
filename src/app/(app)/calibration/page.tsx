@@ -15,6 +15,7 @@ const CRITERE_LABELS: Record<string, string> = {
   knee_angle: "genou",
   elbow_angle: "coude",
   body_line_angle: "axe du corps",
+  pelvis_sag: "gainage",
   rep_form: "tenue du corps",
   rep_lockout: "extension",
   rep_peak: "amplitude",

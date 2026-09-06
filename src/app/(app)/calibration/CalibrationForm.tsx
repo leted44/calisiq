@@ -807,7 +807,10 @@ export default function CalibrationForm() {
                   // Valeur absolue : le sens est passé dans le libellé, le
                   // chiffre n'a plus qu'à porter l'ampleur.
                   value: Math.abs(a.pelvisSagSign),
-                  t: undefined,
+                  // Noté sur les figures dont la grille porte ce critère, le
+                  // full dragon flag pour l'instant. Ailleurs il reste une
+                  // mesure indicative.
+                  t: grid?.pelvis_sag,
                   unit: "",
                   decimals: 3,
                 },

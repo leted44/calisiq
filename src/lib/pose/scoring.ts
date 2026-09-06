@@ -7,6 +7,7 @@ export type CriterionScore = {
     | "shoulder_protraction"
     | "shoulder_flexion"
     | "pelvis_deviation"
+    | "pelvis_sag"
     | "hip_angle"
     | "knee_angle"
     | "elbow_angle"
@@ -135,6 +136,22 @@ export function scoreAngles(
       ),
       valeurMesuree: angles.pelvisDeviation,
       valeurCible: grid.pelvis_deviation.target,
+    });
+  }
+
+  if (grid.pelvis_sag) {
+    scores.push({
+      critere: "pelvis_sag",
+      // Valeur signée passée telle quelle à un seuil maximum : une fermeture
+      // de hanche est négative, donc toujours sous la cible, donc à 10. Seul
+      // l'affaissement franchit le seuil.
+      score: scoreFromMaximum(
+        angles.pelvisSagSign,
+        grid.pelvis_sag.target,
+        grid.pelvis_sag.tolerance
+      ),
+      valeurMesuree: angles.pelvisSagSign,
+      valeurCible: grid.pelvis_sag.target,
     });
   }
 

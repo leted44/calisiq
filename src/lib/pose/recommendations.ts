@@ -627,6 +627,34 @@ const TUCK_FAMILY_PROGRESSIONS: Progression[] = [
 // tournent donc autour du gainage antérieur et du contrôle excentrique, pas
 // autour de la force de bras.
 const DRAGON_FLAG_EXERCISE_MAP: Record<string, TieredRecommendations> = {
+  pelvis_sag: {
+    faible: [
+      {
+        exercice: "Hollow body hold, 3 x 30 s, lombaires plaquées au sol",
+        raison:
+          "Le bassin s'affaisse parce que le bas du dos se creuse. La position creuse tenue au sol apprend au corps le placement exact qui manque en suspension.",
+      },
+      {
+        exercice: "Dead bug lent, 3 x 8 par côté",
+        raison:
+          "Travaille le maintien du bassin pendant que les jambes s'éloignent — c'est précisément le moment où le dragon flag cède.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Dragon flag en tuck avec pause de 3 s, nombril rentré",
+        raison:
+          "Le gainage tient presque : la pause l'oblige à tenir là où il commence à lâcher.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Descente complète en 6 s, jambes tendues",
+        raison:
+          "Le gainage est verrouillé, la marge de progression est dans la durée sous tension.",
+      },
+    ],
+  },
   hip_angle: {
     faible: [
       {
@@ -866,6 +894,9 @@ export function recommendationsFor(
   const isTuckFamily = (TUCK_FAMILY_PROGRESSIONS as string[]).includes(progression);
 
   const key =
+    // pelvis_sag ne se déclenche que dans un sens, celui de l'affaissement :
+    // pas de branche à choisir, contrairement à pelvis_deviation qui mesure
+    // un écart non signé et doit lire le signe pour savoir quoi conseiller.
     critere === "pelvis_deviation"
       ? pelvisSagSign >= 0
         ? "pelvis_deviation_sag"

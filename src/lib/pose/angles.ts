@@ -314,7 +314,15 @@ export function computeAngles(
       ? 0.5
       : (midHip.x - midShoulder.x) / (midAnkle.x - midShoulder.x);
   const expectedHipY = midShoulder.y + t * (midAnkle.y - midShoulder.y);
-  const pelvisSagSign = midHip.y - expectedHipY;
+  // Rapporté à la longueur du corps, comme pelvisDeviation juste au-dessus.
+  // Brut, l'écart s'exprimait en fraction de la hauteur d'image : la même
+  // faute valait deux fois plus filmée de près que de loin. Tant que la
+  // valeur ne servait qu'à lire un signe, ça n'avait pas d'importance ; elle
+  // est maintenant notée, donc elle doit être comparable d'une vidéo à
+  // l'autre. Diviser par une longueur positive ne change aucun signe, donc
+  // les usages existants sont intacts.
+  const pelvisSagSign =
+    bodyLength === 0 ? 0 : (midHip.y - expectedHipY) / bodyLength;
 
   const isInvertedPose = midWrist.y > midAnkle.y && midShoulder.y > midHip.y;
 

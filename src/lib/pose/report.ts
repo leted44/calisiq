@@ -103,6 +103,8 @@ export const CRITERE_DEFINITIONS: Record<CriterionScore["critere"], string> = {
     "Angle hanche-épaule-poignet. Mesure l'ouverture du bras au-dessus de la tête.",
   pelvis_deviation:
     "Écart du bassin par rapport à la ligne droite épaule-cheville. Détecte un bassin qui tombe (sag) ou remonte (pike).",
+  pelvis_sag:
+    "Chute du bassin sous la ligne épaule-cheville, rapportée à la longueur du corps. Contrairement à l'angle de hanche, qui ne peut pas distinguer un dos creusé d'une hanche fermée, ce critère ne regarde que l'affaissement.",
   body_line_angle:
     "Angle du corps entier (épaule-cheville) par rapport à l'horizontale. Mesure si le corps est bien aligné pour la progression visée.",
   torso_angle:
@@ -145,6 +147,11 @@ const PLANCHE_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
     optimal: "Bassin parfaitement aligné entre épaules et chevilles.",
     bon: "Bassin globalement aligné, léger écart par rapport à la ligne idéale.",
     faible: "Le bassin s'écarte nettement de la ligne épaule-hanche-cheville.",
+  },
+  pelvis_sag: {
+    optimal: "Bassin tenu au-dessus de la ligne du corps, gainage verrouillé.",
+    bon: "Le bassin descend légèrement, le gainage tient encore.",
+    faible: "Le bassin s'affaisse sous la ligne du corps : le gainage a lâché et les lombaires se creusent.",
   },
   hip_angle: {
     optimal: "Angle hanche-genou très proche de la cible pour cette variation.",
@@ -225,6 +232,12 @@ const FRONT_LEVER_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
 };
 
 const DRAGON_FLAG_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
+  pelvis_sag: {
+    optimal: "Gainage tenu du début à la fin, le bassin ne descend jamais sous la ligne du corps.",
+    bon: "Le bassin descend un peu en fin de course, le gainage tient globalement.",
+    faible:
+      "Le bassin s'affaisse et les lombaires se creusent. C'est la faute qui invalide la figure, et celle par laquelle on se blesse : le dragon flag se tient en hollow body, pas en cambré.",
+  },
   hip_angle: {
     optimal: "Ligne du corps verrouillée, aucune cassure à la hanche.",
     bon: "Légère cassure à la hanche, la ligne reste globalement tenue.",

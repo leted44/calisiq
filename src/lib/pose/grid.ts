@@ -123,6 +123,19 @@ export type ProgressionThresholds = {
   shoulder_protraction?: ShoulderProtractionThreshold;
   shoulder_flexion?: Threshold;
   pelvis_deviation?: Threshold;
+  // Affaissement du bassin, SIGNÉ, et c'est tout l'intérêt.
+  //
+  // hip_angle ne peut pas distinguer un dos creusé d'une hanche fermée : il
+  // sort d'un acos, donc il vaut toujours entre 0 et 180 degrés, et une
+  // hanche en hyperextension à 190 degrés se replie en 170, exactement comme
+  // une hanche fermée à 170. Les deux fautes reçoivent la même note alors
+  // qu'elles n'ont pas la même gravité.
+  //
+  // Seuil MAXIMUM sur une valeur signée : une valeur négative, c'est un
+  // bassin plus haut que la ligne épaule-cheville, donc une fermeture, et
+  // elle passe toujours à 10 ici — hip_angle la sanctionne déjà par son
+  // ampleur. Seul l'affaissement, positif, est pénalisé une seconde fois.
+  pelvis_sag?: MaximumThreshold;
 };
 
 export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
@@ -314,6 +327,16 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   },
   full_dragon_flag: {
     body_line_angle_from_horizontal: { target: 20, tolerance: 55, mode: "maximum" },
+    // SEUIL DRAFT, aucun échantillon. Échelle reprise des tolérances de
+    // pelvis_deviation déjà calibrées ailleurs (0,12 sur la full planche et
+    // le handstand), la mesure étant rapportée à la même longueur de corps.
+    //
+    // Sur un dragon flag, perdre le gainage creuse les lombaires et fait
+    // tomber le bassin sous la ligne du corps. C'est à la fois la faute
+    // technique qui invalide la figure et le mécanisme par lequel on se fait
+    // mal, alors que fermer la hanche ne fait que rendre la figure plus
+    // facile. D'où une pénalité qui ne vise que ce sens-là.
+    pelvis_sag: { target: 0.03, tolerance: 0.12, mode: "maximum" },
     // La faute classique du dragon flag : casser à la hanche pour soulager le
     // levier. C'est le critère le plus serré de la figure.
     hip_angle: { target: 180, tolerance: 10 },
