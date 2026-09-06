@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { getLang, getDictionary } from "@/lib/i18n/server";
+import { LanguageProvider } from "@/lib/i18n/client";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,9 +14,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
+// Métadonnées dépendantes de la langue : `generateMetadata` plutôt qu'un
+// objet figé, sinon la description du document resterait française pour un
+// utilisateur anglophone, y compris dans les aperçus de partage.
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getDictionary();
+  return {
   title: "CalisIQ",
-  description: "Analyse biomécanique de tes mouvements de calisthénie",
+  description: t.meta.description,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -24,16 +31,21 @@ export const metadata: Metadata = {
   // détectés par Next, qui écrit les balises <link> lui-même. Le déclarer ici
   // reprendrait la main sur ces fichiers et pointerait vers l'ancienne route
   // /icon/[size], supprimée avec le rendu « CQ » qu'elle générait.
-};
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#0b0f19",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Lue sur le serveur : la page arrive déjà dans la bonne langue, sans
+  // clignotement à l'hydratation, et l'attribut lang du document est correct
+  // pour les lecteurs d'écran et la traduction automatique du navigateur.
+  const lang = await getLang();
   return (
     <html
-      lang="fr"
+      lang={lang}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
@@ -70,7 +82,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <LanguageProvider lang={lang}>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }

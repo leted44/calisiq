@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "../_components/LogoutButton";
 import DeleteAccountButton from "../_components/DeleteAccountButton";
 import InstallAppButton from "../_components/InstallAppButton";
+import LanguageSwitcher from "../_components/LanguageSwitcher";
 import {
   RulerIcon,
   ScaleIcon,
@@ -173,6 +174,9 @@ export default async function ProfilPage() {
             navigateur n'expose pas d'invite native laisserait l'utilisateur
             sans réponse ; il déplie alors la marche à suivre. */}
         <InstallAppButton />
+
+        {/* Au-dessus de la déconnexion : c'est un réglage, pas une sortie. */}
+        <LanguageSwitcher />
 
         <LogoutButton />
 
