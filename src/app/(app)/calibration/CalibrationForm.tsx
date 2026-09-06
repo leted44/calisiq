@@ -788,8 +788,25 @@ export default function CalibrationForm() {
                   decimals: 3,
                 },
                 {
-                  label: "Signe sag/pike bassin",
-                  value: a.pelvisSagSign,
+                  // Le sens est nommé, pas laissé à déduire du signe.
+                  //
+                  // Affiché brut, « -0,017 » ne dit rien : rien n'indique
+                  // quel côté est lequel, et une lecture extérieure de cet
+                  // écran a conclu à un dos creusé là où la mesure dit
+                  // l'inverse. Le signe vient de pelvisSagSign = midHip.y -
+                  // expectedHipY, avec un y d'image qui croît vers le bas :
+                  // positif, le bassin est SOUS la ligne épaule-cheville,
+                  // donc il s'affaisse ; négatif, il est au-dessus, donc la
+                  // hanche se ferme.
+                  label:
+                    a.pelvisSagSign > 0
+                      ? "Bassin : affaissement (sag)"
+                      : a.pelvisSagSign < 0
+                      ? "Bassin : fermeture (pike)"
+                      : "Bassin : aligné",
+                  // Valeur absolue : le sens est passé dans le libellé, le
+                  // chiffre n'a plus qu'à porter l'ampleur.
+                  value: Math.abs(a.pelvisSagSign),
                   t: undefined,
                   unit: "",
                   decimals: 3,
