@@ -41,7 +41,17 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   straddle_planche: [],
   full_planche: ["elbow_angle", "hip_angle", "body_line_angle"],
   handstand: ["hip_angle", "pelvis_deviation"],
-  handstand_push_up: [],
+  // Recalé sur 7 échantillons notés à la main, dont une série volontairement
+  // ratée. Écart absolu moyen entre la grille et l'œil : 0,46, pire écart
+  // 0,82. La cible de tenue du corps est passée de 178 à 170 degrés, et le
+  // verrouillage a été confronté aux mesures puis confirmé à sa valeur
+  // d'origine.
+  //
+  // Les trois autres critères ne figurent pas ici, et c'est délibéré :
+  // amplitude, oscillation et tempo donnent 10 aux sept échantillons. Aucun
+  // n'a encore rencontré d'exécution qui les mette en défaut, donc aucun n'est
+  // calibré. Il faudra une série à demi-amplitude ou franchement lancée.
+  handstand_push_up: ["rep_form", "rep_lockout"],
   one_arm_handstand: [],
   tuck_front_lever: ["elbow_angle", "hip_angle"],
   advanced_tuck_front_lever: ["elbow_angle", "hip_angle"],

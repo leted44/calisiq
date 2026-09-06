@@ -14,6 +14,11 @@ const CRITERE_LABELS: Record<string, string> = {
   knee_angle: "genou",
   elbow_angle: "coude",
   body_line_angle: "axe du corps",
+  rep_form: "tenue du corps",
+  rep_lockout: "extension",
+  rep_peak: "amplitude",
+  rep_control: "contrôle",
+  rep_tempo: "tempo",
 };
 
 const ALL_VARIATIONS = [

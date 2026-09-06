@@ -19,8 +19,8 @@ export default function ConfidentialitePage() {
         <p>
           CalisIQ est édité à titre individuel. Pour toute question relative
           à tes données, contacte{" "}
-          <a href="mailto:dydyx97114@gmail.com" className="text-cyan-400 underline">
-            dydyx97114@gmail.com
+          <a href="mailto:calisiq.app@gmail.com" className="text-cyan-400 underline">
+            calisiq.app@gmail.com
           </a>
           .
         </p>
