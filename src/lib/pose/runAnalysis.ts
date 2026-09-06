@@ -274,6 +274,29 @@ export async function runPoseAnalysis({
     );
   }
 
+  // Dragon flag soumis dans la mauvaise catégorie, dans les deux sens.
+  //
+  // Le cas s'est présenté sur des échantillons réels : la même vidéo à une
+  // jambe repliée, notée 9,8 en Single Leg et 3,5 en Full. La grille du Full
+  // la descend bien, mais pas assez, parce que deux de ses critères restent
+  // à 10 et diluent les deux qui voient la faute. Plafonner la note globale
+  // dès qu'un critère s'effondre a été mesuré sur ces mêmes échantillons et
+  // dégrade l'ensemble : un Full soumis en Single Leg, que l'utilisateur note
+  // 7 parce que la figure exécutée est plus dure, tomberait à 2.
+  //
+  // Le bon outil est donc celui déjà employé pour le front lever : nommer
+  // l'erreur de catégorie au lieu de la traduire en points.
+  if (progression === "full_dragon_flag" && median.bentKneeAngle < 150) {
+    warningParts.push(
+      "Une jambe est repliée sur cette vidéo : c'est un Single Leg Dragon Flag, pas un Full. Change de variation pour obtenir un score juste."
+    );
+  }
+  if (progression === "one_leg_dragon_flag" && median.bentKneeAngle > 150) {
+    warningParts.push(
+      "Les deux jambes sont tendues sur cette vidéo : c'est un Full Dragon Flag, pas un Single Leg. Change de variation pour obtenir un score juste."
+    );
+  }
+
   const warning = warningParts.length > 0 ? warningParts.join(" ") : null;
 
   const midIndex = Math.floor((window.start + window.end) / 2);

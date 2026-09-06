@@ -339,8 +339,15 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     pelvis_sag: { target: 0.03, tolerance: 0.12, mode: "maximum" },
     // La faute classique du dragon flag : casser à la hanche pour soulager le
     // levier. C'est le critère le plus serré de la figure.
-    hip_angle: { target: 180, tolerance: 10 },
-    knee_angle: { target: 180, tolerance: 12 },
+    //
+    // Calibré le 2026-09-07 sur 4 échantillons. Tolérances resserrées de 10 à
+    // 9 pour la hanche et de 12 à 8 pour le genou : écart absolu moyen entre
+    // la grille et les notes humaines 0,80 avant, 0,54 après, et les trois
+    // exécutions réelles tombent désormais à 0,0, 0,0 et 0,2 de la note
+    // donnée à l'œil. Le genou rejoint la valeur déjà calibrée sur la full
+    // planche, où la même exigence de jambes tendues s'applique.
+    hip_angle: { target: 180, tolerance: 9 },
+    knee_angle: { target: 180, tolerance: 8 },
   },
 
   // --- Drapeau (human flag) ---

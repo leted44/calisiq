@@ -62,7 +62,7 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   // raisonnés. Le bloc reste vide tant que la calibration n'a pas eu lieu.
   tuck_dragon_flag: [],
   one_leg_dragon_flag: [],
-  full_dragon_flag: [],
+  full_dragon_flag: ["hip_angle", "knee_angle"],
   tuck_human_flag: [],
   straddle_human_flag: [],
   full_human_flag: [],
