@@ -34,6 +34,60 @@ export const fr = {
     seconds: (n: number) => `${n} s`,
   },
   analysis: {
+    notAnalysable: "Pas encore analysable",
+    approximate: "Note approximative : seuils pas encore validés sur des figures réelles",
+    difficulty: "Difficulté",
+    notAnalysableLong:
+      "Pas encore analysable, la notation de cette variation reste à construire.",
+    approximateLong:
+      "Note approximative : les seuils de cette variation n'ont pas encore été validés sur des figures réelles.",
+    notAvailableYet:
+      "L'analyse pour cette variation n'est pas encore disponible — ses critères de score sont en cours de calibration.",
+    videoSection: "Vidéo",
+    videoHint:
+      "MP4, MOV, WebM · seul le segment que tu analyses est conservé dans l'historique, allégé automatiquement",
+    import: "Importer",
+    record: "Se filmer",
+    stop: "Arrêter",
+    countdown: (n: number) => `Décompte : ${n}s`,
+    startRecording: "Démarrer l'enregistrement",
+    switchCamera: "Changer de caméra",
+    trimSection: "Découpe",
+    change: "Changer",
+    saveToPhone: "Enregistrer sur le téléphone",
+    whenDone: "Quand as-tu réalisé cette figure ?",
+    whenDoneHint:
+      "Utilisé pour ton historique et ta progression — pratique si tu importes une vidéo filmée il y a un moment.",
+    trimHint: "Sélectionne uniquement le passage à analyser",
+    trimStart: (v: string) => `Début : ${v}`,
+    trimDuration: (v: string) => `Durée : ${v}`,
+    saveFailed: (msg: string) => `Échec de l'enregistrement : ${msg}`,
+    preparingVideo: (pct: number) => `Préparation de la vidéo... ${pct}%`,
+    savedToHistory: "Enregistré dans ton historique",
+    reanalyse: "Réanalyser cette vidéo",
+    reanalyseSavedHint:
+      "Vérifie la cohérence du résultat, sans re-sauvegarder. Le score déjà enregistré dans l'historique n'est pas modifié.",
+    reanalyseHint: "Vérifie la cohérence du résultat avant de l'enregistrer.",
+    soon: "Bientôt",
+    exerciseTypes: "Types d'exercice",
+    figures: "Figures",
+    favourites: "Favoris",
+    progression: "Progression",
+    errors: {
+      unreadableFile: "Impossible de lire ce fichier vidéo.",
+      unreadableVideo: "Impossible de lire cette vidéo. Essaie un autre fichier.",
+      camera: (msg: string) => `Impossible d'accéder à la caméra : ${msg}`,
+      noOtherCamera: "Aucune autre caméra disponible sur cet appareil.",
+      qualityChange:
+        "Impossible de changer la qualité — réessaie ou choisis une résolution plus basse.",
+      sessionExpired: "Session expirée, reconnecte-toi.",
+      tooLarge:
+        "Vidéo non sauvegardée : même après découpe, elle dépasse la limite de 50 Mo. Réduis la durée du segment analysé.",
+      noVideo: "Choisis ou filme une vidéo.",
+      segmentTooShort: (s: number) =>
+        `Le segment sélectionné est trop court : il faut au moins ${s}s pour capturer un hold stable.`,
+      analysisFailed: (msg: string) => `L'analyse a échoué : ${msg}`,
+    },
     comingSoon: "Bientôt disponible",
     addFavorite: (name: string) => `Ajouter ${name} aux favoris`,
     removeFavorite: (name: string) => `Retirer ${name} des favoris`,

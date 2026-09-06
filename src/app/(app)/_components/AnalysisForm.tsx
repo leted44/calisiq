@@ -398,14 +398,15 @@ function StatusBadge({
   state: "locked" | "draft";
   size?: "sm" | "md";
 }) {
+  const t = useT();
   const box = size === "sm" ? "h-4 w-4" : "h-5 w-5";
   const glyph = size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3";
   return (
     <span
       title={
         state === "locked"
-          ? "Pas encore analysable"
-          : "Note approximative : seuils pas encore validés sur des figures réelles"
+          ? t.analysis.notAnalysable
+          : t.analysis.approximate
       }
       className={`flex ${box} items-center justify-center rounded-full border ${
         state === "locked"
@@ -475,7 +476,7 @@ function VariationRail({
 
   return (
     <div className="space-y-3">
-      <SectionHeading>Progression</SectionHeading>
+      <SectionHeading>{t.analysis.progression}</SectionHeading>
 
       <div className="relative">
         <span
@@ -616,7 +617,7 @@ function VariationRail({
             </div>
             <span className="flex shrink-0 items-center gap-2">
               <span className="text-[10px] uppercase tracking-[0.15em] text-slate-500">
-                Difficulté
+                {t.analysis.difficulty}
               </span>
               <span className="flex items-end gap-[3px]">
                 {options.map((o, index) => (
@@ -640,15 +641,13 @@ function VariationRail({
           {!current.available ? (
             <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-500">
               <LockIcon className="h-3.5 w-3.5 shrink-0" />
-              Pas encore analysable, la notation de cette variation reste à
-              construire.
+              {t.analysis.notAnalysableLong}
             </p>
           ) : (
             !isCalibrated(current.value) && (
               <p className="mt-2.5 flex items-center gap-1.5 text-[11px] leading-relaxed text-amber-400/90">
                 <ApproximateIcon className="h-3.5 w-3.5 shrink-0" />
-                Note approximative : les seuils de cette variation n&apos;ont pas
-                encore été validés sur des figures réelles.
+                {t.analysis.approximateLong}
               </p>
             )
           )}
@@ -671,7 +670,13 @@ const EXERCISE_TYPES: {
 
 const MIN_TRIM_SECONDS = 2;
 
-function getVideoDuration(file: File): Promise<number> {
+// Le message d'erreur est passé en paramètre : cette fonction vit hors d'un
+// composant, où aucun hook n'est utilisable, et y coder une langue en dur
+// réintroduirait exactement le texte figé qu'on est en train de retirer.
+function getVideoDuration(
+  file: File,
+  unreadableMessage: string
+): Promise<number> {
   return new Promise((resolve, reject) => {
     const video = document.createElement("video");
     video.preload = "metadata";
@@ -681,7 +686,7 @@ function getVideoDuration(file: File): Promise<number> {
     };
     video.onerror = () => {
       URL.revokeObjectURL(video.src);
-      reject(new Error("Impossible de lire ce fichier vidéo."));
+      reject(new Error(unreadableMessage));
     };
     video.src = URL.createObjectURL(file);
   });
@@ -826,9 +831,9 @@ export default function AnalysisForm() {
 
     let videoDuration: number;
     try {
-      videoDuration = await getVideoDuration(selected);
+      videoDuration = await getVideoDuration(selected, t.analysis.errors.unreadableFile);
     } catch {
-      setError("Impossible de lire cette vidéo. Essaie un autre fichier.");
+      setError(t.analysis.errors.unreadableVideo);
       return;
     }
 
@@ -927,7 +932,7 @@ export default function AnalysisForm() {
       await startStream(facingMode, false, quality);
       setCameraMode(true);
     } catch (err) {
-      setError("Impossible d'accéder à la caméra : " + (err as Error).message);
+      setError(t.analysis.errors.camera((err as Error).message));
     }
   }
 
@@ -939,7 +944,7 @@ export default function AnalysisForm() {
       // navigateurs renvoient silencieusement la même caméra qu'avant.
       await startStream(nextMode, true, quality);
     } catch {
-      setError("Aucune autre caméra disponible sur cet appareil.");
+      setError(t.analysis.errors.noOtherCamera);
       try {
         await startStream(facingMode, false, quality);
       } catch {
@@ -959,7 +964,7 @@ export default function AnalysisForm() {
     try {
       await startStream(facingMode, false, newQuality);
     } catch {
-      setError("Impossible de changer la qualité — réessaie ou choisis une résolution plus basse.");
+      setError(t.analysis.errors.qualityChange);
     }
   }
 
@@ -1078,7 +1083,7 @@ export default function AnalysisForm() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      setSaveError("Session expirée, reconnecte-toi.");
+      setSaveError(t.analysis.errors.sessionExpired);
       setSaving(false);
       return;
     }
@@ -1127,7 +1132,7 @@ export default function AnalysisForm() {
       const isSizeError = /maximum allowed size/i.test(uploadError.message);
       setSaveError(
         isSizeError
-          ? "Vidéo non sauvegardée : même après découpe, elle dépasse la limite de 50 Mo. Réduis la durée du segment analysé."
+          ? t.analysis.errors.tooLarge
           : uploadError.message
       );
       setSaving(false);
@@ -1190,13 +1195,13 @@ export default function AnalysisForm() {
     setError(null);
 
     if (!file || !duration || !previewVideoRef.current || !canvasRef.current) {
-      setError("Choisis ou filme une vidéo.");
+      setError(t.analysis.errors.noVideo);
       return;
     }
 
     if (trimEnd - trimStart < MIN_TRIM_SECONDS) {
       setError(
-        `Le segment sélectionné est trop court : il faut au moins ${MIN_TRIM_SECONDS}s pour capturer un hold stable.`
+        t.analysis.errors.segmentTooShort(MIN_TRIM_SECONDS)
       );
       return;
     }
@@ -1236,7 +1241,7 @@ export default function AnalysisForm() {
         return;
       }
       console.error(err);
-      setError("L'analyse a échoué : " + (err as Error).message);
+      setError(t.analysis.errors.analysisFailed((err as Error).message));
     }
   }
 
@@ -1286,7 +1291,7 @@ export default function AnalysisForm() {
         return;
       }
       console.error(err);
-      setError("L'analyse a échoué : " + (err as Error).message);
+      setError(t.analysis.errors.analysisFailed((err as Error).message));
     }
   }
 
@@ -1316,7 +1321,7 @@ export default function AnalysisForm() {
 
       {favoriteEntries.length > 0 && (
         <div className="space-y-3">
-          <SectionHeading>Favoris</SectionHeading>
+          <SectionHeading>{t.analysis.favourites}</SectionHeading>
           {/* Défilement horizontal plutôt qu'une grille : la rangée garde la
               même hauteur qu'il y ait un favori ou huit, et ne repousse
               jamais les figures hors de l'écran. */}
@@ -1378,7 +1383,7 @@ export default function AnalysisForm() {
       )}
 
       <div className="space-y-3">
-        <SectionHeading>Figures</SectionHeading>
+        <SectionHeading>{t.analysis.figures}</SectionHeading>
         <div className="grid grid-cols-2 gap-3">
         {FIGURES.map((f, index) => {
           const selected = figure === f.value;
@@ -1496,28 +1501,28 @@ export default function AnalysisForm() {
           proposer « Hold » pour une traction n'aurait aucun sens. */}
       {!isRepProgression(progression) && (
       <div className="space-y-3">
-        <SectionHeading>Types d&apos;exercice</SectionHeading>
+        <SectionHeading>{t.analysis.exerciseTypes}</SectionHeading>
         <div className="grid grid-cols-3 gap-2">
-          {EXERCISE_TYPES.map((t) => {
-            const selected = exerciseType === t.value;
+          {EXERCISE_TYPES.map((type) => {
+            const selected = exerciseType === type.value;
             return (
               <button
-                key={t.value}
+                key={type.value}
                 type="button"
-                disabled={!t.available}
-                onClick={() => setExerciseType(t.value)}
+                disabled={!type.available}
+                onClick={() => setExerciseType(type.value)}
                 className={`relative flex flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-center transition-colors ${
-                  !t.available
+                  !type.available
                     ? "cursor-not-allowed border-slate-800 bg-slate-800/40 text-slate-600"
                     : selected
                     ? "border-cyan-500 bg-cyan-500/10 text-white"
                     : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600"
                 }`}
               >
-                <t.Icon className={`h-5 w-5 ${selected ? "text-cyan-400" : ""}`} />
-                <span className="text-xs font-medium">{t.label}</span>
-                {!t.available && (
-                  <span className="block text-[10px] text-slate-500">Bientôt</span>
+                <type.Icon className={`h-5 w-5 ${selected ? "text-cyan-400" : ""}`} />
+                <span className="text-xs font-medium">{type.label}</span>
+                {!type.available && (
+                  <span className="block text-[10px] text-slate-500">{t.analysis.soon}</span>
                 )}
               </button>
             );
@@ -1528,19 +1533,17 @@ export default function AnalysisForm() {
 
       {!variationAvailable && !videoUrl && (
         <p className="rounded-lg bg-orange-500/10 p-3 text-sm text-orange-400">
-          L&apos;analyse pour cette variation n&apos;est pas encore disponible —
-          ses critères de score sont en cours de calibration.
+          {t.analysis.notAvailableYet}
         </p>
       )}
 
       {variationAvailable && !videoUrl && !cameraMode && (
         <div className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Vidéo
+            {t.analysis.videoSection}
           </p>
           <p className="text-xs text-slate-500">
-            MP4, MOV, WebM · seul le segment que tu analyses est conservé dans
-            l&apos;historique, allégé automatiquement
+            {t.analysis.videoHint}
           </p>
           <div className="grid grid-cols-2 gap-3">
             <button
@@ -1549,7 +1552,7 @@ export default function AnalysisForm() {
               className="flex flex-col items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 py-6 text-sm font-medium text-slate-200 hover:border-cyan-700"
             >
               <UploadCloudIcon className="h-7 w-7 text-cyan-400" />
-              Importer
+              {t.analysis.import}
             </button>
             <button
               type="button"
@@ -1557,7 +1560,7 @@ export default function AnalysisForm() {
               className="flex flex-col items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 py-6 text-sm font-medium text-slate-200 hover:border-cyan-700"
             >
               <CameraIcon className="h-7 w-7 text-cyan-400" />
-              Se filmer
+              {t.analysis.record}
             </button>
           </div>
         </div>
@@ -1601,7 +1604,7 @@ export default function AnalysisForm() {
               <button
                 type="button"
                 onClick={flipCamera}
-                aria-label="Changer de caméra"
+                aria-label={t.analysis.switchCamera}
                 className="absolute right-3 top-3 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
               >
                 <CameraFlipIcon className="h-5 w-5" />
@@ -1644,7 +1647,7 @@ export default function AnalysisForm() {
                 onClick={stopRecording}
                 className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm font-medium text-white"
               >
-                Arrêter
+                {t.analysis.stop}
               </button>
             ) : countdown !== null ? (
               <button
@@ -1652,7 +1655,7 @@ export default function AnalysisForm() {
                 disabled
                 className="flex-1 rounded-lg bg-slate-800 py-2.5 text-sm font-medium text-slate-400"
               >
-                Décompte : {countdown}s
+                {t.analysis.countdown(countdown)}
               </button>
             ) : (
               <button
@@ -1660,7 +1663,7 @@ export default function AnalysisForm() {
                 onClick={beginCountdown}
                 className="flex-1 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 text-sm font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)]"
               >
-                Démarrer l&apos;enregistrement
+                {t.analysis.startRecording}
               </button>
             )}
           </div>
@@ -1671,7 +1674,7 @@ export default function AnalysisForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Découpe
+              {t.analysis.trimSection}
             </p>
             <div className="flex gap-2">
               {fileSource === "camera" && (
@@ -1681,7 +1684,7 @@ export default function AnalysisForm() {
                   className="flex items-center gap-1 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:border-slate-600"
                 >
                   <DownloadIcon className="h-3.5 w-3.5" />
-                  Enregistrer sur le téléphone
+                  {t.analysis.saveToPhone}
                 </button>
               )}
               <button
@@ -1709,7 +1712,7 @@ export default function AnalysisForm() {
                 htmlFor="performed-at"
                 className="text-xs font-medium uppercase tracking-wide text-slate-500"
               >
-                Quand as-tu réalisé cette figure ?
+                {t.analysis.whenDone}
               </label>
               <input
                 id="performed-at"
@@ -1720,8 +1723,7 @@ export default function AnalysisForm() {
                 className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white outline-none focus:border-cyan-500"
               />
               <p className="text-[11px] text-slate-500">
-                Utilisé pour ton historique et ta progression — pratique si tu
-                importes une vidéo filmée il y a un moment.
+                {t.analysis.whenDoneHint}
               </p>
             </div>
           )}
@@ -1737,7 +1739,7 @@ export default function AnalysisForm() {
           {!analyzing && !result && (
             <div>
               <p className="mb-2 text-xs text-slate-500">
-                Sélectionne uniquement le passage à analyser
+                {t.analysis.trimHint}
               </p>
               <div className="relative h-6">
                 <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-full bg-slate-700" />
@@ -1769,9 +1771,9 @@ export default function AnalysisForm() {
               </div>
 
               <div className="mt-2 flex justify-between text-xs text-slate-400">
-                <span>Début : {formatTime(trimStart)}</span>
+                <span>{t.analysis.trimStart(formatTime(trimStart))}</span>
                 <span>Fin : {formatTime(trimEnd)}</span>
-                <span>Durée : {formatTime(trimEnd - trimStart)}</span>
+                <span>{t.analysis.trimDuration(formatTime(trimEnd - trimStart))}</span>
               </div>
             </div>
           )}
@@ -1822,7 +1824,7 @@ export default function AnalysisForm() {
 
           {saveError && (
             <p className="text-xs text-red-400">
-              Échec de l&apos;enregistrement : {saveError}
+              {t.analysis.saveFailed(saveError)}
             </p>
           )}
 
@@ -1834,7 +1836,7 @@ export default function AnalysisForm() {
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)] disabled:opacity-50"
             >
               {compressing
-                ? `Préparation de la vidéo... ${compressionProgress}%`
+                ? t.analysis.preparingVideo(compressionProgress)
                 : saving
                 ? "Enregistrement..."
                 : "Enregistrer cette figure"}
@@ -1844,7 +1846,7 @@ export default function AnalysisForm() {
           {saved && (
             <p className="flex items-center justify-center gap-1.5 rounded-lg border border-green-800 bg-green-500/10 py-2.5 text-sm font-medium text-green-400">
               <CheckCircleIcon className="h-4 w-4" />
-              Enregistré dans ton historique
+              {t.analysis.savedToHistory}
             </p>
           )}
 
@@ -1855,12 +1857,12 @@ export default function AnalysisForm() {
                 onClick={handleReanalyze}
                 className="w-full rounded-lg border border-slate-700 py-2.5 font-medium text-slate-200 hover:border-slate-600"
               >
-                Réanalyser cette vidéo
+                {t.analysis.reanalyse}
               </button>
               <p className="text-center text-xs text-slate-500">
                 {saved
-                  ? "Vérifie la cohérence du résultat, sans re-sauvegarder. Le score déjà enregistré dans l'historique n'est pas modifié."
-                  : "Vérifie la cohérence du résultat avant de l'enregistrer."}
+                  ? t.analysis.reanalyseSavedHint
+                  : t.analysis.reanalyseHint}
               </p>
             </div>
           )}
