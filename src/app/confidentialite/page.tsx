@@ -3,14 +3,15 @@ export default function ConfidentialitePage() {
     <div className="mx-auto max-w-2xl space-y-6 bg-slate-950 px-4 py-12 text-slate-300">
       <div>
         <h1 className="text-2xl font-bold text-white">Politique de confidentialité</h1>
-        <p className="mt-1 text-sm text-slate-500">Dernière mise à jour : 24 août 2026</p>
+        <p className="mt-1 text-sm text-slate-500">Dernière mise à jour : 6 septembre 2026</p>
       </div>
 
       <p>
-        CalisIQ est une application d&apos;analyse technique de figures de
-        callisthénie (planche, handstand) par vidéo. Cette page explique
-        quelles données sont collectées, pourquoi, et comment elles sont
-        protégées.
+        CalisIQ est une application d&apos;analyse technique de calisthénie
+        par vidéo. Elle couvre des figures tenues, comme la planche, le front
+        lever ou le handstand, et des mouvements à répétition, comme les
+        tractions, les dips ou les pompes. Cette page explique quelles données
+        sont collectées, pourquoi, et comment elles sont protégées.
       </p>
 
       <section className="space-y-2">
