@@ -248,14 +248,15 @@ export function TuckDragonFlagIcon({ className = base }: IconProps) {
   );
 }
 
-export function StraddleDragonFlagIcon({ className = base }: IconProps) {
+export function OneLegDragonFlagIcon({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className}>
       <path d="M3 7h5" {...stroke} />
       <circle cx="5.5" cy="5.2" r="1.5" {...stroke} />
-      <path d="M7 7.5 14 12" {...stroke} />
-      <path d="M14 12 21 12" {...stroke} />
-      <path d="M14 12 20 17" {...stroke} />
+      <path d="M7 7.5 14 11.5" {...stroke} />
+      <path d="M14 11.5 21 15.5" {...stroke} />
+      <path d="M14 11.5 17.5 13.5" {...stroke} />
+      <path d="M17.5 13.5 16.5 9.5" {...stroke} />
     </svg>
   );
 }

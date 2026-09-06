@@ -46,7 +46,7 @@ const VARIATIONS = [
   { value: "straddle_front_lever", label: "Straddle Front Lever", figure: "front_lever" },
   { value: "full_front_lever", label: "Full Front Lever", figure: "front_lever" },
   { value: "tuck_dragon_flag", label: "Tuck Dragon Flag", figure: "dragon_flag" },
-  { value: "straddle_dragon_flag", label: "Straddle Dragon Flag", figure: "dragon_flag" },
+  { value: "one_leg_dragon_flag", label: "Single Leg Dragon Flag", figure: "dragon_flag" },
   { value: "full_dragon_flag", label: "Full Dragon Flag", figure: "dragon_flag" },
   { value: "tuck_human_flag", label: "Tuck Drapeau", figure: "human_flag" },
   { value: "straddle_human_flag", label: "Straddle Drapeau", figure: "human_flag" },

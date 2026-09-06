@@ -13,7 +13,7 @@ export const PROGRESSION_LABELS: Record<string, string> = {
   straddle_front_lever: "Straddle front lever",
   full_front_lever: "Full front lever",
   tuck_dragon_flag: "Tuck dragon flag",
-  straddle_dragon_flag: "Straddle dragon flag",
+  one_leg_dragon_flag: "Single leg dragon flag",
   full_dragon_flag: "Full dragon flag",
   tuck_human_flag: "Tuck drapeau",
   straddle_human_flag: "Straddle drapeau",
@@ -61,7 +61,7 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   // Aucun échantillon réel : les seuils du dragon flag sont entièrement
   // raisonnés. Le bloc reste vide tant que la calibration n'a pas eu lieu.
   tuck_dragon_flag: [],
-  straddle_dragon_flag: [],
+  one_leg_dragon_flag: [],
   full_dragon_flag: [],
   tuck_human_flag: [],
   straddle_human_flag: [],

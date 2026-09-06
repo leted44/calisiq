@@ -71,7 +71,7 @@ export type Progression =
   | "straddle_front_lever"
   | "full_front_lever"
   | "tuck_dragon_flag"
-  | "straddle_dragon_flag"
+  | "one_leg_dragon_flag"
   | "full_dragon_flag"
   | "tuck_human_flag"
   | "straddle_human_flag"
@@ -287,10 +287,30 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     hip_angle: { target: 100, tolerance: 35 },
     knee_angle: { target: 70, tolerance: 40 },
   },
-  straddle_dragon_flag: {
-    body_line_angle_from_horizontal: { target: 35, tolerance: 55, mode: "maximum" },
-    hip_angle: { target: 175, tolerance: 20 },
-    knee_angle: { target: 180, tolerance: 18 },
+  // SEUILS DRAFT, aucun échantillon réel.
+  //
+  // Construits sur le même patron que la Single Leg Front Lever, pour la
+  // même raison : avec une jambe tendue et l'autre repliée, hip_angle et
+  // knee_angle sont des moyennes gauche/droite qui ne décrivent aucune des
+  // deux jambes. Les critères ci-dessous isolent celle qui porte la
+  // difficulté.
+  //
+  // torso_angle plutôt que body_line_angle_from_horizontal, comme sur le
+  // tuck : la ligne épaule-cheville suppose deux jambes dans la même
+  // position, elle traverse un corps qui n'existe pas dès qu'une jambe est
+  // repliée.
+  one_leg_dragon_flag: {
+    torso_angle: { target: 30, tolerance: 50, mode: "maximum" },
+    straightest_knee_angle: { target: 180, tolerance: 14 },
+    // La cassure à la hanche est la faute classique du dragon flag : la
+    // jambe tendue doit prolonger le tronc, pas se replier pour soulager le
+    // levier.
+    straightest_leg_hip_angle: { target: 175, tolerance: 18 },
+    // Seuil maximum et non une bande : la figure demande que cette jambe
+    // reste repliée, pas qu'elle atteigne un angle précis. La forme du
+    // critère est reprise de la Single Leg Front Lever, où elle a été
+    // validée sur échantillons ; sa valeur reste à confirmer ici.
+    bent_knee_angle: { target: 100, tolerance: 60, mode: "maximum" },
   },
   full_dragon_flag: {
     body_line_angle_from_horizontal: { target: 20, tolerance: 55, mode: "maximum" },

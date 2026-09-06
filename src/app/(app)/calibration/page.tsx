@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PROGRESSION_LABELS, CALIBRATED_CRITERIA } from "@/lib/pose/report";
+import { SCORING_GRID, REP_SCORING_GRID } from "@/lib/pose/grid";
 import CalibrationForm from "./CalibrationForm";
 import CalibrationAccuracy, {
   type CalibrationSampleRow,
@@ -21,19 +22,20 @@ const CRITERE_LABELS: Record<string, string> = {
   rep_tempo: "tempo",
 };
 
+// Dérivé des grilles plutôt qu'écrit à la main.
+//
+// La liste codée en dur s'était arrêtée à douze variations quand
+// l'application en compte vingt-huit : dragon flag, drapeau et tous les
+// exercices à répétition manquaient à l'appel, si bien que la page censée
+// suivre l'avancement de la calibration en cachait plus de la moitié, sans
+// rien signaler. L'ordre de déclaration des grilles regroupe déjà les
+// variations par famille, c'est exactement l'ordre voulu ici.
 const ALL_VARIATIONS = [
-  "tuck_planche",
-  "advanced_tuck_planche",
-  "straddle_planche",
-  "full_planche",
-  "handstand",
-  "handstand_push_up",
+  ...Object.keys(SCORING_GRID),
+  ...Object.keys(REP_SCORING_GRID),
+  // Sans grille d'aucune sorte, donc absente des deux tables : ses
+  // échantillons servent justement à construire le barème qui lui manque.
   "one_arm_handstand",
-  "tuck_front_lever",
-  "advanced_tuck_front_lever",
-  "one_leg_front_lever",
-  "straddle_front_lever",
-  "full_front_lever",
 ];
 
 const EXTRA_LABELS: Record<string, string> = {
