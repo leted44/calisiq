@@ -491,11 +491,16 @@ drapeau. Ses seuils d'inclinaison et de coude sont interpolés entre la tuck et
 la straddle : entièrement raisonnés, donc DRAFT, et la marque « environ »
 s'affiche tant qu'un échantillon réel n'aura pas été enregistré.
 
-Une chose reste à faire quand la variation aura servi : `recommendations.ts`
-n'a pas d'entrée pour `straightest_knee_angle`, `straightest_leg_hip_angle` ni
-`bent_knee_angle`. Ces trois critères ne produisent donc aucun exercice
-correctif, ici comme sur la Single Leg Dragon Flag et la Single Leg Front
-Lever, où le trou existe déjà.
+Le trou de recommandations qu'elle a mis en lumière est comblé dans la
+foulée. `straightest_knee_angle`, `straightest_leg_hip_angle` et
+`bent_knee_angle` n'ouvraient sur aucun exercice correctif, pas plus que le
+coude de la famille drapeau : un point faible désigné sur la jambe tendue
+était nommé sans que rien ne soit proposé pour le corriger. Les quatre sont
+écrits, dans les deux langues, et le dictionnaire de traduction est à jour.
+
+Vérifié par balayage : chaque critère noté par `SCORING_GRID` ouvre
+désormais sur des exercices, pour les seize progressions tenues comme pour
+les neuf exercices à répétition.
 
 ## Exercices à répétition
 

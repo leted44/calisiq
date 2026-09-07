@@ -571,6 +571,28 @@ export const recommendationsEn: Record<
       },
     ],
   },
+  bent_knee_angle: {
+    faible: [
+      {
+        exercice: "Switch variation: both your legs are straight, this is a full front lever",
+        raison:
+          "The knee that should stay tucked is nearly straight. The figure you performed is harder than the one selected, and scored in this category it gets a mark that does not describe it.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Bring the knee back against your chest and keep it tight for the whole hold",
+        raison:
+          "The knee opens up during the hold, almost always as fatigue sets in. Yet it is what defines the variation: letting it drift changes the figure mid-hold.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Tucked leg stays tight — nothing to fix on that side",
+        raison: "That leg holds its position cleanly from start to finish.",
+      },
+    ],
+  },
   body_line_angle: {
     faible: [
       {
@@ -709,6 +731,100 @@ export const recommendationsEn: Record<
       {
         exercice: "Move up to the next variation",
         raison: "The torso is low and controlled; the tuck is no longer moving you forward.",
+      },
+    ],
+  },
+  straightest_knee_angle: {
+    faible: [
+      {
+        exercice: "Hold with the working leg resting on a low support, 3 x 20 s per side",
+        raison:
+          "The knee bends because the leg gives out before the core does. The support takes part of the load away and leaves time to lock the extension.",
+      },
+      {
+        exercice: "Active quad lock on the floor, 8 x 5 s per leg",
+        raison:
+          "Straightening a knee is a muscular action, not a position you fall into. Train it on its own before demanding it under tension.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue \"toes pulled toward you, knee squeezed\" from the moment you enter the position",
+        raison: "The extension is nearly complete; it is lost over the last few degrees.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Working leg locked out — extend the hold",
+        raison: "That leg draws a clean line; it is no longer the limit.",
+      },
+    ],
+  },
+  straightest_leg_hip_angle: {
+    faible: [
+      {
+        exercice: "Hollow body with one leg straight and the other tucked, 3 x 20 s per side",
+        raison:
+          "The hip closes to shorten the lever, the natural reflex once the position gets hard. On the floor the same shape can be held without the fear of falling, and the placement sinks in.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue \"push the heel far away\" on the straight leg",
+        raison: "The opening is nearly complete; an end-range cue closes the gap.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Straight leg well in line with the torso — work on duration",
+        raison: "There is nothing left to reposition on that alignment.",
+      },
+    ],
+  },
+  bent_knee_angle: {
+    faible: [
+      {
+        exercice: "Switch variation: both your legs are straight",
+        raison:
+          "The knee that should stay tucked is nearly straight. You are performing the variation above, and scored in this category it gets a mark that does not describe it.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Bring the knee back against your chest and keep it tight for the whole hold",
+        raison:
+          "The knee opens up during the hold, almost always as fatigue sets in. Yet it is what defines the variation.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Tucked leg stays tight — nothing to fix on that side",
+        raison: "That leg holds its position from start to finish.",
+      },
+    ],
+  },
+  elbow_angle: {
+    faible: [
+      {
+        exercice: "Straight-arm side support on a low bar, 3 x 15 s per side",
+        raison:
+          "The bottom arm bends and the body sags toward the pole. That arm is the one pushing: until it takes the load with a locked elbow, the figure keeps collapsing.",
+      },
+      {
+        exercice: "Human flag negatives, slow descent with locked elbows",
+        raison: "Forces you to hold the extension at the exact moment it gives way.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue \"push the pole away\" on the bottom arm",
+        raison: "The elbows hold; a few degrees are still left to lock.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Arms locked out — move the work onto hold duration",
+        raison: "The anchor is solid; it is no longer what limits the hold.",
       },
     ],
   },

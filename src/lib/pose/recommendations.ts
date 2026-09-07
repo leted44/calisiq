@@ -585,6 +585,28 @@ const FRONT_LEVER_EXERCISE_MAP: Record<string, TieredRecommendations> = {
       },
     ],
   },
+  bent_knee_angle: {
+    faible: [
+      {
+        exercice: "Change de variation : tes deux jambes sont tendues, c'est un front lever complet",
+        raison:
+          "Le genou censé rester replié est presque tendu. La figure exécutée est plus dure que celle sélectionnée, et notée dans cette catégorie elle reçoit une note qui ne la décrit pas.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Ramène le genou contre la poitrine et garde-le serré tout le hold",
+        raison:
+          "Le genou s'ouvre en cours de tenue, presque toujours quand la fatigue arrive. C'est pourtant lui qui définit la variation : le laisser filer change la figure en cours de route.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Jambe repliée bien fermée — rien à corriger de ce côté",
+        raison: "La position de cette jambe est nette du début à la fin du hold.",
+      },
+    ],
+  },
   body_line_angle: {
     faible: [
       {
@@ -744,6 +766,110 @@ const DRAGON_FLAG_EXERCISE_MAP: Record<string, TieredRecommendations> = {
       {
         exercice: "Passe à la variation supérieure",
         raison: "Le tronc est bas et contrôlé, la tuck ne te fait plus progresser.",
+      },
+    ],
+  },
+
+  // Critères des variations à une jambe : single leg dragon flag et single
+  // leg drapeau. Sans eux, un point faible désigné sur la jambe tendue
+  // n'ouvrait sur aucun exercice — la carte de résultat nommait la faute sans
+  // dire quoi en faire.
+  straightest_knee_angle: {
+    faible: [
+      {
+        exercice: "Tenue jambe active posée sur un appui bas, 3 x 20 s par côté",
+        raison:
+          "Le genou plie parce que la jambe lâche avant le gainage. L'appui retire une partie de la charge et laisse le temps de verrouiller l'extension.",
+      },
+      {
+        exercice: "Verrouillage actif du quadriceps au sol, 8 x 5 s par jambe",
+        raison:
+          "Tendre un genou est un geste musculaire, pas une position qu'on subit. Il s'entraîne à part avant d'être exigé sous tension.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue « pointe de pied vers soi, genou serré » dès l'entrée en position",
+        raison: "L'extension est presque complète, elle se perd sur les derniers degrés.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Jambe active verrouillée — allonge la tenue",
+        raison: "La ligne de cette jambe est nette, ce n'est plus elle qui limite.",
+      },
+    ],
+  },
+  straightest_leg_hip_angle: {
+    faible: [
+      {
+        exercice: "Hollow body une jambe tendue, l'autre repliée, 3 x 20 s par côté",
+        raison:
+          "La hanche se ferme pour raccourcir le levier, c'est le réflexe quand la position devient dure. Au sol, la même forme se tient sans la peur de tomber et le placement s'installe.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue « pousser le talon loin » sur la jambe tendue",
+        raison: "L'ouverture est presque complète, un cue de fin d'amplitude referme l'écart.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Jambe tendue bien dans l'axe du tronc — travaille la durée",
+        raison: "Il n'y a rien à replacer sur cet alignement.",
+      },
+    ],
+  },
+  bent_knee_angle: {
+    faible: [
+      {
+        exercice: "Change de variation : tes deux jambes sont tendues",
+        raison:
+          "Le genou censé rester replié est presque tendu. Tu exécutes la version au-dessus, et notée dans cette catégorie elle reçoit une note qui ne la décrit pas.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Ramène le genou contre la poitrine et garde-le serré tout le hold",
+        raison:
+          "Le genou s'ouvre en cours de tenue, presque toujours quand la fatigue arrive. C'est pourtant lui qui définit la variation.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Jambe repliée bien fermée — rien à corriger de ce côté",
+        raison: "La position de cette jambe tient du début à la fin.",
+      },
+    ],
+  },
+
+  // Le coude ne concerne que la famille drapeau, qui partage cette table :
+  // sur un dragon flag les bras servent d'ancrage derrière la tête et leur
+  // angle ne dit rien de la figure, donc aucune de ses variations ne porte ce
+  // critère.
+  elbow_angle: {
+    faible: [
+      {
+        exercice: "Support latéral bras tendus sur barre basse, 3 x 15 s par côté",
+        raison:
+          "Le bras du bas plie et le corps s'affaisse vers le mât. C'est lui qui pousse : tant qu'il n'encaisse pas la charge bras tendu, la figure se referme.",
+      },
+      {
+        exercice: "Négatives de drapeau, descente lente coudes verrouillés",
+        raison: "Force à tenir l'extension au moment précis où elle cède.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue « pousser le mât loin » sur le bras du bas",
+        raison: "Les coudes tiennent, il reste quelques degrés à verrouiller.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Bras verrouillés — passe le travail sur la durée",
+        raison: "L'ancrage est solide, ce n'est plus lui qui limite la tenue.",
       },
     ],
   },
