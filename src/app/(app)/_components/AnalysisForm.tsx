@@ -769,15 +769,6 @@ export default function AnalysisForm() {
   const actionsRef = useRef<HTMLDivElement>(null);
   const [actionsVisible, setActionsVisible] = useState(true);
   const favorites = useFavorites();
-  // Variation sélectionnée et son rang, partagés entre la carte et la barre
-  // ancrée pour qu'elles ne puissent pas diverger.
-  const currentVariationIndex = figure
-    ? VARIATIONS_BY_FIGURE[figure].findIndex((o) => o.value === progression)
-    : -1;
-  const currentVariation =
-    figure && currentVariationIndex >= 0
-      ? VARIATIONS_BY_FIGURE[figure][currentVariationIndex]
-      : null;
   const favoriteEntries = favorites
     .map((value) => VARIATION_INDEX[value])
     .filter((entry): entry is VariationIndexEntry => entry !== undefined);
@@ -2002,51 +1993,81 @@ export default function AnalysisForm() {
       {figure && variationAvailable && !videoUrl && !cameraMode && !actionsVisible && (
         <div className="fixed inset-x-0 bottom-16 z-20 px-4 pb-3">
           <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-cyan-500/30 bg-slate-900/95 shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.95)] backdrop-blur-md">
-            <button
-              type="button"
-              onClick={scrollToProgression}
-              className="flex w-full items-center gap-3 px-3 pt-2.5 text-left"
-            >
-              {currentVariation?.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={currentVariation.image}
-                  alt=""
-                  className="h-11 w-12 shrink-0 object-contain"
-                />
-              ) : (
-                <span className="flex h-11 w-12 shrink-0 items-center justify-center">
-                  {currentVariation ? (
-                    <currentVariation.Icon className="h-6 w-6 text-slate-500" />
-                  ) : null}
-                </span>
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[11px] leading-tight text-cyan-300/80">
-                  {t.figures[figure].label}
-                </span>
-                <span className="block truncate text-[15px] font-semibold leading-tight text-white">
-                  {t.variations[progression].label}
-                </span>
+            {/* Nom de la figure et raccourci vers la progression complète,
+                celle qui porte la description de la position. */}
+            <div className="flex items-center justify-between gap-2 px-3 pt-2.5">
+              <span className="truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300/80">
+                {t.figures[figure].label}
               </span>
-              {/* Même jauge que dans la carte de variation : le repère de
-                  difficulté suit la sélection au lieu de disparaître. */}
-              <span className="flex shrink-0 items-end gap-[3px]" aria-hidden>
-                {VARIATIONS_BY_FIGURE[figure].map((o, index) => (
-                  <span
+              <button
+                type="button"
+                onClick={scrollToProgression}
+                aria-label={t.analysis.progression}
+                className="-mr-1 shrink-0 rounded-lg p-1 text-slate-600 hover:text-slate-400"
+              >
+                <ChevronDownIcon className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Toutes les variantes, pas seulement la sélectionnée.
+                N'afficher que la variante courante donnait l'impression que la
+                figure n'en avait qu'une, et il fallait descendre pour
+                découvrir les autres. Elles sont numérotées comme dans le rail
+                du dessous : c'est une progression, et l'ordre est
+                l'information principale. Défilement horizontal, la rangée
+                garde donc la même hauteur de trois à six variantes. */}
+            <div className="-mx-0 flex gap-1.5 overflow-x-auto px-3 pb-0.5 pt-2">
+              {VARIATIONS_BY_FIGURE[figure].map((o, index) => {
+                const selected = o.value === progression;
+                const draft = o.available && !isCalibrated(o.value);
+                return (
+                  <button
                     key={o.value}
-                    className={`w-[3px] rounded-full ${
-                      index <= currentVariationIndex ? "bg-cyan-400" : "bg-slate-700"
+                    type="button"
+                    disabled={!o.available}
+                    onClick={() => setProgression(o.value)}
+                    className={`flex shrink-0 items-center gap-1.5 rounded-lg border py-1.5 pl-1.5 pr-2.5 transition-colors ${
+                      !o.available
+                        ? "border-slate-800 bg-slate-900/60 opacity-60"
+                        : selected
+                        ? "border-cyan-400 bg-cyan-500/15"
+                        : "border-slate-700 bg-slate-800/60 hover:border-slate-600"
                     }`}
-                    style={{ height: `${7 + index * 2}px` }}
-                  />
-                ))}
-              </span>
-              {/* Chevron : sans lui, rien n'indique que cette ligne mène
-                  quelque part. */}
-              <ChevronDownIcon className="h-4 w-4 shrink-0 text-slate-600" />
-            </button>
-            <div className="flex gap-2 p-2.5">
+                  >
+                    <span
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
+                        !o.available
+                          ? "border border-slate-800 text-slate-600"
+                          : selected
+                          ? "bg-cyan-400 text-slate-950"
+                          : "border border-slate-600 text-slate-400"
+                      }`}
+                    >
+                      {index + 1}
+                    </span>
+                    <span
+                      className={`whitespace-nowrap text-[12px] ${
+                        !o.available
+                          ? "font-medium text-slate-500"
+                          : selected
+                          ? "font-semibold text-white"
+                          : "font-medium text-slate-300"
+                      }`}
+                    >
+                      {t.variations[o.value].label}
+                    </span>
+                    {!o.available && (
+                      <LockIcon className="h-3 w-3 shrink-0 text-slate-600" />
+                    )}
+                    {draft && (
+                      <ApproximateIcon className="h-3 w-3 shrink-0 text-amber-400/80" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-2 p-2.5 pt-2">
               <button
                 type="button"
                 onClick={requestImport}
