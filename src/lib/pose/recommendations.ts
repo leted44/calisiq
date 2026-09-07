@@ -1,4 +1,6 @@
 import type { CriterionScore } from "./scoring";
+import type { Lang } from "@/lib/i18n/config";
+import { recommendationsEn } from "@/lib/i18n/recommendations.en";
 import type { AnyProgression, Progression } from "./grid";
 import { tierFor, figureFromProgression, type ScoreTier } from "./report";
 
@@ -10,7 +12,7 @@ export type Recommendation = { exercice: string; raison: string };
 // - "optimal" : c'est déjà solide, un conseil de maintien/finition suffit —
 //   proposer un exercice de débutant ici serait hors sujet et frustrant
 //   pour quelqu'un qui a déjà un niveau avancé sur ce point précis.
-type TieredRecommendations = Record<ScoreTier, Recommendation[]>;
+export type TieredRecommendations = Record<ScoreTier, Recommendation[]>;
 
 const PLANCHE_EXERCISE_MAP: Record<string, TieredRecommendations> = {
   shoulder_protraction: {
@@ -872,24 +874,35 @@ const REP_EXERCISE_MAP: Record<string, TieredRecommendations> = {
   },
 };
 
+// La langue est un paramètre, pas une lecture de contexte : les
+// recommandations sont produites par l'analyse, qui tourne hors de React.
 export function recommendationsFor(
   critere: CriterionScore["critere"],
   score: number,
   pelvisSagSign: number,
   hipAngleDeviation: number,
-  progression: AnyProgression
+  progression: AnyProgression,
+  lang: Lang = "fr"
 ): Recommendation[] {
   const figure = figureFromProgression(progression);
-  const exerciseMap =
+  const cle =
     figure === "handstand"
-      ? HANDSTAND_EXERCISE_MAP
+      ? "HANDSTAND"
       : figure === "front_lever"
-      ? FRONT_LEVER_EXERCISE_MAP
+      ? "FRONT_LEVER"
       : figure === "dragon_flag"
-      ? DRAGON_FLAG_EXERCISE_MAP
+      ? "DRAGON_FLAG"
       : figure === "reps"
-      ? REP_EXERCISE_MAP
-      : PLANCHE_EXERCISE_MAP;
+      ? "REP"
+      : "PLANCHE";
+  const tablesFr: Record<string, Record<string, TieredRecommendations>> = {
+    HANDSTAND: HANDSTAND_EXERCISE_MAP,
+    FRONT_LEVER: FRONT_LEVER_EXERCISE_MAP,
+    DRAGON_FLAG: DRAGON_FLAG_EXERCISE_MAP,
+    REP: REP_EXERCISE_MAP,
+    PLANCHE: PLANCHE_EXERCISE_MAP,
+  };
+  const exerciseMap = lang === "en" ? recommendationsEn[cle] : tablesFr[cle];
   const tier = tierFor(score);
   const isTuckFamily = (TUCK_FAMILY_PROGRESSIONS as string[]).includes(progression);
 

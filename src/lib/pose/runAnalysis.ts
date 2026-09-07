@@ -478,7 +478,8 @@ export async function runPoseAnalysis({
         weakestRep.score,
         median.pelvisSagSign,
         weakestRep.valeurMesuree - weakestRep.valeurCible,
-        progression
+        progression,
+        lang
       ),
       representativeFrameDataUrl,
       landmarksFrames: frames,
@@ -493,7 +494,8 @@ export async function runPoseAnalysis({
     weakest.score,
     median.pelvisSagSign,
     weakest.valeurMesuree - weakest.valeurCible,
-    progression
+    progression,
+    lang
   );
 
   return {
