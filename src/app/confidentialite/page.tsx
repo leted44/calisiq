@@ -1,95 +1,65 @@
-export default function ConfidentialitePage() {
+import { getDictionary } from "@/lib/i18n/server";
+
+const CONTACT_EMAIL = "calisiq.app@gmail.com";
+
+export default async function ConfidentialitePage() {
+  const t = await getDictionary();
+
+  // Sections énumérées plutôt qu'écrites une par une : elles ont toutes la
+  // même forme, un titre et un paragraphe, et les lister évite de répéter
+  // cinq fois le même balisage. Les deux premières restent écrites à la main
+  // parce qu'elles portent respectivement un lien et une liste.
+  const sections = [
+    { title: t.privacy.whyTitle, body: t.privacy.whyBody },
+    { title: t.privacy.hostingTitle, body: t.privacy.hostingBody },
+    { title: t.privacy.googleTitle, body: t.privacy.googleBody },
+    { title: t.privacy.rightsTitle, body: t.privacy.rightsBody },
+    { title: t.privacy.cookiesTitle, body: t.privacy.cookiesBody },
+  ];
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 bg-slate-950 px-4 py-12 text-slate-300">
       <div>
-        <h1 className="text-2xl font-bold text-white">Politique de confidentialité</h1>
-        <p className="mt-1 text-sm text-slate-500">Dernière mise à jour : 6 septembre 2026</p>
+        <h1 className="text-2xl font-bold text-white">{t.privacy.title}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t.privacy.updated}</p>
       </div>
 
-      <p>
-        CalisIQ est une application d&apos;analyse technique de calisthénie
-        par vidéo. Elle couvre des figures tenues, comme la planche, le front
-        lever ou le handstand, et des mouvements à répétition, comme les
-        tractions, les dips ou les pompes. Cette page explique quelles données
-        sont collectées, pourquoi, et comment elles sont protégées.
-      </p>
+      <p>{t.privacy.intro}</p>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-white">Éditeur</h2>
+        <h2 className="text-lg font-semibold text-white">
+          {t.privacy.publisherTitle}
+        </h2>
         <p>
-          CalisIQ est édité à titre individuel. Pour toute question relative
-          à tes données, contacte{" "}
-          <a href="mailto:calisiq.app@gmail.com" className="text-cyan-400 underline">
-            calisiq.app@gmail.com
+          {t.privacy.publisherBody}{" "}
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            className="text-cyan-400 underline"
+          >
+            {CONTACT_EMAIL}
           </a>
           .
         </p>
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-white">Données collectées</h2>
+        <h2 className="text-lg font-semibold text-white">
+          {t.privacy.dataTitle}
+        </h2>
         <ul className="list-disc space-y-1 pl-5">
-          <li>Email et mot de passe, ou identité Google si tu te connectes via Google</li>
-          <li>Les vidéos que tu importes ou filmes pour analyse</li>
-          <li>
-            Les informations de profil que tu choisis de renseigner : taille,
-            poids, date de naissance, sexe, photo de profil
-          </li>
-          <li>
-            Les résultats d&apos;analyse générés à partir de tes vidéos
-            (scores, angles mesurés, recommandations)
-          </li>
+          <li>{t.privacy.data1}</li>
+          <li>{t.privacy.data2}</li>
+          <li>{t.privacy.data3}</li>
+          <li>{t.privacy.data4}</li>
         </ul>
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-white">Pourquoi ces données</h2>
-        <p>
-          Elles servent uniquement à faire fonctionner l&apos;application :
-          analyser ta posture par intelligence artificielle, calculer tes
-          scores techniques, te proposer des exercices correctifs, et
-          personnaliser l&apos;expérience selon ton profil.
-        </p>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-white">Hébergement et sécurité</h2>
-        <p>
-          Les données sont hébergées chez Supabase (Union européenne). Tes
-          vidéos sont stockées dans un espace privé, accessible uniquement
-          par toi. Aucune donnée n&apos;est vendue ni partagée avec des
-          tiers à des fins commerciales.
-        </p>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-white">Connexion avec Google</h2>
-        <p>
-          Si tu choisis de te connecter avec Google, seules ton adresse
-          email et ton nom nous sont transmis par Google, dans le seul but
-          de créer et sécuriser ton compte CalisIQ.
-        </p>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-white">Tes droits</h2>
-        <p>
-          Tu peux supprimer tes vidéos et analyses directement depuis
-          l&apos;application (Historique). Pour supprimer ton compte
-          entièrement ou exercer un droit d&apos;accès, de rectification ou
-          de suppression de tes données, contacte-nous à l&apos;adresse
-          ci-dessus.
-        </p>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-white">Cookies</h2>
-        <p>
-          CalisIQ utilise uniquement des cookies techniques nécessaires au
-          maintien de ta session de connexion. Aucun cookie publicitaire ou
-          de suivi n&apos;est utilisé.
-        </p>
-      </section>
+      {sections.map((section) => (
+        <section key={section.title} className="space-y-2">
+          <h2 className="text-lg font-semibold text-white">{section.title}</h2>
+          <p>{section.body}</p>
+        </section>
+      ))}
     </div>
   );
 }
