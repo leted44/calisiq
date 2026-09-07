@@ -683,3 +683,19 @@ export function StarIcon({
     </svg>
   );
 }
+
+// Globe : publication sur le profil public. Méridiens plutôt qu'un simple
+// cercle, sinon l'icône se confond avec un bouton d'état à cette taille.
+export function GlobeIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M3.5 12h17M12 3.5c2.2 2.3 3.3 5.2 3.3 8.5s-1.1 6.2-3.3 8.5c-2.2-2.3-3.3-5.2-3.3-8.5S9.8 5.8 12 3.5z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

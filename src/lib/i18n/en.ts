@@ -480,6 +480,18 @@ export const en: Dictionary = {
     saved: "Handle saved",
     yourHandle: "Your handle",
   },
+  publish: {
+    publish: "Publish to my profile",
+    published: "Published on your profile",
+    hint: "This session stays private until you publish it.",
+    copyProfileLink: "Copy my profile link",
+    profileOf: (handle: string) => `@${handle}'s profile`,
+    publishedFigures: "Published figures",
+    emptyProfile: "This profile has not published anything yet.",
+    notFound: "This profile does not exist.",
+    cta: "Analyse your technique for free",
+    ctaHint: "Film a figure, get a score per criterion and your level.",
+  },
   install: {
     installedTitle: "CalisIQ is installed",
     installedHint: "Launch it from your home screen",

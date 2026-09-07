@@ -485,6 +485,18 @@ export const fr = {
     saved: "Pseudo enregistré",
     yourHandle: "Ton pseudo",
   },
+  publish: {
+    publish: "Publier sur mon profil",
+    published: "Publiée sur ton profil",
+    hint: "Cette séance restera privée tant que tu ne la publies pas.",
+    copyProfileLink: "Copier le lien de mon profil",
+    profileOf: (handle: string) => `Profil de @${handle}`,
+    publishedFigures: "Figures publiées",
+    emptyProfile: "Ce profil n'a encore rien publié.",
+    notFound: "Ce profil n'existe pas.",
+    cta: "Analyse ta technique gratuitement",
+    ctaHint: "Filme une figure, obtiens ta note par critère et ton niveau.",
+  },
   install: {
     installedTitle: "CalisIQ est bien installé",
     installedHint: "Tu la lances depuis ton écran d'accueil",

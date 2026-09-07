@@ -10,6 +10,7 @@ import { PROGRESSION_LABELS } from "@/lib/pose/report";
 import VideoPoseOverlay from "../../_components/VideoPoseOverlay";
 import DeleteSessionButton from "../../_components/DeleteSessionButton";
 import ReferenceSessionToggle from "../../_components/ReferenceSessionToggle";
+import PublishSessionToggle from "../../_components/PublishSessionToggle";
 import { ChangeVideoIcon } from "@/components/icons";
 
 export default async function SessionDetailPage({
@@ -23,10 +24,17 @@ export default async function SessionDetailPage({
   const lang = await getLang();
   const t = await getDictionary();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("handle").eq("id", user.id).single()
+    : { data: null };
+
   const { data: session } = await supabase
     .from("sessions")
     .select(
-      "id, progression, status, video_url, created_at, performed_at, trim_start, trim_end, hold_duration_seconds, rep_count, is_reference, scores(critere, score, valeur_mesuree, valeur_cible), recommendations(exercice, raison)"
+      "id, progression, status, video_url, created_at, performed_at, trim_start, trim_end, hold_duration_seconds, rep_count, is_reference, is_public, scores(critere, score, valeur_mesuree, valeur_cible), recommendations(exercice, raison)"
     )
     .eq("id", id)
     .single();
@@ -134,7 +142,12 @@ export default async function SessionDetailPage({
         )}
       </div>
 
-      <div className="w-full max-w-md pb-4">
+      <div className="w-full max-w-md space-y-4 pb-4">
+        <PublishSessionToggle
+          sessionId={session.id}
+          isPublic={session.is_public ?? false}
+          handle={profile?.handle ?? null}
+        />
         <ReferenceSessionToggle
           sessionId={session.id}
           isReference={session.is_reference ?? false}
