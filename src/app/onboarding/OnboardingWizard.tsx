@@ -1,6 +1,7 @@
 "use client";
 
 import { useT } from "@/lib/i18n/client";
+import HandleField from "@/components/HandleField";
 import type { Dictionary } from "@/lib/i18n/fr";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 type Gender = "homme" | "femme" | "autre";
 
 type InitialProfile = {
+  handle: string | null;
   heightCm: number | null;
   weightKg: number | null;
   birthDate: string | null;
@@ -40,6 +42,17 @@ export default function OnboardingWizard({
 
   const t = useT();
   const [step, setStep] = useState(0);
+  // Pseudo public. Placé en premier de l'étape, au-dessus des mesures :
+  // c'est la seule information d'identité du formulaire, les autres ne
+  // servent qu'à affiner des repères.
+  const [handle, setHandle] = useState(initialProfile.handle ?? "");
+  // Dernier pseudo confirmé libre par le serveur. Comparé à la saisie
+  // courante : une confirmation qui ne correspond plus à ce qui est tapé ne
+  // vaut rien.
+  const [handleConfirme, setHandleConfirme] = useState<string | null>(
+    initialProfile.handle ?? null
+  );
+  const handleValid = handle.length > 0 && handleConfirme === handle;
   const [birthDate, setBirthDate] = useState(initialProfile.birthDate ?? "");
   const [gender, setGender] = useState<Gender | null>(initialProfile.gender);
   const [heightCm, setHeightCm] = useState(
@@ -99,6 +112,9 @@ export default function OnboardingWizard({
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
+        // Écrit seulement s'il est valide : un pseudo à moitié tapé ne doit
+        // pas écraser celui déjà réservé.
+        ...(handleValid ? { handle } : {}),
         birth_date: birthDate || null,
         gender,
         height_cm: heightCm ? Number(heightCm) : null,
@@ -154,6 +170,13 @@ export default function OnboardingWizard({
       {step === 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white">{t.onboarding.personalInfo}</h2>
+
+          <HandleField
+            value={handle}
+            onChange={setHandle}
+            onAvailable={setHandleConfirme}
+          />
+
           <p className="text-sm text-slate-400">
             {t.onboarding.optionalProgress}
           </p>

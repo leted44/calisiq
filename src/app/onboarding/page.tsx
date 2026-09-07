@@ -14,7 +14,7 @@ export default async function OnboardingPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("height_cm, weight_kg, birth_date, gender, avatar_url")
+    .select("handle, height_cm, weight_kg, birth_date, gender, avatar_url")
     .eq("id", user.id)
     .single();
 
@@ -24,6 +24,7 @@ export default async function OnboardingPage() {
         userId={user.id}
         userEmail={user.email ?? ""}
         initialProfile={{
+          handle: profile?.handle ?? null,
           heightCm: profile?.height_cm ?? null,
           weightKg: profile?.weight_kg ?? null,
           birthDate: profile?.birth_date ?? null,

@@ -468,6 +468,23 @@ export const fr = {
     figuresTracked: "Figures",
     byFigure: "Par figure",
   },
+  handle: {
+    label: "Pseudo public",
+    prefix: "calisiq.app/u/",
+    placeholder: "teddy_974",
+    hint: "Ce sera l'adresse de ton profil. Minuscules, chiffres et tiret bas.",
+    tooShort: "Trois caractères minimum.",
+    checking: "Vérification...",
+    available: "Disponible",
+    taken: "Déjà pris, essaie autre chose.",
+    checkFailed: "Impossible de vérifier pour l'instant.",
+    claimTitle: "Réserve ton pseudo",
+    claimBody:
+      "Il servira d'adresse à ton profil public et signera tes vidéos partagées.",
+    save: "Réserver",
+    saved: "Pseudo enregistré",
+    yourHandle: "Ton pseudo",
+  },
   install: {
     installedTitle: "CalisIQ est bien installé",
     installedHint: "Tu la lances depuis ton écran d'accueil",

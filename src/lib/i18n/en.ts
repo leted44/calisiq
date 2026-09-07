@@ -463,6 +463,23 @@ export const en: Dictionary = {
     figuresTracked: "Figures",
     byFigure: "By figure",
   },
+  handle: {
+    label: "Public handle",
+    prefix: "calisiq.app/u/",
+    placeholder: "teddy_974",
+    hint: "This becomes your profile address. Lowercase, digits and underscore.",
+    tooShort: "Three characters minimum.",
+    checking: "Checking...",
+    available: "Available",
+    taken: "Already taken, try another one.",
+    checkFailed: "Could not check right now.",
+    claimTitle: "Claim your handle",
+    claimBody:
+      "It becomes the address of your public profile and signs the videos you share.",
+    save: "Claim",
+    saved: "Handle saved",
+    yourHandle: "Your handle",
+  },
   install: {
     installedTitle: "CalisIQ is installed",
     installedHint: "Launch it from your home screen",
