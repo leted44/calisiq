@@ -1,10 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import { PROGRESSION_LABELS } from "@/lib/pose/report";
+import { progressionLabel } from "@/lib/pose/report";
+import { getLang, getDictionary } from "@/lib/i18n/server";
 import ProgressionDashboard, {
   type VariationProgression,
 } from "../_components/ProgressionDashboard";
 
 export default async function ProgressionPage() {
+  const t = await getDictionary();
+  const lang = await getLang();
   const supabase = await createClient();
 
   const { data: sessions } = await supabase
@@ -24,7 +27,7 @@ export default async function ProgressionPage() {
     if (!byVariation.has(key)) {
       byVariation.set(key, {
         variation: key,
-        label: PROGRESSION_LABELS[key] ?? key,
+        label: progressionLabel(key, lang),
         points: [],
       });
     }
@@ -55,7 +58,7 @@ export default async function ProgressionPage() {
   return (
     <div className="flex flex-col items-center gap-6 px-4 pb-4 pt-10">
       <div className="w-full max-w-md">
-        <h1 className="text-2xl font-bold text-white">Progression</h1>
+        <h1 className="text-2xl font-bold text-white">{t.progressPage.title}</h1>
         <p className="text-sm text-slate-400">
           Score, durée de hold et records — figure par figure, sur la période
           de ton choix.

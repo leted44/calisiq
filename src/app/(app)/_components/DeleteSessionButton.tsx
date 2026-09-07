@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -14,13 +15,14 @@ export default function DeleteSessionButton({
   videoPath: string;
   redirectTo?: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const supabase = createClient();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleDelete() {
-    if (!confirm("Supprimer définitivement ce hold et son analyse ?")) return;
+    if (!confirm(t.session.confirmDelete)) return;
 
     setDeleting(true);
     setError(null);
@@ -30,7 +32,7 @@ export default function DeleteSessionButton({
       .delete()
       .eq("session_id", sessionId);
     if (scoresError) {
-      setError("Suppression des scores échouée : " + scoresError.message);
+      setError(t.session.deleteScoresFailed(scoresError.message));
       setDeleting(false);
       return;
     }
@@ -40,10 +42,7 @@ export default function DeleteSessionButton({
       .delete()
       .eq("session_id", sessionId);
     if (recommendationsError) {
-      setError(
-        "Suppression des recommandations échouée : " +
-          recommendationsError.message
-      );
+      setError(t.session.deleteRecosFailed(recommendationsError.message));
       setDeleting(false);
       return;
     }
@@ -52,7 +51,7 @@ export default function DeleteSessionButton({
       .from("videos")
       .remove([videoPath]);
     if (storageError) {
-      setError("Suppression de la vidéo échouée : " + storageError.message);
+      setError(t.session.deleteVideoFailed(storageError.message));
       setDeleting(false);
       return;
     }

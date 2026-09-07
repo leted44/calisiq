@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
+import type { Dictionary } from "@/lib/i18n/fr";
 import { useState, type RefObject } from "react";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { recordAnnotatedVideo, downloadBlob } from "@/lib/pose/exportVideo";
@@ -14,11 +16,13 @@ import {
   TrendUpIcon,
 } from "@/components/icons";
 
-const FEATURES = [
-  { icon: BodyIcon, label: "Squelette superposé" },
-  { icon: TrendUpIcon, label: "Scores en direct" },
-  { icon: TimerIcon, label: "Chrono du hold" },
-  { icon: CheckCircleIcon, label: "Écran de score final" },
+// Table construite au chargement du module, avant que la langue soit connue :
+// le libellé est donc une fonction du dictionnaire, pas une chaîne.
+const FEATURES: { icon: typeof BodyIcon; label: (t: Dictionary) => string }[] = [
+  { icon: BodyIcon, label: (t) => t.export.skeletonOverlay },
+  { icon: TrendUpIcon, label: (t) => t.export.liveScores },
+  { icon: TimerIcon, label: (t) => t.export.holdTimer },
+  { icon: CheckCircleIcon, label: (t) => t.export.finalScreen },
 ];
 
 export default function ExportVideoButton({
@@ -52,6 +56,7 @@ export default function ExportVideoButton({
   repTimes?: number[] | null;
   weakPointCue?: string | null;
 }) {
+  const t = useT();
   const [recording, setRecording] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +87,7 @@ export default function ExportVideoButton({
     if (validCache) return validCache;
 
     const video = videoRef.current;
-    if (!video) throw new Error("Vidéo introuvable.");
+    if (!video) throw new Error(t.export.videoNotFound);
 
     setRecording(true);
     setProgress(0);
@@ -125,7 +130,7 @@ export default function ExportVideoButton({
       // découvrir la troncature une fois sur Instagram.
       if (!result.writesCorrectDuration) {
         setNotice(
-          "Durée du fichier non réparable sur cet appareil : un réseau social risque de n'importer que le début. Signale-le-moi si c'est le cas."
+          t.export.durationUnfixable
         );
       }
       const extension = blob.type.includes("mp4") ? "mp4" : "webm";
@@ -170,7 +175,7 @@ export default function ExportVideoButton({
     if (!navigator.canShare?.({ files: [file] })) {
       downloadBlob(blob, filename);
       setNotice(
-        "Ce navigateur ne sait pas partager de fichier. La vidéo a été téléchargée, tu peux la publier depuis ta galerie."
+        t.export.noShareSupport
       );
       return;
     }
@@ -186,7 +191,7 @@ export default function ExportVideoButton({
         if (err.name === "AbortError") return;
         downloadBlob(blob, filename);
         setNotice(
-          "Ton téléphone a refusé le partage direct. La vidéo a été téléchargée, tu peux la publier depuis ta galerie."
+          t.export.shareRefused
         );
       });
   }
@@ -222,8 +227,8 @@ export default function ExportVideoButton({
               <DownloadIcon className="h-4 w-4 text-cyan-300" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Ta vidéo analysée</p>
-              <p className="text-[11px] text-slate-400">Prête à publier</p>
+              <p className="text-sm font-semibold text-white">{t.export.yourVideo}</p>
+              <p className="text-[11px] text-slate-400">{t.export.readyToPost}</p>
             </div>
           </div>
           <span className="flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-amber-400/20 to-amber-500/20 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-300 ring-1 ring-amber-400/40">
@@ -234,9 +239,9 @@ export default function ExportVideoButton({
 
         <div className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-2">
           {FEATURES.map(({ icon: Icon, label }) => (
-            <div key={label} className="flex items-center gap-1.5">
+            <div key={label(t)} className="flex items-center gap-1.5">
               <Icon className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
-              <span className="text-[11px] leading-tight text-slate-300">{label}</span>
+              <span className="text-[11px] leading-tight text-slate-300">{label(t)}</span>
             </div>
           ))}
         </div>
@@ -250,7 +255,7 @@ export default function ExportVideoButton({
           >
             {busy
               ? `Génération... ${progress}%`
-              : "Partager sur mes réseaux"}
+              : t.export.share}
           </button>
 
           <button

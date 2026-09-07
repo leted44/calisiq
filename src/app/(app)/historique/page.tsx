@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatHoldDuration, PROGRESSION_LABELS } from "@/lib/pose/report";
+import { formatHoldDuration, progressionLabel } from "@/lib/pose/report";
+import { getLang, getDictionary } from "@/lib/i18n/server";
+import type { Dictionary } from "@/lib/i18n/fr";
 
-const STATUS_LABELS: Record<string, string> = {
-  processing: "En attente d'analyse",
-  done: "Analysé",
-  error: "Erreur",
-};
+// Résolu au rendu : la table est construite au chargement du module, avant
+// que la langue soit connue.
+function statusLabel(status: string, t: Dictionary): string {
+  if (status === "done") return t.history.analysed;
+  if (status === "error") return t.history.statusError;
+  return t.history.statusProcessing;
+}
 
 function scoreColor(score: number): string {
   if (score >= 8) return "text-green-400";
@@ -15,6 +19,8 @@ function scoreColor(score: number): string {
 }
 
 export default async function HistoriquePage() {
+  const t = await getDictionary();
+  const lang = await getLang();
   const supabase = await createClient();
 
   const { data: sessions } = await supabase
@@ -41,13 +47,13 @@ export default async function HistoriquePage() {
   return (
     <div className="flex flex-col items-center gap-4 px-4 pt-10">
       <div className="w-full max-w-md">
-        <h1 className="text-2xl font-bold text-white">Historique</h1>
-        <p className="text-sm text-slate-400">Tes figures analysées.</p>
+        <h1 className="text-2xl font-bold text-white">{t.history.title}</h1>
+        <p className="text-sm text-slate-400">{t.history.subtitle}</p>
       </div>
 
       <div className="w-full max-w-md space-y-3">
         {rows.length === 0 && (
-          <p className="text-sm text-slate-500">Aucune analyse pour l&apos;instant.</p>
+          <p className="text-sm text-slate-500">{t.history.empty}</p>
         )}
 
         {rows.map((session) => (
@@ -59,7 +65,7 @@ export default async function HistoriquePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="flex items-center gap-1.5 font-medium text-white">
-                  {PROGRESSION_LABELS[session.progression] ?? session.progression}
+                  {progressionLabel(session.progression, lang)}
                   {session.is_reference && (
                     <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
                       Référence
@@ -91,7 +97,7 @@ export default async function HistoriquePage() {
                     : "bg-slate-700/50 text-slate-300"
                 }`}
               >
-                {STATUS_LABELS[session.status] ?? session.status}
+                {statusLabel(session.status, t) ?? session.status}
               </span>
             </div>
 

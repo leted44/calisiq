@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleIcon } from "@/components/icons";
@@ -11,6 +12,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const t = useT();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -133,7 +135,7 @@ export default function LoginPage() {
           />
         </div>
         <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
-          Analyse Intelligente de la Forme
+          {t.auth2.tagline}
         </p>
       </div>
 
@@ -143,9 +145,9 @@ export default function LoginPage() {
           className="relative w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl shadow-black/40"
         >
           <div className="space-y-1 text-center">
-            <h1 className="text-xl font-semibold text-white">Confirme ton email</h1>
+            <h1 className="text-xl font-semibold text-white">{t.auth2.confirmTitle}</h1>
             <p className="text-sm text-slate-400">
-              On a envoyé un code à <span className="text-slate-300">{pendingEmail}</span>.
+              {t.auth2.confirmSentTo} <span className="text-slate-300">{pendingEmail}</span>.
               Saisis-le ci-dessous pour activer ton compte.
             </p>
           </div>
@@ -155,7 +157,7 @@ export default function LoginPage() {
             required
             autoFocus
             inputMode="text"
-            placeholder="Code de confirmation"
+            placeholder={t.auth2.codePlaceholder}
             value={otpCode}
             onChange={(e) => setOtpCode(e.target.value)}
             className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-center text-lg tracking-[0.3em] text-white placeholder-slate-500 outline-none focus:border-cyan-500"
@@ -168,7 +170,7 @@ export default function LoginPage() {
             disabled={verifying}
             className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_0_20px_rgba(34,211,238,0.35)] py-2.5 font-medium text-white transition-opacity disabled:opacity-50"
           >
-            {verifying ? "Vérification..." : "Confirmer"}
+            {verifying ? t.auth2.verifying : t.auth2.confirm}
           </button>
 
           <div className="flex items-center justify-between text-sm">
@@ -190,10 +192,10 @@ export default function LoginPage() {
               className="text-cyan-400 underline underline-offset-2 hover:text-cyan-300 disabled:opacity-50"
             >
               {resendStatus === "sent"
-                ? "Code renvoyé"
+                ? t.auth2.codeResent
                 : resendStatus === "sending"
-                ? "Envoi..."
-                : "Renvoyer le code"}
+                ? t.auth2.sending
+                : t.auth2.resendCode}
             </button>
           </div>
         </form>
@@ -204,7 +206,7 @@ export default function LoginPage() {
         >
           <div className="space-y-1 text-center">
             <h1 className="text-xl font-semibold text-white">
-              {mode === "signin" ? "Connexion" : "Créer un compte"}
+              {mode === "signin" ? t.auth2.signIn : t.auth2.createAccount}
             </h1>
             <p className="text-sm text-slate-400">
               Filme ta figure, obtiens ton score et ton plan de progression en
@@ -219,12 +221,12 @@ export default function LoginPage() {
             className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-white hover:border-slate-600 disabled:opacity-50"
           >
             <GoogleIcon className="h-4 w-4" />
-            {googleLoading ? "Redirection..." : "Continuer avec Google"}
+            {googleLoading ? t.auth2.redirecting : t.auth2.continueWithGoogle}
           </button>
 
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-800" />
-            <p className="text-xs uppercase tracking-wide text-slate-500">Ou e-mail</p>
+            <p className="text-xs uppercase tracking-wide text-slate-500">{t.auth2.orEmail}</p>
             <div className="h-px flex-1 bg-slate-800" />
           </div>
 
@@ -232,7 +234,7 @@ export default function LoginPage() {
             <input
               type="email"
               required
-              placeholder="Email"
+              placeholder={t.auth2.email}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
@@ -241,7 +243,7 @@ export default function LoginPage() {
               type="password"
               required
               minLength={6}
-              placeholder="Mot de passe"
+              placeholder={t.auth2.password}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
@@ -255,7 +257,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_0_20px_rgba(34,211,238,0.35)] py-2.5 font-medium text-white transition-opacity disabled:opacity-50"
           >
-            {loading ? "..." : mode === "signin" ? "Se connecter" : "S'inscrire"}
+            {loading ? "..." : mode === "signin" ? t.auth2.signInAction : t.auth2.signUpAction}
           </button>
 
           <button
@@ -264,8 +266,8 @@ export default function LoginPage() {
             className="w-full text-sm text-slate-400 underline underline-offset-2 hover:text-slate-300"
           >
             {mode === "signin"
-              ? "Pas de compte ? S'inscrire"
-              : "Déjà un compte ? Se connecter"}
+              ? t.auth2.noAccount
+              : t.auth2.haveAccount}
           </button>
         </form>
       )}
