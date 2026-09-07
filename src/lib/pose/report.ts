@@ -78,7 +78,12 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   // portent une note recopiée depuis la grille et ne valident rien ; une fois
   // écartés, seule la full garde des exécutions conformes exploitables.
   tuck_human_flag: [],
-  one_leg_human_flag: [],
+  // Trois exécutions conformes et trois corps tendus soumis dans cette
+  // catégorie. bent_knee_angle sépare les deux groupes de 10 à 0 et les notes
+  // humaines suivent ; torso_angle couvre 5,9 à 10. Le coude et les deux
+  // critères de jambe tendue restent au-dessus de 6,5 sur tout le lot : rien
+  // ne les a mis en défaut, ils n'y figurent donc pas.
+  one_leg_human_flag: ["torso_angle", "bent_knee_angle"],
   // Rien de mesurable ici tant que l'écartement des jambes n'est pas mesuré :
   // straddle et full présentent les mêmes angles de hanche et de genou.
   straddle_human_flag: [],

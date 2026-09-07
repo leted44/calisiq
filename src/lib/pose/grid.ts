@@ -422,21 +422,21 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   // CALIBRATION DU 2026-09-07, sur les 31 échantillons enregistrés via
   // /calibration. Seule la full en ressort validée. Aucun seuil n'a bougé.
   //
-  // UNE NOTE HUMAINE COPIÉE SUR LA GRILLE NE VALIDE RIEN
+  // UN ACCORD PARFAIT SE VÉRIFIE AVANT DE SE CÉLÉBRER
   //
   // Douze de ces trente et un échantillons portent une note humaine identique
-  // à celle que la grille calcule, au centième près. Ce n'est pas un accord
-  // remarquable, c'est la même valeur écrite deux fois : la note affichée par
-  // l'application a été ressaisie comme note de référence. Confronter la
-  // grille à sa propre sortie ne peut produire qu'un accord parfait, et
-  // régler un seuil dessus reviendrait à optimiser un miroir.
+  // à celle que la grille calcule, au centième près. Deux explications : soit
+  // la note affichée a été ressaisie comme note de référence, auquel cas on
+  // confronte la grille à sa propre sortie et l'accord ne prouve rien, soit
+  // le jugement est réellement tombé sur la même valeur.
   //
-  // Ces douze-là sont donc écartés de tout calcul. Le même contrôle est à
-  // refaire à chaque passe, sur toutes les figures : c'est le seul moyen de
-  // distinguer un vrai jugement d'un aller-retour.
+  // La question se tranche en demandant, pas en supposant. Pour la single leg
+  // le point a été vérifié : ses notes sont indépendantes, et elles comptent.
+  // Le contrôle reste à refaire à chaque passe — c'est un signal à lever, pas
+  // un verdict.
   //
-  // Ce qu'il reste : quatre exécutions conformes et notées indépendamment sur
-  // la full, zéro sur les trois autres variantes.
+  // Ce qu'il reste après vérification : la full et la single leg validées, la
+  // tuck et la straddle sans aucune exécution conforme exploitable.
   //
   // Contrairement au dragon flag, l'inclinaison est ici une vraie bande et non
   // un seuil maximum : la cible est l'horizontale, et un corps qui pointe vers
@@ -481,14 +481,21 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   // tuck et la straddle du drapeau pour l'inclinaison et le coude, et
   // reprises telles quelles de la Single Leg Front Lever pour les trois
   // critères de jambe, où elles ont été calibrées sur 6 échantillons.
-  // Six échantillons le jour même de l'ajout de la variante, dont trois
-  // vraies exécutions à une jambe — mais les trois portent une note copiée
-  // sur la grille. L'accord apparent, un écart moyen de 0,01, ne prouve donc
-  // rien du tout. Les trois autres sont des corps entièrement tendus soumis
-  // ici, et bent_knee_angle les descend correctement à 0.
+  // CALIBRÉE le 2026-09-07, six échantillons le jour même de l'ajout de la
+  // variante : trois vraies exécutions à une jambe, et trois corps
+  // entièrement tendus soumis ici. Écart absolu moyen de 0,09 sur les six,
+  // 0,01 sur les trois conformes. Notes confirmées comme indépendantes par
+  // leur auteur, malgré leur proximité avec la grille.
   //
-  // La variante reste en brouillon. Il lui faut des exécutions notées à
-  // l'œil, sans regarder le score affiché.
+  // Deux critères sont confirmés, et deux seulement. bent_knee_angle sépare
+  // franchement les deux groupes — 10 sur les trois vraies exécutions, 0 sur
+  // les trois corps tendus — et les notes humaines suivent exactement, 8,8 à
+  // 9,6 contre 7 à 7,3. torso_angle couvre la plage 5,9 à 10 et l'exécution
+  // la moins bien notée du lot est celle dont le tronc est le plus haut.
+  //
+  // Les trois autres, coude et les deux critères de jambe tendue, restent
+  // entre 6,5 et 10 sur tout le lot : aucune exécution ne les a mis en
+  // défaut, donc rien n'y est prouvé. Même règle que sur le handstand push-up.
   one_leg_human_flag: {
     torso_angle: { target: 8, tolerance: 22 },
     elbow_angle: { target: 175, tolerance: 24 },
