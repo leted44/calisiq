@@ -32,6 +32,14 @@ import {
 import { detectReps } from "./repAnalysis";
 import { drawAngleLabels } from "./canvasHud";
 import { seekTo } from "@/lib/video/playback";
+import type { Lang } from "@/lib/i18n/config";
+import { fr } from "@/lib/i18n/fr";
+import { en } from "@/lib/i18n/en";
+
+// Avertissements dans la langue demandée. Accès direct aux dictionnaires
+// plutôt qu'au contexte React, qui n'existe pas ici : l'analyse tourne sur
+// une boucle d'animation, hors de tout composant.
+const w = (lang: Lang) => (lang === "en" ? en.warnings : fr.warnings);
 
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
@@ -114,6 +122,7 @@ export async function runPoseAnalysis({
   rangeEnd,
   onProgress,
   onLiveAngles,
+  lang = "fr",
   signal,
 }: {
   video: HTMLVideoElement;
@@ -125,6 +134,9 @@ export async function runPoseAnalysis({
   rangeEnd?: number;
   onProgress?: (percent: number) => void;
   onLiveAngles?: (angles: PoseAngles) => void;
+  // Langue des avertissements. Paramètre et non contexte : l'analyse tourne
+  // hors de React, sur une boucle d'animation.
+  lang?: Lang;
   // Permet d'annuler une analyse en cours (ex. l'utilisateur se rend
   // compte d'une erreur pendant le traitement) sans attendre la fin.
   signal?: AbortSignal;
@@ -154,7 +166,7 @@ export async function runPoseAnalysis({
     function loop() {
       if (signal?.aborted) {
         video.pause();
-        reject(new DOMException("Analyse annulée.", "AbortError"));
+        reject(new DOMException(w(lang).cancelled, "AbortError"));
         return;
       }
 
@@ -214,7 +226,7 @@ export async function runPoseAnalysis({
       framesAnalyzed: 0,
       detectionRate: 0,
       warning:
-        "Aucun corps détecté dans cette vidéo. Vérifie que tu es entièrement visible dans le cadre, avec un bon éclairage.",
+        w(lang).noBodyVideo,
     };
   }
 
@@ -242,12 +254,12 @@ export async function runPoseAnalysis({
   const warningParts: string[] = [];
   if (detectionRate < 0.5) {
     warningParts.push(
-      `Corps détecté seulement sur ${Math.round(detectionRate * 100)}% des frames — vérifie le cadrage et l'angle de caméra pour un résultat fiable.`
+      w(lang).lowDetection(Math.round(detectionRate * 100))
     );
   }
   if (!window.detected) {
     warningParts.push(
-      "Aucune position stable assez longue détectée — la durée du hold n'a pas pu être mesurée. Filme si possible avec le téléphone posé/stable plutôt qu'à la main."
+      w(lang).noStableHold
     );
   }
   // En straddle, les deux jambes doivent être écartées de part et d'autre
@@ -259,7 +271,7 @@ export async function runPoseAnalysis({
     progression === "straddle_planche" || progression === "straddle_front_lever";
   if (isStraddleVariant && median.legOcclusionRisk) {
     warningParts.push(
-      "Une jambe peut être mal détectée ou superposée à l'autre sur cette vidéo — pour un straddle, filme légèrement de biais (pas totalement de face ni de profil) pour bien distinguer les deux jambes, sinon les angles genou et axe du corps peuvent être faussés."
+      w(lang).legOcclusion
     );
   }
   // Figure à une jambe alors que les deux sont tendues : la personne
@@ -270,7 +282,7 @@ export async function runPoseAnalysis({
   // catégorie, et fausserait sa courbe de progression.
   if (progression === "one_leg_front_lever" && median.bentKneeAngle > 150) {
     warningParts.push(
-      "Les deux jambes sont tendues sur cette vidéo : c'est un Full Front Lever, pas un Single Leg. Change de variation pour obtenir un score juste — le Single Leg attend une jambe tendue et l'autre repliée."
+      w(lang).notSingleLegFrontLever
     );
   }
 
@@ -288,12 +300,12 @@ export async function runPoseAnalysis({
   // l'erreur de catégorie au lieu de la traduire en points.
   if (progression === "full_dragon_flag" && median.bentKneeAngle < 150) {
     warningParts.push(
-      "Une jambe est repliée sur cette vidéo : c'est un Single Leg Dragon Flag, pas un Full. Change de variation pour obtenir un score juste."
+      w(lang).notFullDragonFlag
     );
   }
   if (progression === "one_leg_dragon_flag" && median.bentKneeAngle > 150) {
     warningParts.push(
-      "Les deux jambes sont tendues sur cette vidéo : c'est un Full Dragon Flag, pas un Single Leg. Change de variation pour obtenir un score juste."
+      w(lang).notSingleLegDragonFlag
     );
   }
 
@@ -340,7 +352,7 @@ export async function runPoseAnalysis({
       framesAnalyzed: frames.length,
       detectionRate,
       warning:
-        "Position debout détectée, pas un handstand. Pour analyser un handstand, les mains doivent être au sol et les pieds en l'air (position inversée).",
+        w(lang).notHandstand,
     };
   }
 
@@ -400,7 +412,7 @@ export async function runPoseAnalysis({
         framesAnalyzed: frames.length,
         detectionRate,
         warning:
-          "Aucune répétition complète détectée. Filme de profil, corps entier visible, et va au bout du mouvement dans les deux sens — les répétitions partielles ne sont pas comptées.",
+          w(lang).noReps,
       };
     }
 
@@ -435,12 +447,12 @@ export async function runPoseAnalysis({
       : NaN;
     if (Number.isFinite(facing) && facing > 0.65) {
       repWarnings.push(
-        "Vidéo filmée trop de face pour cet exercice. Filme de profil, corps entier dans le cadre : la flexion des bras et l'ouverture de hanche se voient de côté, pas de face. Les notes de contrôle et de forme restent approximatives sur cette prise."
+        w(lang).tooFrontOn
       );
     }
     if (reps.length < 3) {
       repWarnings.push(
-        `Seulement ${reps.length} répétition${reps.length > 1 ? "s" : ""} détectée${reps.length > 1 ? "s" : ""} : la régularité du tempo n'a pas beaucoup de sens sur une série aussi courte.`
+        w(lang).fewReps(reps.length)
       );
     }
 
@@ -510,7 +522,8 @@ export async function runPoseAnalysis({
 // fenêtre de hold puisqu'il n'y a qu'une frame. Renvoie un objet au même
 // format que runPoseAnalysis pour réutiliser le même affichage.
 export async function measureImage(
-  image: HTMLImageElement
+  image: HTMLImageElement,
+  lang: Lang = "fr"
 ): Promise<PoseAnalysisResult> {
   const landmarker = await getLandmarker();
 
@@ -522,7 +535,7 @@ export async function measureImage(
       framesAnalyzed: 0,
       detectionRate: 0,
       warning:
-        "Aucun corps détecté sur cette image. Vérifie que la personne est entièrement visible.",
+        w(lang).noBodyImage,
     };
   }
 

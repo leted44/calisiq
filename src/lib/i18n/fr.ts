@@ -150,6 +150,33 @@ export const fr = {
     weakPoint: "Point faible",
     priority: "À travailler en priorité",
   },
+  warnings: {
+    cancelled: "Analyse annulée.",
+    noBodyVideo:
+      "Aucun corps détecté dans cette vidéo. Vérifie que tu es entièrement visible dans le cadre, avec un bon éclairage.",
+    noBodyImage:
+      "Aucun corps détecté sur cette image. Vérifie que la personne est entièrement visible.",
+    lowDetection: (pct: number) =>
+      `Corps détecté seulement sur ${pct}% des frames — vérifie le cadrage et l'angle de caméra pour un résultat fiable.`,
+    noStableHold:
+      "Aucune position stable assez longue détectée — la durée du hold n'a pas pu être mesurée. Filme si possible avec le téléphone posé/stable plutôt qu'à la main.",
+    noReps:
+      "Aucune répétition complète détectée. Filme de profil, corps entier visible, et va au bout du mouvement dans les deux sens — les répétitions partielles ne sont pas comptées.",
+    fewReps: (n: number) =>
+      `Seulement ${n} répétition${n > 1 ? "s" : ""} détectée${n > 1 ? "s" : ""} : la régularité du tempo n'a pas beaucoup de sens sur une série aussi courte.`,
+    notHandstand:
+      "Position debout détectée, pas un handstand. Pour analyser un handstand, les mains doivent être au sol et les pieds en l'air (position inversée).",
+    legOcclusion:
+      "Une jambe peut être mal détectée ou superposée à l'autre sur cette vidéo — pour un straddle, filme légèrement de biais (pas totalement de face ni de profil) pour bien distinguer les deux jambes, sinon les angles genou et axe du corps peuvent être faussés.",
+    notSingleLegFrontLever:
+      "Les deux jambes sont tendues sur cette vidéo : c'est un Full Front Lever, pas un Single Leg. Change de variation pour obtenir un score juste — le Single Leg attend une jambe tendue et l'autre repliée.",
+    notFullDragonFlag:
+      "Une jambe est repliée sur cette vidéo : c'est un Single Leg Dragon Flag, pas un Full. Change de variation pour obtenir un score juste.",
+    notSingleLegDragonFlag:
+      "Les deux jambes sont tendues sur cette vidéo : c'est un Full Dragon Flag, pas un Single Leg. Change de variation pour obtenir un score juste.",
+    tooFrontOn:
+      "Vidéo filmée trop de face pour cet exercice. Filme de profil, corps entier dans le cadre : la flexion des bras et l'ouverture de hanche se voient de côté, pas de face. Les notes de contrôle et de forme restent approximatives sur cette prise.",
+  },
   install: {
     installedTitle: "CalisIQ est bien installé",
     installedHint: "Tu la lances depuis ton écran d'accueil",

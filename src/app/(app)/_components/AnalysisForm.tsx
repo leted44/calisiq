@@ -19,7 +19,7 @@ import {
 } from "@/lib/pose/report";
 import { LockIcon, ApproximateIcon, StarIcon } from "@/components/icons";
 import { useFavorites, toggleFavorite } from "./favorites";
-import { useT } from "@/lib/i18n/client";
+import { useT, useLang } from "@/lib/i18n/client";
 import {
   UploadCloudIcon,
   CameraIcon,
@@ -753,6 +753,7 @@ export default function AnalysisForm() {
   // pour une variation qui n'existerait plus est simplement ignoré, plutôt
   // que de faire planter l'accueil.
   const t = useT();
+  const lang = useLang();
   const favorites = useFavorites();
   const favoriteEntries = favorites
     .map((value) => VARIATION_INDEX[value])
@@ -1222,6 +1223,7 @@ export default function AnalysisForm() {
 
     try {
       const analysisResult = await runPoseAnalysis({
+        lang,
         video: previewVideoRef.current,
         canvas: canvasRef.current,
         progression: progression as Progression,
@@ -1272,6 +1274,7 @@ export default function AnalysisForm() {
 
     try {
       const analysisResult = await runPoseAnalysis({
+        lang,
         video: previewVideoRef.current,
         canvas: canvasRef.current,
         progression: progression as Progression,

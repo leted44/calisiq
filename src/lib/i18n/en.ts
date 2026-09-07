@@ -145,6 +145,33 @@ export const en: Dictionary = {
     weakPoint: "Weak point",
     priority: "Work on this first",
   },
+  warnings: {
+    cancelled: "Analysis cancelled.",
+    noBodyVideo:
+      "No body detected in this video. Check that you are fully in frame, with decent lighting.",
+    noBodyImage:
+      "No body detected in this image. Check that the person is fully visible.",
+    lowDetection: (pct: number) =>
+      `Body detected on only ${pct}% of frames — check the framing and camera angle for a reliable result.`,
+    noStableHold:
+      "No position held still for long enough — the hold duration could not be measured. Film with the phone propped up rather than handheld if you can.",
+    noReps:
+      "No complete rep detected. Film from the side, full body in frame, and take the movement all the way in both directions — partial reps are not counted.",
+    fewReps: (n: number) =>
+      `Only ${n} rep${n > 1 ? "s" : ""} detected: tempo consistency does not mean much on a set this short.`,
+    notHandstand:
+      "Standing position detected, not a handstand. To analyse a handstand, the hands must be on the ground and the feet in the air.",
+    legOcclusion:
+      "One leg may be mistracked or overlapping the other in this video — for a straddle, film slightly off-axis (neither straight on nor fully side on) so both legs stay distinct, otherwise the knee and body-line angles can be wrong.",
+    notSingleLegFrontLever:
+      "Both legs are straight in this video: this is a Full Front Lever, not a Single Leg. Switch variation for a fair score — the Single Leg expects one leg straight and the other tucked.",
+    notFullDragonFlag:
+      "One leg is tucked in this video: this is a Single Leg Dragon Flag, not a Full. Switch variation for a fair score.",
+    notSingleLegDragonFlag:
+      "Both legs are straight in this video: this is a Full Dragon Flag, not a Single Leg. Switch variation for a fair score.",
+    tooFrontOn:
+      "This video is filmed too front-on for this exercise. Film from the side, full body in frame: arm bend and hip opening are visible from the side, not from the front. Control and form scores stay approximate on this take.",
+  },
   install: {
     installedTitle: "CalisIQ is installed",
     installedHint: "Launch it from your home screen",
