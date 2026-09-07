@@ -1,6 +1,6 @@
 "use client";
 
-import { useT } from "@/lib/i18n/client";
+import { useT, useLang } from "@/lib/i18n/client";
 import type { Dictionary } from "@/lib/i18n/fr";
 import { useState, type RefObject } from "react";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
@@ -57,6 +57,7 @@ export default function ExportVideoButton({
   weakPointCue?: string | null;
 }) {
   const t = useT();
+  const lang = useLang();
   const [recording, setRecording] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +98,7 @@ export default function ExportVideoButton({
     async function render(forceLegacyEncoder: boolean) {
       const canvas = document.createElement("canvas");
       return recordAnnotatedVideo({
+        lang,
         video: video!,
         canvas,
         rangeStart: rangeStart ?? 0,

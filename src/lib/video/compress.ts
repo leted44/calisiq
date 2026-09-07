@@ -1,4 +1,20 @@
 import { playSegment } from "./playback";
+import { fr } from "@/lib/i18n/fr";
+import { en } from "@/lib/i18n/en";
+import { LANG_COOKIE, isLang } from "@/lib/i18n/config";
+
+// Messages d'erreur dans la langue courante. Ce module est une couche
+// technique sans accès au contexte React ni aux cookies du serveur : il lit
+// donc le cookie directement, ce qui est possible parce qu'il ne tourne que
+// dans le navigateur.
+function m() {
+  const valeur = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith(LANG_COOKIE + "="))
+    ?.split("=")[1];
+  return isLang(valeur) && valeur === "en" ? en.media : fr.media;
+}
+
 
 // 1080p de côté : c'est la résolution que consomment réellement les
 // réseaux, et largement au-dessus de ce dont MediaPipe a besoin pour
@@ -46,7 +62,7 @@ function loadVideo(file: File): Promise<{ video: HTMLVideoElement; revoke: () =>
     video.onloadedmetadata = () => resolve({ video, revoke });
     video.onerror = () => {
       revoke();
-      reject(new Error("Vidéo illisible."));
+      reject(new Error(m().unreadableVideo));
     };
   });
 }

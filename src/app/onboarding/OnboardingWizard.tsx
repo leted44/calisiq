@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -30,6 +31,7 @@ export default function OnboardingWizard({
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const t = useT();
   const [step, setStep] = useState(0);
   const [birthDate, setBirthDate] = useState(initialProfile.birthDate ?? "");
   const [gender, setGender] = useState<Gender | null>(initialProfile.gender);
@@ -79,7 +81,7 @@ export default function OnboardingWizard({
         .upload(path, avatarFile, { upsert: true });
 
       if (uploadError) {
-        setError("La photo n'a pas pu être envoyée : " + uploadError.message);
+        setError(t.media.photoUploadFailed(uploadError.message));
         setSaving(false);
         return;
       }

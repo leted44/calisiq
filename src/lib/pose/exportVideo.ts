@@ -11,6 +11,7 @@ import { computeAngles } from "./angles";
 import { drawAngleLabels } from "./canvasHud";
 import { buildTargetPose, type TargetPose } from "./targetPose";
 import { isRepProgression, type AnyProgression, type Progression } from "./grid";
+import type { Lang } from "@/lib/i18n/config";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,6 +33,9 @@ function sleep(ms: number): Promise<void> {
 // pixels.
 const MAX_EXPORT_DIMENSION = 3840;
 
+// Libellés dessinés dans la vidéo. Copie française conservée ici plutôt que
+// lue au dictionnaire : ce module tourne sur un canvas hors React, et la
+// langue lui est passée en paramètre.
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   rep_lockout: "Extension",
   rep_peak: "Amplitude",
@@ -734,10 +738,15 @@ function drawGhostPose(
 // Légende du fantôme : sans elle, le spectateur ne peut pas deviner que le
 // tracé vert en pointillés est la position visée et pas une seconde
 // détection.
-function drawGhostLegend(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, y: number) {
+function drawGhostLegend(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  y: number,
+  lang: Lang
+) {
   const w = canvas.width;
   const scale = w / 400;
-  const text = "Position idéale";
+  const text = lang === "en" ? "Ideal position" : "Position idéale";
   const font = `600 ${9 * scale}px sans-serif`;
   ctx.font = font;
   const lineLength = 16 * scale;
@@ -771,10 +780,14 @@ function drawGhostLegend(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElemen
 
 // Badge "RALENTI" en haut, pour que le spectateur comprenne que la vidéo
 // n'a pas bugué et qu'on lui rejoue volontairement le moment clé.
-function drawSlowMotionBadge(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+function drawSlowMotionBadge(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  lang: Lang
+) {
   const w = canvas.width;
   const scale = w / 400;
-  const text = "RALENTI · À CORRIGER";
+  const text = lang === "en" ? "SLOW MOTION · TO FIX" : "RALENTI · À CORRIGER";
   const font = `700 ${9 * scale}px sans-serif`;
   ctx.font = font;
   const paddingX = 12 * scale;
@@ -793,6 +806,7 @@ function drawSlowMotionBadge(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEl
 }
 
 export async function recordAnnotatedVideo({
+  lang = "fr",
   video,
   canvas,
   rangeStart,
@@ -811,6 +825,8 @@ export async function recordAnnotatedVideo({
   forceLegacyEncoder,
   onProgress,
 }: {
+  // Langue des textes dessinés dans la vidéo.
+  lang?: Lang;
   video: HTMLVideoElement;
   canvas: HTMLCanvasElement;
   rangeStart: number;
@@ -1110,11 +1126,11 @@ export async function recordAnnotatedVideo({
             const ghost = buildTargetPose(landmarks, progression);
             if (ghost) {
               drawGhostPose(ctx, canvas, ghost, 0.55 + 0.3 * Math.sin(phase * Math.PI * 2));
-              drawGhostLegend(ctx, canvas, 44 * (canvas.width / 400));
+              drawGhostLegend(ctx, canvas, 44 * (canvas.width / 400), lang);
             }
           }
 
-          drawSlowMotionBadge(ctx, canvas);
+          drawSlowMotionBadge(ctx, canvas, lang);
           drawWeakPointOverlay(ctx, canvas, {
             landmarks,
             critere: weakest.critere,

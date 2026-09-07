@@ -288,6 +288,13 @@ export const fr = {
     idealPosition: "Position idéale",
     slowMotion: "RALENTI · À CORRIGER",
   },
+  media: {
+    noFrameEncoded: "Aucune image n'a pu être encodée.",
+    incompleteEncoder: "Encodeur vidéo incomplet sur cet appareil.",
+    muxingFailed: "Assemblage de la vidéo impossible sur cet appareil.",
+    unreadableVideo: "Vidéo illisible.",
+    photoUploadFailed: (m: string) => `La photo n'a pas pu être envoyée : ${m}`,
+  },
   install: {
     installedTitle: "CalisIQ est bien installé",
     installedHint: "Tu la lances depuis ton écran d'accueil",

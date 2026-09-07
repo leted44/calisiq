@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
+import { getDictionary } from "@/lib/i18n/server";
 
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const t = await getDictionary();
   return {
     // `id` fige l'identité de l'application aux yeux du navigateur. Sans lui,
     // l'identifiant est déduit de `start_url` : le jour où celle-ci change,
@@ -8,7 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: "CalisIQ",
     short_name: "CalisIQ",
-    description: "Analyse biomécanique de tes mouvements de calisthénie",
+    description: t.meta.description,
     start_url: "/",
     display: "standalone",
     background_color: "#0b0f19",

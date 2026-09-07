@@ -1,4 +1,20 @@
 import { Muxer, ArrayBufferTarget } from "mp4-muxer";
+import { fr } from "@/lib/i18n/fr";
+import { en } from "@/lib/i18n/en";
+import { LANG_COOKIE, isLang } from "@/lib/i18n/config";
+
+// Messages d'erreur dans la langue courante. Ce module est une couche
+// technique sans accès au contexte React ni aux cookies du serveur : il lit
+// donc le cookie directement, ce qui est possible parce qu'il ne tourne que
+// dans le navigateur.
+function m() {
+  const valeur = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith(LANG_COOKIE + "="))
+    ?.split("=")[1];
+  return isLang(valeur) && valeur === "en" ? en.media : fr.media;
+}
+
 import { withFixedDuration } from "./fixMp4Duration";
 
 // Écriture de la vidéo exportée.
@@ -297,11 +313,11 @@ async function createWebCodecsWriter(
       // On préfère un message qui dit ce qui s'est réellement passé.
       if (chunkCount === 0) {
         markWebCodecsFailed();
-        throw new Error("Aucune image n'a pu être encodée.");
+        throw new Error(m().noFrameEncoded);
       }
       if (!gotDecoderConfig) {
         markWebCodecsFailed();
-        throw new Error("Encodeur vidéo incomplet sur cet appareil.");
+        throw new Error(m().incompleteEncoder);
       }
       // Dernier filet : si la finalisation échoue malgré tout, on ne laisse
       // pas remonter l'erreur interne du muxer, illisible pour
@@ -310,7 +326,7 @@ async function createWebCodecsWriter(
         muxer.finalize();
       } catch {
         markWebCodecsFailed();
-        throw new Error("Assemblage de la vidéo impossible sur cet appareil.");
+        throw new Error(m().muxingFailed);
       }
       const { buffer } = muxer.target as ArrayBufferTarget;
       return new Blob([buffer], { type: "video/mp4" });

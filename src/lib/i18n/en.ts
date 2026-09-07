@@ -283,6 +283,13 @@ export const en: Dictionary = {
     idealPosition: "Ideal position",
     slowMotion: "SLOW MOTION · TO FIX",
   },
+  media: {
+    noFrameEncoded: "No frame could be encoded.",
+    incompleteEncoder: "Incomplete video encoder on this device.",
+    muxingFailed: "The video could not be assembled on this device.",
+    unreadableVideo: "Unreadable video.",
+    photoUploadFailed: (m: string) => `The photo could not be uploaded: ${m}`,
+  },
   install: {
     installedTitle: "CalisIQ is installed",
     installedHint: "Launch it from your home screen",
