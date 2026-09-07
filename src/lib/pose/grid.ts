@@ -419,7 +419,24 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
 
   // --- Drapeau (human flag) ---
   //
-  // SEUILS DRAFT, entièrement raisonnés, aucun échantillon réel.
+  // CALIBRATION DU 2026-09-07, sur les 31 échantillons enregistrés via
+  // /calibration. Seule la full en ressort validée. Aucun seuil n'a bougé.
+  //
+  // UNE NOTE HUMAINE COPIÉE SUR LA GRILLE NE VALIDE RIEN
+  //
+  // Douze de ces trente et un échantillons portent une note humaine identique
+  // à celle que la grille calcule, au centième près. Ce n'est pas un accord
+  // remarquable, c'est la même valeur écrite deux fois : la note affichée par
+  // l'application a été ressaisie comme note de référence. Confronter la
+  // grille à sa propre sortie ne peut produire qu'un accord parfait, et
+  // régler un seuil dessus reviendrait à optimiser un miroir.
+  //
+  // Ces douze-là sont donc écartés de tout calcul. Le même contrôle est à
+  // refaire à chaque passe, sur toutes les figures : c'est le seul moyen de
+  // distinguer un vrai jugement d'un aller-retour.
+  //
+  // Ce qu'il reste : quatre exécutions conformes et notées indépendamment sur
+  // la full, zéro sur les trois autres variantes.
   //
   // Contrairement au dragon flag, l'inclinaison est ici une vraie bande et non
   // un seuil maximum : la cible est l'horizontale, et un corps qui pointe vers
@@ -428,6 +445,16 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   // La tuck est notée sur le tronc seul, genoux repliés rendant la ligne
   // épaule-cheville dépourvue de sens — même raisonnement que sur la tuck
   // dragon flag et les figures asymétriques.
+  // Neuf échantillons, dont un seul montre une vraie tuck — et sa note est
+  // copiée sur la grille, donc inutilisable. Les huit autres sont des jambes
+  // tendues ou une seule jambe repliée soumises ici.
+  //
+  // Sur ces huit, la grille note environ 1,4 point de trop, toujours dans le
+  // même sens. Ce n'est pas un problème de seuil mais de moyenne : le tronc
+  // et le coude restent excellents quand les jambes ne sont pas groupées, et
+  // deux critères à 9 sur quatre empêchent la note de descendre. Même
+  // mécanique que sur la tuck dragon flag, même conclusion : rien à régler
+  // ici tant que le mode d'agrégation ne change pas.
   tuck_human_flag: {
     torso_angle: { target: 10, tolerance: 25 },
     elbow_angle: { target: 175, tolerance: 25 },
@@ -454,6 +481,14 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   // tuck et la straddle du drapeau pour l'inclinaison et le coude, et
   // reprises telles quelles de la Single Leg Front Lever pour les trois
   // critères de jambe, où elles ont été calibrées sur 6 échantillons.
+  // Six échantillons le jour même de l'ajout de la variante, dont trois
+  // vraies exécutions à une jambe — mais les trois portent une note copiée
+  // sur la grille. L'accord apparent, un écart moyen de 0,01, ne prouve donc
+  // rien du tout. Les trois autres sont des corps entièrement tendus soumis
+  // ici, et bent_knee_angle les descend correctement à 0.
+  //
+  // La variante reste en brouillon. Il lui faut des exécutions notées à
+  // l'œil, sans regarder le score affiché.
   one_leg_human_flag: {
     torso_angle: { target: 8, tolerance: 22 },
     elbow_angle: { target: 175, tolerance: 24 },
@@ -461,12 +496,33 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     straightest_leg_hip_angle: { target: 170, tolerance: 20 },
     bent_knee_angle: { target: 100, tolerance: 60, mode: "maximum" },
   },
+  // Huit échantillons, aucune vraie straddle : toutes les vidéos soumises ici
+  // montrent des jambes serrées ou une seule jambe repliée.
+  //
+  // Et il y a plus gênant qu'un manque d'échantillons. RIEN NE MESURE
+  // L'ÉCARTEMENT DES JAMBES. Les angles de hanche et de genou d'une straddle
+  // et d'une full sont les mêmes — jambes tendues des deux côtés — et seule
+  // leur ouverture latérale les sépare. Tant que cette mesure n'existe pas,
+  // la grille ne peut pas distinguer les deux variantes, et une full soumise
+  // en straddle obtient une excellente note. Calibrer les seuils actuels ne
+  // corrigerait pas ça : c'est un critère qui manque, pas un seuil mal réglé.
   straddle_human_flag: {
     body_line_angle_from_horizontal: { target: 5, tolerance: 20 },
     elbow_angle: { target: 175, tolerance: 22 },
     hip_angle: { target: 172, tolerance: 20 },
     knee_angle: { target: 180, tolerance: 16 },
   },
+  // CALIBRÉE le 2026-09-07 sur 4 exécutions conformes notées indépendamment
+  // de la grille : écart absolu moyen 0,29, et les quatre critères sont
+  // réellement mis à l'épreuve sur ce lot — l'axe du corps y va de 3,0 à
+  // 10,0, la hanche de 1,9 à 9,9. Aucun n'est resté à 10 faute d'exécution
+  // qui le mette en défaut, ce qui est la condition pour se dire calibré.
+  //
+  // Le balayage place chaque valeur actuelle à son optimum ou à un centième :
+  // axe du corps 15 (0,29, contre 0,41 à 11 et 0,32 à 20), coude 175 (0,29,
+  // contre 0,30 à 170 et 0,45 à 180), hanche 12 (0,29, contre 0,33 à 10 et
+  // 0,35 à 16), genou 12 (à égalité avec 10). Élargir la tolérance de coude
+  // à 26 gagnerait 0,04 : non fait, c'est sous le bruit de quatre points.
   full_human_flag: {
     body_line_angle_from_horizontal: { target: 0, tolerance: 15 },
     // Bras du haut qui tire, bras du bas qui pousse : les deux doivent rester

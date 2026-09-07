@@ -47,7 +47,7 @@ scoring.
 | Illustrations front lever | Tuck, advanced tuck, single leg et full faites | Il manque la straddle, qui affiche encore une icône |
 | Single Leg Front Lever | Actif | Genou de la jambe libre calibré le 2026-09-01 sur 6 échantillons |
 | Dragon Flag (tuck, single leg, full) | Actif, full calibrée | 19 échantillons le 2026-09-07 : full confirmée sur 3 exécutions conformes, single leg confrontée à 4, tuck toujours DRAFT avec une seule |
-| Drapeau (tuck, single leg, straddle, full) | Actif, seuils DRAFT | Aucun échantillon réel, seuils entièrement raisonnés. Single leg ajoutée le 2026-09-07 |
+| Drapeau (tuck, single leg, straddle, full) | Actif, full calibrée | 31 échantillons le 2026-09-07 : full validée sur 4 exécutions conformes, les trois autres variantes toujours DRAFT |
 | Traction, Dips, Pompes, Pistol squat | Actif, seuils DRAFT | Exercices à répétition, aucun échantillon réel |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
 
@@ -502,6 +502,32 @@ Vérifié par balayage : chaque critère noté par `SCORING_GRID` ouvre
 désormais sur des exercices, pour les seize progressions tenues comme pour
 les neuf exercices à répétition.
 
+Passe de calibration du 2026-09-07 sur les quatre variantes du Drapeau,
+31 échantillons. **Aucun seuil n'a bougé**, et une seule variante en sort
+validée : la full, sur 4 exécutions conformes, écart absolu moyen 0,29, avec
+ses quatre critères réellement mis à l'épreuve. Le balayage place chaque
+valeur actuelle à son optimum.
+
+**Le vrai enseignement de cette passe est méthodologique.** Douze des trente
+et un échantillons portent une note humaine identique au centième à celle
+que la grille calcule. Ce n'est pas un accord, c'est la même valeur écrite
+deux fois : le score affiché par l'application a été ressaisi comme note de
+référence. Confronter la grille à sa propre sortie ne peut donner qu'un
+accord parfait, et régler un seuil dessus revient à optimiser un miroir.
+Ils sont écartés de tous les calculs, et **ce contrôle est à refaire à
+chaque passe, sur toutes les figures**. Le même symptôme touche 4 des 19
+échantillons du dragon flag.
+
+Conséquence directe : la Single Leg Drapeau, ajoutée le matin même, semblait
+s'accorder à la grille à 0,01 près sur ses trois exécutions conformes. Les
+trois notes étaient recopiées. Elle reste en brouillon.
+
+La Straddle Drapeau, elle, bute sur autre chose qu'un manque d'échantillons :
+**rien ne mesure l'écartement des jambes**. Une straddle et une full
+présentent les mêmes angles de hanche et de genou, seule leur ouverture
+latérale les sépare. Tant que ce critère n'existe pas, une full soumise en
+straddle obtient une excellente note, et aucun réglage de seuil n'y changera
+quoi que ce soit. C'est un critère qui manque, pas un seuil mal réglé.
 ## Exercices à répétition
 
 Deuxième modèle de notation, à côté de celui des holds, et volontairement

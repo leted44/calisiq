@@ -74,10 +74,18 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   // tronc et la jambe repliée notent 10 partout, donc rien n'y est prouvé.
   one_leg_dragon_flag: ["straightest_knee_angle", "straightest_leg_hip_angle"],
   full_dragon_flag: ["hip_angle", "knee_angle"],
+  // Passe du 2026-09-07 sur 31 échantillons (voir grid.ts). Douze d'entre eux
+  // portent une note recopiée depuis la grille et ne valident rien ; une fois
+  // écartés, seule la full garde des exécutions conformes exploitables.
   tuck_human_flag: [],
   one_leg_human_flag: [],
+  // Rien de mesurable ici tant que l'écartement des jambes n'est pas mesuré :
+  // straddle et full présentent les mêmes angles de hanche et de genou.
   straddle_human_flag: [],
-  full_human_flag: [],
+  // Quatre exécutions conformes notées indépendamment, écart moyen 0,29, et
+  // les quatre critères ont rencontré des exécutions qui les mettent en
+  // défaut. Le balayage confirme chaque valeur à son optimum.
+  full_human_flag: ["body_line_angle", "elbow_angle", "hip_angle", "knee_angle"],
   australian_pull_up: [],
   strict_pull_up: [],
   bench_dip: [],
