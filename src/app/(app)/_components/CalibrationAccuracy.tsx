@@ -17,7 +17,12 @@ import {
   isRepProgression,
   type Progression,
 } from "@/lib/pose/grid";
-import { PROGRESSION_LABELS } from "@/lib/pose/report";
+import {
+  PROGRESSION_LABELS,
+  figureFamily,
+  FIGURE_FAMILY_ORDER,
+  FIGURE_FAMILY_LABELS,
+} from "@/lib/pose/report";
 import type { PoseAngles } from "@/lib/pose/angles";
 
 export type CalibrationSampleRow = {
@@ -284,6 +289,37 @@ export default function CalibrationAccuracy({
     }))
     .sort((a, b) => b.meanAbsoluteGap - a.meanAbsoluteGap);
 
+  // Regroupement par figure.
+  //
+  // Le classement par écart décroissant répondait à une seule question, quelle
+  // variation recalibrer en premier, et il éparpillait les variations d'une
+  // même figure d'un bout à l'autre de la liste : impossible de voir d'un coup
+  // d'œil où en est le dragon flag. Les familles suivent l'ordre du sélecteur
+  // de figures, et le classement par écart est conservé À L'INTÉRIEUR de
+  // chacune, ce qui garde la réponse à la question d'origine.
+  const familles = FIGURE_FAMILY_ORDER.map((famille) => {
+    const variations = comparisons.filter(
+      (c) => figureFamily(c.variation) === famille
+    );
+    const echantillons = variations.reduce((n, c) => n + c.samples.length, 0);
+    return {
+      famille,
+      label: FIGURE_FAMILY_LABELS[famille],
+      variations,
+      echantillons,
+      // Moyenne pondérée par le nombre d'échantillons, et non moyenne des
+      // moyennes : une variation à un seul échantillon ne doit pas peser
+      // autant qu'une variation à huit.
+      meanAbsoluteGap:
+        echantillons === 0
+          ? 0
+          : variations.reduce(
+              (a, c) => a + c.meanAbsoluteGap * c.samples.length,
+              0
+            ) / echantillons,
+    };
+  }).filter((f) => f.variations.length > 0);
+
   if (comparisons.length === 0) {
     return (
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
@@ -321,92 +357,108 @@ export default function CalibrationAccuracy({
         </p>
       )}
 
-      <div className="space-y-2">
-        {comparisons.map((c) => (
-          <div
-            key={c.variation}
-            className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900"
-          >
-            <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-3.5 py-2.5">
-              <p className="text-sm font-medium text-white">{c.label}</p>
-              <span className={`text-xs font-semibold ${gapColor(c.meanAbsoluteGap)}`}>
-                écart moyen {c.meanAbsoluteGap.toFixed(1)}
+      <div className="space-y-5">
+        {familles.map((f) => (
+          <div key={f.famille} className="space-y-2">
+            <div className="flex items-baseline justify-between gap-3 border-b border-slate-800 pb-1.5">
+              <p className="text-sm font-semibold text-white">{f.label}</p>
+              <span className="text-[11px] text-slate-500">
+                {f.variations.length} variation
+                {f.variations.length > 1 ? "s" : ""} ·{" "}
+                {f.echantillons} échantillon{f.echantillons > 1 ? "s" : ""} ·{" "}
+                <span className={`font-semibold ${gapColor(f.meanAbsoluteGap)}`}>
+                  écart {f.meanAbsoluteGap.toFixed(1)}
+                </span>
               </span>
             </div>
 
-            <div className="divide-y divide-slate-800/70">
-              {c.samples.map((s) => (
-                <div key={s.id} className="px-3.5 py-2">
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="w-6 shrink-0 text-slate-600">
-                      #{s.index}
-                    </span>
-                    <span className="flex-1 text-slate-400">
-                      ta note{" "}
-                      <span className="font-semibold text-slate-200">
-                        {s.userRating.toFixed(1)}
-                      </span>
-                    </span>
-                    <span className="flex-1 text-slate-400">
-                      grille{" "}
-                      <span className="font-semibold text-slate-200">
-                        {s.computed.toFixed(1)}
-                      </span>
-                    </span>
-                    <span
-                      className={`w-12 shrink-0 text-right font-semibold ${gapColor(
-                        Math.abs(s.gap)
-                      )}`}
-                    >
-                      {s.gap > 0 ? "+" : ""}
-                      {s.gap.toFixed(1)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(s, c.label)}
-                      disabled={deleting !== null}
-                      aria-label={`Supprimer l'échantillon ${s.index}`}
-                      className="shrink-0 rounded-md p-1 text-slate-600 transition hover:bg-slate-800 hover:text-red-400 disabled:opacity-40"
-                    >
-                      <TrashIcon className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-
-                  {s.details.length > 0 && (
-                    // Décalé sous la ligne principale et en plus petit : le
-                    // détail sert à décider QUEL seuil bouger, il ne doit pas
-                    // concurrencer la comparaison globale du regard.
-                    <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 pl-9 text-[11px]">
-                      {s.details.map((d) => {
-                        const gap = d.computed - d.userRating;
-                        return (
-                          <span key={d.label} className="text-slate-500">
-                            {d.label}{" "}
-                            <span className="text-slate-300">
-                              {d.userRating.toFixed(1)}
-                            </span>{" "}
-                            vs{" "}
-                            <span className="text-slate-300">
-                              {d.computed.toFixed(1)}
-                            </span>{" "}
-                            <span className={`font-semibold ${gapColor(Math.abs(gap))}`}>
-                              {gap > 0 ? "+" : ""}
-                              {gap.toFixed(1)}
-                            </span>
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {s.incoherence && (
-                    <p className="mt-1 pl-9 text-[11px] leading-snug text-slate-500">
-                      Contre-exemple : {s.incoherence}, ce n&apos;est pas la
-                      position de cette variation.
-                    </p>
-                  )}
+            {f.variations.map((c) => (
+              <div
+                key={c.variation}
+                className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900"
+              >
+                <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-3.5 py-2.5">
+                  <p className="text-sm font-medium text-white">{c.label}</p>
+                  <span className={`text-xs font-semibold ${gapColor(c.meanAbsoluteGap)}`}>
+                    écart moyen {c.meanAbsoluteGap.toFixed(1)}
+                  </span>
                 </div>
-              ))}
-            </div>
+
+                <div className="divide-y divide-slate-800/70">
+                  {c.samples.map((s) => (
+                    <div key={s.id} className="px-3.5 py-2">
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="w-6 shrink-0 text-slate-600">
+                          #{s.index}
+                        </span>
+                        <span className="flex-1 text-slate-400">
+                          ta note{" "}
+                          <span className="font-semibold text-slate-200">
+                            {s.userRating.toFixed(1)}
+                          </span>
+                        </span>
+                        <span className="flex-1 text-slate-400">
+                          grille{" "}
+                          <span className="font-semibold text-slate-200">
+                            {s.computed.toFixed(1)}
+                          </span>
+                        </span>
+                        <span
+                          className={`w-12 shrink-0 text-right font-semibold ${gapColor(
+                            Math.abs(s.gap)
+                          )}`}
+                        >
+                          {s.gap > 0 ? "+" : ""}
+                          {s.gap.toFixed(1)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(s, c.label)}
+                          disabled={deleting !== null}
+                          aria-label={`Supprimer l'échantillon ${s.index}`}
+                          className="shrink-0 rounded-md p-1 text-slate-600 transition hover:bg-slate-800 hover:text-red-400 disabled:opacity-40"
+                        >
+                          <TrashIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+
+                      {s.details.length > 0 && (
+                        // Décalé sous la ligne principale et en plus petit : le
+                        // détail sert à décider QUEL seuil bouger, il ne doit pas
+                        // concurrencer la comparaison globale du regard.
+                        <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 pl-9 text-[11px]">
+                          {s.details.map((d) => {
+                            const gap = d.computed - d.userRating;
+                            return (
+                              <span key={d.label} className="text-slate-500">
+                                {d.label}{" "}
+                                <span className="text-slate-300">
+                                  {d.userRating.toFixed(1)}
+                                </span>{" "}
+                                vs{" "}
+                                <span className="text-slate-300">
+                                  {d.computed.toFixed(1)}
+                                </span>{" "}
+                                <span className={`font-semibold ${gapColor(Math.abs(gap))}`}>
+                                  {gap > 0 ? "+" : ""}
+                                  {gap.toFixed(1)}
+                                </span>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {s.incoherence && (
+                        <p className="mt-1 pl-9 text-[11px] leading-snug text-slate-500">
+                          Contre-exemple : {s.incoherence}, ce n&apos;est pas la
+                          position de cette variation.
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ))}
       </div>

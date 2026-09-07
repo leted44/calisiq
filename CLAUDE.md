@@ -300,23 +300,21 @@ la résolution supposait aussi de suivre le niveau H.264 (4.2 s'arrête vers
 le 1080p, la 4K demande 5.1 ou 5.2) et de relever le plafond de débit, sans
 quoi la 4K sortait plus compressée que la 1080p.
 
-**Deux marques d'état, à ne pas confondre.** Le sélecteur signale deux choses
-différentes avec deux pictogrammes distincts, et les fondre en un seul
-tromperait l'utilisateur dans un sens ou dans l'autre.
+**Une seule marque d'état dans le sélecteur.** Le **cadenas gris** dit que
+l'app ne sait pas analyser la figure du tout. Il ne concerne que les
+variations `available: false`.
 
-Le **cadenas gris** dit que l'app ne sait pas analyser la figure du tout. Il ne
-concerne que les variations `available: false`. Le **signe « environ » ambre**
-dit qu'elle s'analyse, mais que ses seuils n'ont jamais été validés sur des
-figures réelles : la note existe et est utilisable, elle est seulement
-approximative. Le test est `isCalibrated()`, qui lit `CALIBRATED_CRITERIA` :
-une progression dont la liste est vide porte la marque. Elle disparaît d'elle
-même dès qu'une recalibration y inscrit un critère, sans intervention.
+Il a existé une seconde marque, le **signe « environ » ambre**, posé sur les
+variations dont les seuils n'avaient jamais été confrontés à des vidéos
+réelles. Elle a été retirée le 2026-09-07, avec la fonction `isCalibrated()`,
+le pictogramme et les libellés qui allaient avec. La raison n'est pas
+qu'elle mentait, elle disait vrai : c'est qu'elle affichait l'état du
+chantier interne à quelqu'un venu filmer sa figure, sur des variations
+entières comme le drapeau ou les exercices à répétition, sans lui donner de
+quoi en faire quoi que ce soit. L'avancement de la calibration se suit sur
+`/calibration`, qui est faite pour ça.
 
-Une tuile de figure porte la marque ambre quand **aucune** de ses variations
-n'est calibrée. Dès qu'une seule l'est, la famille a une base fiable et la
-marque tombe. Les badges des variations sont ancrés à la pastille numérotée et
-non au coin du bouton : la largeur d'un nœud varie de deux à six colonnes selon
-la figure, et au coin le badge finissait par sembler appartenir au nœud voisin.
+`CALIBRATED_CRITERIA` reste tenu à jour et sert toujours, mais seulement là.
 
 **Le choix de la variation ne repose pas sur l'illustration.** Les figures et
 les variations avaient le même traitement visuel, si bien qu'une carte

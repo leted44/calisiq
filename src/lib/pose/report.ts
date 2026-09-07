@@ -62,10 +62,16 @@ export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   one_leg_front_lever: ["bent_knee_angle", "straightest_leg_hip_angle"],
   straddle_front_lever: ["elbow_angle", "hip_angle", "knee_angle", "body_line_angle"],
   full_front_lever: ["elbow_angle", "hip_angle", "knee_angle", "body_line_angle"],
-  // Aucun échantillon réel : les seuils du dragon flag sont entièrement
-  // raisonnés. Le bloc reste vide tant que la calibration n'a pas eu lieu.
+  // Passe du 2026-09-07 sur 19 échantillons (voir grid.ts). La tuck reste
+  // vide : sur ses cinq échantillons, un seul montre une vraie tuck, les
+  // autres sont des exécutions tendues ou à une jambe soumises dans cette
+  // catégorie. Une variation ne se déclare pas calibrée sur une exécution.
   tuck_dragon_flag: [],
-  one_leg_dragon_flag: [],
+  // Confrontés à 4 exécutions conformes sans qu'aucune valeur ait eu à
+  // bouger. Ces deux critères-là et pas les autres : eux seuls ont rencontré
+  // des exécutions qui les mettent en défaut, de 0,1 à 9,9 sur le lot. Le
+  // tronc et la jambe repliée notent 10 partout, donc rien n'y est prouvé.
+  one_leg_dragon_flag: ["straightest_knee_angle", "straightest_leg_hip_angle"],
   full_dragon_flag: ["hip_angle", "knee_angle"],
   tuck_human_flag: [],
   straddle_human_flag: [],
@@ -350,14 +356,6 @@ export function tierLabel(tier: ScoreTier, lang: Lang = "fr"): string {
   return lang === "en" ? reportEn.tierLabels[tier] : TIER_LABELS[tier];
 }
 
-// Une progression est dite calibrée quand au moins un de ses critères a été
-// recalé sur des figures réelles notées à la main. Tant que la liste est vide,
-// ses seuils sont entièrement raisonnés : la figure s'analyse, mais sa note est
-// approximative et l'interface doit le dire.
-export function isCalibrated(progression: string): boolean {
-  return (CALIBRATED_CRITERIA[progression]?.length ?? 0) > 0;
-}
-
 export function figureFromProgression(
   progression: string
 ): "planche" | "handstand" | "front_lever" | "dragon_flag" | "reps" {
@@ -372,6 +370,71 @@ export function figureFromProgression(
   if (isRepProgression(progression)) return "reps";
   return "planche";
 }
+
+// Famille d'une variation, au sens où l'utilisateur la choisit à l'écran.
+//
+// Distincte de `figureFromProgression`, qui regroupe par famille de
+// DESCRIPTIONS : là-bas le drapeau est rangé avec le dragon flag parce qu'il
+// partage ses critères et ses conseils, et les vingt exercices à répétition
+// tombent tous dans un même sac. Pour se repérer dans une liste de suivi il
+// faut l'autre découpage, celui du sélecteur de figures.
+export type FigureFamily =
+  | "planche"
+  | "handstand"
+  | "front_lever"
+  | "dragon_flag"
+  | "human_flag"
+  | "traction"
+  | "dips"
+  | "pompes"
+  | "pistol"
+  | "handstand_push_up"
+  | "one_arm_handstand";
+
+export function figureFamily(progression: string): FigureFamily {
+  // Les deux composés d'abord : ils contiennent le nom d'une autre famille et
+  // seraient sinon capturés par elle.
+  if (progression === "handstand_push_up") return "handstand_push_up";
+  if (progression === "one_arm_handstand") return "one_arm_handstand";
+  if (progression.includes("planche")) return "planche";
+  if (progression.includes("front_lever")) return "front_lever";
+  if (progression.includes("dragon_flag")) return "dragon_flag";
+  if (progression.includes("human_flag")) return "human_flag";
+  if (progression.includes("pull_up")) return "traction";
+  if (progression.includes("dip")) return "dips";
+  if (progression.includes("push_up")) return "pompes";
+  if (progression.includes("pistol")) return "pistol";
+  return "handstand";
+}
+
+/** Ordre d'affichage des familles, celui du sélecteur de figures. */
+export const FIGURE_FAMILY_ORDER: FigureFamily[] = [
+  "planche",
+  "handstand",
+  "front_lever",
+  "dragon_flag",
+  "human_flag",
+  "handstand_push_up",
+  "one_arm_handstand",
+  "traction",
+  "dips",
+  "pompes",
+  "pistol",
+];
+
+export const FIGURE_FAMILY_LABELS: Record<FigureFamily, string> = {
+  planche: "Planche",
+  handstand: "Handstand",
+  front_lever: "Front Lever",
+  dragon_flag: "Dragon Flag",
+  human_flag: "Drapeau",
+  handstand_push_up: "Handstand Push-up",
+  one_arm_handstand: "One Arm Handstand",
+  traction: "Traction",
+  dips: "Dips",
+  pompes: "Pompes",
+  pistol: "Pistol squat",
+};
 
 export function formatHoldDuration(seconds: number | null | undefined): string {
   if (seconds === null || seconds === undefined) return "—";

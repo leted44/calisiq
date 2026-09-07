@@ -12,14 +12,9 @@ import type { Progression, RepProgression } from "@/lib/pose/grid";
 import CaptureTipsModal, { shouldSkipTips } from "./CaptureTipsModal";
 import ResultCard from "./ResultCard";
 import ExportVideoButton from "./ExportVideoButton";
-import {
-  progressionLabel,
-  figureFromProgression,
-  isCalibrated,
-} from "@/lib/pose/report";
+import { progressionLabel, figureFromProgression } from "@/lib/pose/report";
 import {
   LockIcon,
-  ApproximateIcon,
   StarIcon,
   ChevronDownIcon,
 } from "@/components/icons";
@@ -391,39 +386,22 @@ const VARIATION_INDEX: Record<string, VariationIndexEntry> = Object.fromEntries(
 
 // Marque d'état d'une figure, en pastille de coin.
 //
-// Deux états distincts, et il ne faut pas les confondre. Le cadenas dit que
-// l'app ne sait pas analyser la figure du tout. Le signe « environ » dit
-// qu'elle l'analyse, mais avec des seuils jamais validés sur des vidéos
-// réelles : la note existe, elle est seulement approximative. Un cadenas sur
-// ce second cas laisserait croire à tort que la figure est inutilisable.
-function StatusBadge({
-  state,
-  size = "md",
-}: {
-  state: "locked" | "draft";
-  size?: "sm" | "md";
-}) {
+// Un seul état : le cadenas, qui dit que l'app ne sait pas analyser la figure
+// du tout. Il a existé un second état, le signe « environ », posé sur les
+// figures dont les seuils n'avaient jamais été confrontés à des vidéos
+// réelles. Il a été retiré : l'avancement de la calibration se suit sur la
+// page dédiée, et l'afficher sur l'écran d'analyse revenait à commenter le
+// chantier interne devant quelqu'un venu filmer sa figure.
+function StatusBadge({ size = "md" }: { size?: "sm" | "md" }) {
   const t = useT();
   const box = size === "sm" ? "h-4 w-4" : "h-5 w-5";
   const glyph = size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3";
   return (
     <span
-      title={
-        state === "locked"
-          ? t.analysis.notAnalysable
-          : t.analysis.approximate
-      }
-      className={`flex ${box} items-center justify-center rounded-full border ${
-        state === "locked"
-          ? "border-slate-700 bg-slate-950 text-slate-500"
-          : "border-amber-500/40 bg-amber-500/10 text-amber-400"
-      }`}
+      title={t.analysis.notAnalysable}
+      className={`flex ${box} items-center justify-center rounded-full border border-slate-700 bg-slate-950 text-slate-500`}
     >
-      {state === "locked" ? (
-        <LockIcon className={glyph} />
-      ) : (
-        <ApproximateIcon className={glyph} />
-      )}
+      <LockIcon className={glyph} />
     </span>
   );
 }
@@ -521,12 +499,9 @@ function VariationRail({
                     selon la figure, et au coin il finissait par sembler
                     appartenir au nœud voisin. */}
                 <span className="relative z-10">
-                  {(!o.available || !isCalibrated(o.value)) && (
+                  {!o.available && (
                     <span className="absolute -right-2 -top-1 z-20">
-                      <StatusBadge
-                        size="sm"
-                        state={o.available ? "draft" : "locked"}
-                      />
+                      <StatusBadge size="sm" />
                     </span>
                   )}
                 <span
@@ -643,18 +618,11 @@ function VariationRail({
           <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
             {t.variations[current.value].cue}
           </p>
-          {!current.available ? (
+          {!current.available && (
             <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-500">
               <LockIcon className="h-3.5 w-3.5 shrink-0" />
               {t.analysis.notAnalysableLong}
             </p>
-          ) : (
-            !isCalibrated(current.value) && (
-              <p className="mt-2.5 flex items-center gap-1.5 text-[11px] leading-relaxed text-amber-400/90">
-                <ApproximateIcon className="h-3.5 w-3.5 shrink-0" />
-                {t.analysis.approximateLong}
-              </p>
-            )
           )}
         </div>
       )}
@@ -1450,14 +1418,6 @@ export default function AnalysisForm() {
           // Nombre impair de figures : la dernière prend toute la largeur
           // plutôt que de laisser un trou dans la grille.
           const wide = FIGURES.length % 2 === 1 && index === FIGURES.length - 1;
-          // Une figure est marquée « approximative » quand aucune de ses
-          // variations n'a été recalée sur des figures réelles. Dès qu'une
-          // seule l'est, la marque disparaît : la famille a une base fiable.
-          const figureIsDraft =
-            f.available &&
-            !VARIATIONS_BY_FIGURE[f.value].some(
-              (v) => v.available && isCalibrated(v.value)
-            );
           return (
             <button
               key={f.value}
@@ -1474,9 +1434,9 @@ export default function AnalysisForm() {
                   : "border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-900"
               }`}
             >
-              {(!f.available || figureIsDraft) && (
+              {!f.available && (
                 <span className="absolute right-2.5 top-2.5 z-10">
-                  <StatusBadge state={f.available ? "draft" : "locked"} />
+                  <StatusBadge />
                 </span>
               )}
 
@@ -2020,7 +1980,6 @@ export default function AnalysisForm() {
             <div className="-mx-0 flex gap-1.5 overflow-x-auto px-3 pb-0.5 pt-2">
               {VARIATIONS_BY_FIGURE[figure].map((o, index) => {
                 const selected = o.value === progression;
-                const draft = o.available && !isCalibrated(o.value);
                 return (
                   <button
                     key={o.value}
@@ -2059,9 +2018,6 @@ export default function AnalysisForm() {
                     </span>
                     {!o.available && (
                       <LockIcon className="h-3 w-3 shrink-0 text-slate-600" />
-                    )}
-                    {draft && (
-                      <ApproximateIcon className="h-3 w-3 shrink-0 text-amber-400/80" />
                     )}
                   </button>
                 );
