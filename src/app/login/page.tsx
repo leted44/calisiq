@@ -213,8 +213,7 @@ export default function LoginPage() {
               {mode === "signin" ? t.auth2.signIn : t.auth2.createAccount}
             </h1>
             <p className="text-sm text-slate-400">
-              Filme ta figure, obtiens ton score et ton plan de progression en
-              quelques secondes grâce à l&apos;IA.
+              {t.auth2.pitch}
             </p>
           </div>
 

@@ -14,31 +14,14 @@ import {
   type ScoreTier,
 } from "@/lib/pose/report";
 
-// Mots-clés techniques associés à chaque critère, purement indicatifs (pas
-// des mesures) — aident à reconnaître le vocabulaire coaching courant.
+// Les mots-clés partent au dictionnaire.
 //
-// Non traduits, et volontairement : « lockout », « kipping », « hollow body »
-// ou « banana » s'emploient tels quels en français comme en anglais. Les
-// traduire ferait perdre au francophone le mot qu'il entendra en salle.
-const CRITERE_TAGS: Record<CriterionScore["critere"], string[]> = {
-  rep_lockout: ["Lockout", "Bas de rep"],
-  rep_peak: ["Amplitude", "Haut de rep"],
-  rep_control: ["Strict", "Kipping"],
-  rep_form: ["Posture", "Gainage"],
-  rep_tempo: ["Tempo", "Endurance"],
-  shoulder_protraction: ["Protraction", "Charge bras"],
-  shoulder_flexion: ["Ouverture", "Stack"],
-  pelvis_deviation: ["Bassin", "Banana"],
-  pelvis_sag: ["Gainage", "Hollow body"],
-  hip_angle: ["Ouverture", "Extension"],
-  knee_angle: ["Jambes tendues", "Genoux"],
-  elbow_angle: ["Verrouillage", "Triceps"],
-  body_line_angle: ["Ligne droite", "Axe"],
-  torso_angle: ["Tronc", "Horizontale"],
-  straightest_knee_angle: ["Jambe tendue", "Genou"],
-  straightest_leg_hip_angle: ["Ouverture", "Jambe tendue"],
-  bent_knee_angle: ["Jambe repliée", "Single leg"],
-};
+// Je les avais d'abord laissés en français en les prenant pour du jargon
+// international. À la relecture, la plupart sont des mots ordinaires —
+// « bas de rep », « jambes tendues », « ligne droite » — et n'avaient rien à
+// faire dans une interface anglaise. Seuls les vrais termes de coaching
+// restent identiques dans les deux langues : lockout, kipping, stack, banana,
+// hollow body, single leg.
 
 const TIER_HEX: Record<ScoreTier, string> = {
   optimal: "#4ade80",
@@ -324,7 +307,7 @@ export default function ResultCard({
                 </p>
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {CRITERE_TAGS[s.critere].map((tag) => (
+                  {t.criteria.tags[s.critere].map((tag) => (
                     <span
                       key={tag}
                       className="rounded-full border border-slate-700 px-2.5 py-1 text-[11px] text-slate-400"
@@ -335,9 +318,8 @@ export default function ResultCard({
                 </div>
 
                 <p className="mt-3 font-mono text-[10px] text-slate-600">
-                  mesuré {s.valeurMesuree.toFixed(decimals)}
-                  {unit} · cible {s.valeurCible.toFixed(decimals)}
-                  {unit}
+                  {t.result.measured(s.valeurMesuree.toFixed(decimals) + unit)} ·{" "}
+                  {t.result.target(s.valeurCible.toFixed(decimals) + unit)}
                 </p>
               </div>
             );
@@ -345,20 +327,20 @@ export default function ResultCard({
 
           {repCount !== undefined && repCount !== null && (
             <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-              <h4 className="text-base font-bold text-white">Répétitions</h4>
+              <h4 className="text-base font-bold text-white">{t.result.repsTitle}</h4>
               <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                Répétitions complètes détectées :{" "}
-                <span className="font-semibold text-white">{repCount}</span>. Les
-                répétitions partielles ne sont pas comptées.
+                {t.result.repsDetected}{" "}
+                <span className="font-semibold text-white">{repCount}</span>
+                {t.result.repsPartial}
               </p>
             </div>
           )}
 
           {holdDurationSeconds !== undefined && holdDurationSeconds !== null && (
             <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-              <h4 className="text-base font-bold text-white">Durée du hold</h4>
+              <h4 className="text-base font-bold text-white">{t.result.holdTitle}</h4>
               <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                Temps réellement maintenu en position stable :{" "}
+                {t.result.holdBody}{" "}
                 <span className="font-semibold text-white">
                   {formatHoldDuration(holdDurationSeconds)}
                 </span>

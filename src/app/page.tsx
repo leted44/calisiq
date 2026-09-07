@@ -174,10 +174,7 @@ export default async function LandingPage() {
             {t.landing.heroPunch}
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-slate-400">
-            Chaque articulation est suivie image par image pendant ton hold. Le
-            score ne vient pas d&apos;une impression, mais de l&apos;angle réel
-            de tes coudes, de tes hanches et de ta ligne de corps, comparé aux
-            seuils de la figure que tu travailles.
+            {t.landing.resultBody}
           </p>
 
           <div className="relative mt-7 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50">
@@ -231,12 +228,10 @@ export default async function LandingPage() {
             {t.landing.figuresHeading}
           </p>
           <h2 className="mt-2 text-[22px] font-bold leading-tight text-white">
-            Trois figures, dix variations
+            {t.landing.figuresTitle}
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-slate-400">
-            Chaque variation a ses propres seuils. Une tuck planche n&apos;est
-            pas notée sur les mêmes critères qu&apos;une full, et soumettre
-            l&apos;une à la place de l&apos;autre se voit dans le score.
+            {t.landing.figuresBody}
           </p>
 
           <div className="mt-6 space-y-3">

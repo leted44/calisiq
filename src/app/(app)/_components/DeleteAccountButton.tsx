@@ -78,7 +78,7 @@ export default function DeleteAccountButton() {
         className="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium text-slate-500 transition-colors hover:text-red-400"
       >
         <TrashIcon className="h-4 w-4" />
-        Supprimer mon compte
+        {t.empty.deleteAccountAction}
       </button>
     );
   }
@@ -99,8 +99,9 @@ export default function DeleteAccountButton() {
           htmlFor="delete-confirm"
           className="block text-xs text-slate-400"
         >
-          Écris <span className="font-semibold text-slate-200">{CONFIRMATION_WORD}</span>{" "}
-          pour confirmer
+          {t.empty.confirmWrite}{" "}
+          <span className="font-semibold text-slate-200">{CONFIRMATION_WORD}</span>{" "}
+          {t.empty.confirmSuffix}
         </label>
         <input
           id="delete-confirm"

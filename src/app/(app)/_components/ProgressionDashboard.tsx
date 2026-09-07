@@ -1,6 +1,8 @@
 "use client";
 
-import { useT } from "@/lib/i18n/client";
+import { useT, useLang } from "@/lib/i18n/client";
+import type { Lang } from "@/lib/i18n/config";
+import { formatLongDate, formatDayMonth } from "@/lib/i18n/dates";
 import type { Dictionary } from "@/lib/i18n/fr";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -49,21 +51,14 @@ const PERIODS: Period[] = [
 ];
 const DEFAULT_PERIOD_INDEX = PERIODS.length - 1; // t.dashboard.all
 
-function formatShortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    timeZone: "Europe/Paris",
-  });
+// Ces deux enveloppes portent la langue jusqu'aux points du graphique, qui
+// sont construits hors du composant.
+function formatChartDate(iso: string, lang: Lang): string {
+  return formatDayMonth(iso, lang);
 }
 
-function formatFullDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    timeZone: "Europe/Paris",
-  });
+function formatFullDate(iso: string, lang: Lang): string {
+  return formatLongDate(iso, lang);
 }
 
 function formatDurationCompact(seconds: number): string {
@@ -495,6 +490,7 @@ function ChartWithTooltip({
   sessionLinkTourId?: string;
 }) {
   const t = useT();
+  const lang = useLang();
   const n = points.length;
 
   function xFor(i: number) {
@@ -602,14 +598,14 @@ function ChartWithTooltip({
             }}
           >
             <p className="text-xs font-bold text-white">{formatValue(active.value)}</p>
-            <p className="text-[10px] text-slate-400">{formatFullDate(active.date)}</p>
+            <p className="text-[10px] text-slate-400">{formatFullDate(active.date, lang)}</p>
           </div>
         )}
       </div>
 
       <div className="flex justify-between text-[10px] text-slate-500">
-        <span>{formatShortDate(points[0].date)}</span>
-        <span>{formatShortDate(points[n - 1].date)}</span>
+        <span>{formatChartDate(points[0].date, lang)}</span>
+        <span>{formatChartDate(points[n - 1].date, lang)}</span>
       </div>
 
       {active && (

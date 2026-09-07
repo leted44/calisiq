@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatShortDate, formatDateTime } from "@/lib/i18n/dates";
 import type { CriterionScore } from "@/lib/pose/scoring";
 import { recommendationsFor } from "@/lib/pose/recommendations";
 import { getLang, getDictionary } from "@/lib/i18n/server";
@@ -103,20 +104,8 @@ export default async function SessionDetailPage({
             </h1>
             <p className="text-xs text-slate-500">
               {session.performed_at
-                ? new Date(session.performed_at).toLocaleDateString("fr-FR", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    timeZone: "Europe/Paris",
-                  })
-                : new Date(session.created_at).toLocaleString("fr-FR", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    timeZone: "Europe/Paris",
-                  })}
+                ? formatShortDate(session.performed_at, lang)
+                : formatDateTime(session.created_at, lang)}
             </p>
           </div>
           <DeleteSessionButton

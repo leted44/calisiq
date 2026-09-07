@@ -78,8 +78,7 @@ export default async function ComparisonPage({
           </Link>
           <h1 className="text-2xl font-bold text-white">{label}</h1>
           <p className="mt-3 rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-400">
-            Il faut au moins deux analyses de cette figure pour comparer. Analyse
-            à nouveau cette figure, et son évolution apparaîtra ici.
+            {t.empty.needTwoAnalyses}
           </p>
         </div>
       </div>

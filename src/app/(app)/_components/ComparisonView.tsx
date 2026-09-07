@@ -1,6 +1,8 @@
 "use client";
 
-import { useT } from "@/lib/i18n/client";
+import { useT, useLang } from "@/lib/i18n/client";
+import type { Lang } from "@/lib/i18n/config";
+import { formatShortDate } from "@/lib/i18n/dates";
 import { useRef, useState } from "react";
 import { formatHoldDuration } from "@/lib/pose/report";
 import { TrendUpIcon, TimerIcon } from "@/components/icons";
@@ -14,13 +16,8 @@ export type ComparisonSide = {
   trimEnd: number | null;
 };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "Europe/Paris",
-  });
+function formatDate(iso: string, lang: Lang): string {
+  return formatShortDate(iso, lang);
 }
 
 function scoreColor(score: number): string {
@@ -78,6 +75,7 @@ function SideVideo({
   videoRef: React.RefObject<HTMLVideoElement | null>;
 }) {
   const t = useT();
+  const lang = useLang();
   return (
     <div className="flex-1">
       <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
@@ -103,7 +101,7 @@ function SideVideo({
       </div>
 
       <div className="mt-2 space-y-0.5 text-center">
-        <p className="text-[11px] text-slate-500">{formatDate(side.date)}</p>
+        <p className="text-[11px] text-slate-500">{formatDate(side.date, lang)}</p>
         {side.score !== null && (
           <p className={`text-lg font-bold ${scoreColor(side.score)}`}>
             {side.score.toFixed(1)}

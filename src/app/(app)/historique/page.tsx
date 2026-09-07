@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatHoldDuration, progressionLabel } from "@/lib/pose/report";
 import { getLang, getDictionary } from "@/lib/i18n/server";
+import { formatShortDate, formatDateTime } from "@/lib/i18n/dates";
 import type { Dictionary } from "@/lib/i18n/fr";
 
 // Résolu au rendu : la table est construite au chargement du module, avant
@@ -74,20 +75,8 @@ export default async function HistoriquePage() {
                 </p>
                 <p className="text-xs text-slate-500">
                   {session.performed_at
-                    ? new Date(session.effectiveDate).toLocaleDateString("fr-FR", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        timeZone: "Europe/Paris",
-                      })
-                    : new Date(session.effectiveDate).toLocaleString("fr-FR", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        timeZone: "Europe/Paris",
-                      })}
+                    ? formatShortDate(session.effectiveDate, lang)
+                    : formatDateTime(session.effectiveDate, lang)}
                 </p>
               </div>
               <span

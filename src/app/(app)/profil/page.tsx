@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatLongDate } from "@/lib/i18n/dates";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "../_components/LogoutButton";
 import DeleteAccountButton from "../_components/DeleteAccountButton";
@@ -13,7 +14,7 @@ import {
   ProfileIcon,
   TrendUpIcon,
 } from "@/components/icons";
-import { getDictionary } from "@/lib/i18n/server";
+import { getDictionary, getLang } from "@/lib/i18n/server";
 import type { Dictionary } from "@/lib/i18n/fr";
 
 // Résolus depuis le dictionnaire au rendu : ces libellés traduisent une
@@ -33,6 +34,7 @@ function genderLabel(gender: string | null | undefined, t: Dictionary) {
 
 export default async function ProfilPage() {
   const t = await getDictionary();
+  const lang = await getLang();
   const supabase = await createClient();
   const {
     data: { user },
@@ -126,12 +128,7 @@ export default async function ProfilPage() {
               <p className="flex-1 text-sm text-slate-300">{t.profile.birthDate}</p>
               <p className="text-sm text-white">
                 {profile?.birth_date
-                  ? new Date(profile.birth_date).toLocaleDateString("fr-FR", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                      timeZone: "Europe/Paris",
-                    })
+                  ? formatLongDate(profile.birth_date, lang)
                   : "—"}
               </p>
             </div>
@@ -170,7 +167,7 @@ export default async function ProfilPage() {
             </div>
             <div className="flex-1">
               <p className="font-medium text-white">{t.profile.calibration}</p>
-              <p className="text-xs text-slate-500">Mesurer et noter des figures</p>
+              <p className="text-xs text-slate-500">{t.empty.calibrationHint}</p>
             </div>
           </Link>
         )}
