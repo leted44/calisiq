@@ -2,7 +2,8 @@
 
 import { useT, useLang } from "@/lib/i18n/client";
 import type { Dictionary } from "@/lib/i18n/fr";
-import { useState, type RefObject } from "react";
+import { useState, useEffect, type RefObject } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { recordAnnotatedVideo, downloadBlob } from "@/lib/pose/exportVideo";
 import type { CriterionScore } from "@/lib/pose/scoring";
@@ -58,6 +59,7 @@ export default function ExportVideoButton({
 }) {
   const t = useT();
   const lang = useLang();
+  const [handle, setHandle] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +86,30 @@ export default function ExportVideoButton({
   } | null>(null);
   const validCache = cached?.key === cacheKey ? cached : null;
 
+  // Pseudo chargé au montage plutôt que passé de page en page : il ne sert
+  // qu'à cet écran, et le faire traverser deux composants depuis le serveur
+  // ferait payer un accessoire à tout le monde pour un usage rare. L'échec de
+  // la requête est sans conséquence, la vidéo repart sans signature.
+  useEffect(() => {
+    let annule = false;
+    (async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || annule) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("handle")
+        .eq("id", user.id)
+        .single();
+      if (!annule) setHandle(data?.handle ?? null);
+    })();
+    return () => {
+      annule = true;
+    };
+  }, []);
+
   async function generate(): Promise<{ blob: Blob; filename: string }> {
     if (validCache) return validCache;
 
@@ -98,6 +124,7 @@ export default function ExportVideoButton({
     async function render(forceLegacyEncoder: boolean) {
       const canvas = document.createElement("canvas");
       return recordAnnotatedVideo({
+        handle,
         lang,
         video: video!,
         canvas,

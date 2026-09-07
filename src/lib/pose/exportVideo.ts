@@ -370,6 +370,7 @@ function drawOutro(
     holdDurationSeconds,
     scores,
     cardOpacity,
+    handle,
     reveal,
   }: {
     figureLabel: string;
@@ -381,6 +382,14 @@ function drawOutro(
     // affiché en dernier bloc pour rappeler d'où vient le score final.
     scores: CriterionScore[];
     cardOpacity: number;
+    /**
+     * Pseudo public de l'auteur, sans préfixe. Null tant qu'il n'en a pas.
+     *
+     * C'est lui qui transforme « une vidéo avec des angles » en « le résultat
+     * de quelqu'un ». Sans identité, une vidéo partagée ne ramène à personne,
+     * et le spectateur n'a rien à chercher même s'il est convaincu.
+     */
+    handle: string | null;
     /**
      * Avancement de la révélation, de 0 à 1.
      *
@@ -412,7 +421,7 @@ function drawOutro(
   const cardWidth = Math.min(w - 32 * scale, 280 * scale);
   const cardPaddingX = 20 * scale;
   const titleSectionHeight = 44 * scale;
-  const scoreSectionHeight = 78 * scale;
+  const scoreSectionHeight = (handle ? 96 : 78) * scale;
   const holdSectionHeight = holdDurationSeconds !== null ? 62 * scale : 0;
   const detailRowHeight = 20 * scale;
   const detailSectionHeight =
@@ -483,7 +492,16 @@ function drawOutro(
     cursorY,
     "center"
   );
-  cursorY += scoreSectionHeight - 62 * scale;
+  if (handle) {
+    cursorY += 18 * scale;
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#64748b";
+    ctx.font = `600 ${11 * scale}px sans-serif`;
+    ctx.fillText("@" + handle, centerX, cursorY);
+    cursorY += scoreSectionHeight - 80 * scale;
+  } else {
+    cursorY += scoreSectionHeight - 62 * scale;
+  }
 
   // Sections suivantes en fondu : elles arrivent une fois le score posé.
   ctx.globalAlpha = cardOpacity * detailsAlpha;
@@ -872,6 +890,7 @@ function drawSlowMotionBadge(
 
 export async function recordAnnotatedVideo({
   lang = "fr",
+  handle = null,
   video,
   canvas,
   rangeStart,
@@ -892,6 +911,8 @@ export async function recordAnnotatedVideo({
 }: {
   // Langue des textes dessinés dans la vidéo.
   lang?: Lang;
+  // Pseudo public gravé sous le score final.
+  handle?: string | null;
   video: HTMLVideoElement;
   canvas: HTMLCanvasElement;
   rangeStart: number;
@@ -1231,6 +1252,7 @@ export async function recordAnnotatedVideo({
       globalScoreValue,
       holdDurationSeconds: holdDurationSeconds ?? null,
       scores,
+      handle,
       reveal,
       cardOpacity,
     }, lang);
