@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getDictionary } from "@/lib/i18n/server";
+import type { Dictionary } from "@/lib/i18n/fr";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
@@ -11,105 +13,103 @@ import {
   CheckIcon,
 } from "@/components/icons";
 
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getDictionary();
+  return {
   // Sans `metadataBase`, l'image d'aperçu Open Graph reste une adresse
   // relative : Instagram, TikTok et WhatsApp ne savent pas la résoudre et
   // affichent un lien nu. C'est précisément le lien qu'on partage partout.
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://calisiq.vercel.app"
   ),
-  title: "CalisIQ — Analyse ta technique en calisthénie",
-  description:
-    "Filme ta planche, ton front lever ou ton handstand : CalisIQ mesure tes angles articulaires, note chaque critère et te dit exactement quoi corriger.",
+  title: t.landing.metaTitle,
+  description: t.landing.metaDescription,
   openGraph: {
-    title: "CalisIQ — Analyse ta technique en calisthénie",
-    description:
-      "Une note sur 10 par critère technique, mesurée sur tes vraies articulations. Pas un avis, une mesure.",
+    title: t.landing.metaTitle,
+    description: t.landing.hero,
     images: ["/logo-full.webp"],
-  },
-};
+    },
+  };
+}
 
 const STEPS = [
   {
     Icon: UploadCloudIcon,
-    title: "Filme ou importe",
-    text: "Deux ou trois secondes de hold suffisent, corps entier dans le cadre.",
+    title: (t: Dictionary) => t.landing.step1,
+    text: (t: Dictionary) => t.landing.step1Body,
   },
   {
     Icon: BodyIcon,
-    title: "L'analyse tourne sur ton téléphone",
-    text: "33 points du corps sont suivis image par image, et chaque angle articulaire est mesuré.",
+    title: (t: Dictionary) => t.landing.step2,
+    text: (t: Dictionary) => t.landing.step2Body,
   },
   {
     Icon: AngleWarningIcon,
-    title: "Tu vois où ça coince",
-    text: "Une note par critère, ton point faible désigné, et les exercices pour le corriger.",
+    title: (t: Dictionary) => t.landing.step3,
+    text: (t: Dictionary) => t.landing.step3Body,
   },
 ];
 
 const FIGURES = [
   {
     name: "Planche",
-    tagline: "Poussée horizontale",
+    tagline: (t: Dictionary) => t.figures.planche.tagline,
     image: "/figures/planche.png",
-    variations: "Tuck, advanced tuck, straddle, full",
+    variations: (t: Dictionary) => t.landing.plancheVariations,
   },
   {
     name: "Front Lever",
-    tagline: "Traction horizontale",
+    tagline: (t: Dictionary) => t.figures.front_lever.tagline,
     image: "/figures/full-front-lever.png",
-    variations: "Tuck, advanced tuck, single leg, straddle, full",
+    variations: (t: Dictionary) => t.landing.frontLeverVariations,
   },
   {
     name: "Handstand",
-    tagline: "Équilibre inversé",
+    tagline: (t: Dictionary) => t.figures.handstand.tagline,
     image: "/figures/handstand.png",
-    variations: "Équilibre tenu",
+    variations: (t: Dictionary) => t.landing.handstandVariations,
   },
 ];
 
 const FEATURES = [
   {
     Icon: AngleWarningIcon,
-    title: "Une note par critère, pas une note globale",
-    text: "Coudes, hanches, genoux, ligne de corps, protraction des épaules. Un score de 7,4 ne t'apprend rien ; savoir que ce sont tes hanches qui coûtent 2 points, si.",
+    title: (t: Dictionary) => t.landing.get1,
+    text: (t: Dictionary) => t.landing.get1Body,
   },
   {
     Icon: TrendUpIcon,
-    title: "La progression se voit",
-    text: "Chaque analyse enregistrée alimente une courbe par figure, et un comparatif avant/après avec ta vidéo de référence.",
+    title: (t: Dictionary) => t.landing.get2,
+    text: (t: Dictionary) => t.landing.get2Body,
   },
   {
     Icon: TimerIcon,
-    title: "La vidéo annotée, prête à publier",
-    text: "Squelette superposé, scores en direct, ralenti sur ton point faible avec le fantôme de la position idéale. Exportée dans la qualité d'origine.",
+    title: (t: Dictionary) => t.landing.get3,
+    text: (t: Dictionary) => t.landing.get3Body,
   },
 ];
 
 const FAQ = [
   {
-    question: "C'est gratuit ?",
-    answer:
-      "Oui. L'analyse et l'export vidéo sont gratuits, et le resteront. Ce qui deviendra payant plus tard, c'est le retrait du filigrane et la conservation illimitée des vidéos.",
+    question: (t: Dictionary) => t.landing.q1,
+    answer: (t: Dictionary) => t.landing.a1,
   },
   {
-    question: "Mes vidéos partent sur un serveur ?",
-    answer:
-      "Non, pas par défaut. L'analyse tourne entièrement dans ton navigateur : ta vidéo ne quitte pas ton téléphone. Elle n'est envoyée que si tu choisis explicitement de garder la figure dans ton historique.",
+    question: (t: Dictionary) => t.landing.q2,
+    answer: (t: Dictionary) => t.landing.a2,
   },
   {
-    question: "Il me faut du matériel ?",
-    answer:
-      "Un téléphone et de quoi te filmer de profil, corps entier visible. C'est tout. Pas de capteur, pas d'application à installer sur un ordinateur.",
+    question: (t: Dictionary) => t.landing.q3,
+    answer: (t: Dictionary) => t.landing.a3,
   },
   {
-    question: "Sur quoi reposent les notes ?",
-    answer:
-      "Sur des seuils d'angles calibrés à partir de figures réelles notées une par une, et affinés à mesure que les échantillons s'accumulent. Chaque critère indique s'il est calibré ou encore approximatif.",
+    question: (t: Dictionary) => t.landing.q4,
+    answer: (t: Dictionary) => t.landing.a4,
   },
 ];
 
 export default async function LandingPage() {
+  const t = await getDictionary();
   const supabase = await createClient();
   const {
     data: { user },
@@ -152,7 +152,7 @@ export default async function LandingPage() {
             href="/login"
             className="mt-7 w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 py-3.5 text-center text-[15px] font-semibold text-white shadow-lg shadow-cyan-500/20"
           >
-            Analyser ma première figure
+            {t.landing.ctaFirst}
           </Link>
           <p className="mt-2.5 text-xs text-slate-500">
             Gratuit, sans installation. Ton email suffit.
@@ -164,7 +164,7 @@ export default async function LandingPage() {
       <section className="border-t border-slate-900 px-5 py-14">
         <div className="mx-auto max-w-md">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Le résultat
+            {t.landing.resultHeading}
           </p>
           <h2 className="mt-2 text-[22px] font-bold leading-tight text-white">
             Un avis, ça se discute. Une mesure, non.
@@ -195,12 +195,12 @@ export default async function LandingPage() {
       <section className="border-t border-slate-900 px-5 py-14">
         <div className="mx-auto max-w-md">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            En trois gestes
+            {t.landing.stepsHeading}
           </p>
           <div className="mt-5 space-y-3">
             {STEPS.map((step, index) => (
               <div
-                key={step.title}
+                key={step.title(t)}
                 className="flex gap-4 rounded-xl border border-slate-800 bg-slate-900 p-4"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-800 text-cyan-400">
@@ -209,10 +209,10 @@ export default async function LandingPage() {
                 <div className="min-w-0">
                   <p className="font-semibold text-white">
                     <span className="text-cyan-400">{index + 1}.</span>{" "}
-                    {step.title}
+                    {step.title(t)}
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-slate-400">
-                    {step.text}
+                    {step.text(t)}
                   </p>
                 </div>
               </div>
@@ -225,7 +225,7 @@ export default async function LandingPage() {
       <section className="border-t border-slate-900 px-5 py-14">
         <div className="mx-auto max-w-md">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Figures analysées
+            {t.landing.figuresHeading}
           </p>
           <h2 className="mt-2 text-[22px] font-bold leading-tight text-white">
             Trois figures, dix variations
@@ -260,10 +260,10 @@ export default async function LandingPage() {
                       {figure.name}
                     </p>
                     <p className="text-[11px] leading-tight text-cyan-300/80">
-                      {figure.tagline}
+                      {figure.tagline(t)}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      {figure.variations}
+                      {figure.variations(t)}
                     </p>
                   </div>
                 </div>
@@ -277,17 +277,17 @@ export default async function LandingPage() {
       <section className="border-t border-slate-900 px-5 py-14">
         <div className="mx-auto max-w-md">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Ce que tu obtiens
+            {t.landing.getHeading}
           </p>
           <div className="mt-5 space-y-5">
             {FEATURES.map((feature) => (
-              <div key={feature.title}>
+              <div key={feature.title(t)}>
                 <div className="flex items-center gap-2.5">
                   <feature.Icon className="h-5 w-5 shrink-0 text-cyan-400" />
-                  <p className="font-semibold text-white">{feature.title}</p>
+                  <p className="font-semibold text-white">{feature.title(t)}</p>
                 </div>
                 <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
-                  {feature.text}
+                  {feature.text(t)}
                 </p>
               </div>
             ))}
@@ -299,17 +299,17 @@ export default async function LandingPage() {
       <section className="border-t border-slate-900 px-5 py-14">
         <div className="mx-auto max-w-md">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Questions
+            {t.landing.faqHeading}
           </p>
           <div className="mt-5 divide-y divide-slate-800 rounded-2xl border border-slate-800 bg-slate-900">
             {FAQ.map((item) => (
-              <div key={item.question} className="p-4">
+              <div key={item.question(t)} className="p-4">
                 <p className="flex items-start gap-2 font-medium text-white">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" />
-                  {item.question}
+                  {item.question(t)}
                 </p>
                 <p className="mt-1.5 pl-6 text-sm leading-relaxed text-slate-400">
-                  {item.answer}
+                  {item.answer(t)}
                 </p>
               </div>
             ))}
@@ -335,7 +335,7 @@ export default async function LandingPage() {
             href="/login"
             className="mt-7 block w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-cyan-500/20"
           >
-            Commencer gratuitement
+            {t.landing.ctaFinal}
           </Link>
         </div>
       </section>
@@ -347,7 +347,7 @@ export default async function LandingPage() {
             href="/confidentialite"
             className="text-slate-500 hover:text-slate-400"
           >
-            Confidentialité
+            {t.landing.privacy}
           </Link>
         </div>
       </footer>
