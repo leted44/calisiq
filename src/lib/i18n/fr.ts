@@ -462,6 +462,12 @@ export const fr = {
     deleteAccount: "Supprimer définitivement ton compte",
     deleteAccountBody: "Ton profil, tes analyses, tes scores et toutes tes vidéos seront supprimés. Cette action est irréversible.",
   },
+  level: {
+    yourLevel: "Ton niveau",
+    total: "Total",
+    figuresTracked: "Figures",
+    byFigure: "Par figure",
+  },
   install: {
     installedTitle: "CalisIQ est bien installé",
     installedHint: "Tu la lances depuis ton écran d'accueil",

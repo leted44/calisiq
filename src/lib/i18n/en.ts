@@ -457,6 +457,12 @@ export const en: Dictionary = {
     deleteAccount: "Permanently delete your account",
     deleteAccountBody: "Your profile, analyses, scores and all your videos will be deleted. This cannot be undone.",
   },
+  level: {
+    yourLevel: "Your level",
+    total: "Total",
+    figuresTracked: "Figures",
+    byFigure: "By figure",
+  },
   install: {
     installedTitle: "CalisIQ is installed",
     installedHint: "Launch it from your home screen",
