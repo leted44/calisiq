@@ -79,6 +79,96 @@ export const VARIATION_DIFFICULTY: Record<string, number> = {
 };
 
 /**
+ * Durée, en secondes, à partir de laquelle une figure compte comme pleinement
+ * tenue. Au-delà, tenir plus longtemps n'ajoute plus de niveau.
+ *
+ * POURQUOI UN PLAFOND
+ *
+ * Sans lui, une full planche tenue soixante secondes vaudrait bien plus
+ * qu'une full planche tenue huit, alors que les deux prouvent exactement la
+ * même chose : la figure est acquise. Le temps supplémentaire relève de
+ * l'endurance, que l'application suit déjà à part dans la courbe de
+ * progression.
+ *
+ * POURQUOI LE SEUIL BAISSE QUAND LA FIGURE MONTE
+ *
+ * C'est le point important. Cinq secondes de full planche est une performance
+ * reconnue ; cinq secondes de tuck planche ne prouve rien, tout le monde y
+ * arrive. Plus la figure est dure, moins il faut de temps pour qu'elle soit
+ * validée. Les valeurs suivent les repères admis dans le milieu.
+ *
+ * Le handstand fait exception à la hausse : c'est une figure d'équilibre
+ * autant que de force, et sa difficulté réelle est justement de durer.
+ *
+ * Les exercices à répétition sont absents : ils n'ont pas de hold, leur
+ * volume se mesure en répétitions.
+ */
+export const HOLD_TARGET_SECONDS: Record<string, number> = {
+  // Planche. Cinq secondes en full est le repère classique d'une figure
+  // acquise ; en tuck, on attend trois fois plus.
+  tuck_planche: 15,
+  advanced_tuck_planche: 12,
+  straddle_planche: 8,
+  full_planche: 5,
+
+  // Handstand. Seule famille où le seuil monte : tenir est la difficulté.
+  handstand: 20,
+  one_arm_handstand: 5,
+
+  // Front lever, même logique que la planche.
+  tuck_front_lever: 15,
+  advanced_tuck_front_lever: 12,
+  one_leg_front_lever: 10,
+  straddle_front_lever: 8,
+  full_front_lever: 5,
+  one_arm_front_lever: 3,
+
+  // Dragon flag. Seuils un peu plus longs qu'un levier de même rang : la
+  // position est moins exigeante en force pure de traction.
+  tuck_dragon_flag: 12,
+  one_leg_dragon_flag: 10,
+  full_dragon_flag: 8,
+
+  // Drapeau. Seuils courts : la position est brutale, personne ne s'y
+  // installe confortablement.
+  tuck_human_flag: 10,
+  straddle_human_flag: 7,
+  full_human_flag: 5,
+};
+
+/**
+ * Plancher du facteur de durée.
+ *
+ * La durée MODULE le niveau, elle ne le décide pas. Sans plancher, une full
+ * planche impeccable filmée deux secondes tomberait à presque rien, ce qui
+ * serait absurde : la figure a bien été tenue, elle a juste été filmée court.
+ * Entre 0,5 et 1, la durée pèse assez pour compter sans écraser la mesure
+ * technique, qui reste l'objet de l'application.
+ */
+const HOLD_FACTOR_FLOOR = 0.5;
+
+/**
+ * Facteur de durée, entre le plancher et 1.
+ *
+ * Racine carrée plutôt que proportion directe : les premières secondes valent
+ * beaucoup plus que les dernières. Passer de deux à cinq secondes est un vrai
+ * progrès, passer de trente à trente-trois n'en est pas un.
+ *
+ * Vaut 1 quand la durée est inconnue. Une mesure qui a échoué ne doit pas se
+ * transformer en pénalité silencieuse.
+ */
+export function holdFactor(
+  progression: string,
+  holdSeconds: number | null | undefined
+): number {
+  const cible = HOLD_TARGET_SECONDS[progression];
+  if (cible === undefined) return 1;
+  if (holdSeconds === null || holdSeconds === undefined) return 1;
+  const part = Math.min(1, Math.sqrt(Math.max(0, holdSeconds) / cible));
+  return HOLD_FACTOR_FLOOR + (1 - HOLD_FACTOR_FLOOR) * part;
+}
+
+/**
  * Exposant appliqué à la qualité d'exécution.
  *
  * Supérieur à 1 délibérément : une figure difficile mal tenue ne doit pas
@@ -89,12 +179,28 @@ export const VARIATION_DIFFICULTY: Record<string, number> = {
  */
 const QUALITY_EXPONENT = 1.5;
 
-/** Points d'une prise. Zéro si la variation n'a pas de difficulté connue. */
-export function levelPoints(progression: string, score: number): number {
+/**
+ * Points d'une prise : difficulté × qualité × durée.
+ *
+ * La durée n'entre pas dans la note sur 10, et c'est délibéré. La note mesure
+ * la qualité de la forme ; y mêler l'endurance la rendrait illisible, puisque
+ * l'utilisateur ne saurait plus si un 6 vient de sa technique ou de son
+ * souffle. Le niveau, lui, doit dire à quel point la prise est impressionnante,
+ * et une figure tenue deux secondes ne l'est pas autant que la même tenue huit.
+ */
+export function levelPoints(
+  progression: string,
+  score: number,
+  holdSeconds?: number | null
+): number {
   const difficulty = VARIATION_DIFFICULTY[progression];
   if (difficulty === undefined) return 0;
   const quality = Math.max(0, Math.min(1, score / 10));
-  return difficulty * Math.pow(quality, QUALITY_EXPONENT);
+  return (
+    difficulty *
+    Math.pow(quality, QUALITY_EXPONENT) *
+    holdFactor(progression, holdSeconds)
+  );
 }
 
 export const TIERS = [
@@ -131,8 +237,12 @@ export function tierForPoints(points: number): Tier {
   return "foundations";
 }
 
-export function tierFor(progression: string, score: number): Tier {
-  return tierForPoints(levelPoints(progression, score));
+export function tierFor(
+  progression: string,
+  score: number,
+  holdSeconds?: number | null
+): Tier {
+  return tierForPoints(levelPoints(progression, score, holdSeconds));
 }
 
 /**
@@ -177,11 +287,11 @@ export const TIER_STYLES: Record<Tier, string> = {
  * figure ne doit pas gonfler un total.
  */
 export function overallPoints(
-  best: { progression: string; score: number }[]
+  best: { progression: string; score: number; holdSeconds?: number | null }[]
 ): number {
   const parVariation = new Map<string, number>();
-  for (const { progression, score } of best) {
-    const points = levelPoints(progression, score);
+  for (const { progression, score, holdSeconds } of best) {
+    const points = levelPoints(progression, score, holdSeconds);
     const connu = parVariation.get(progression) ?? 0;
     if (points > connu) parVariation.set(progression, points);
   }

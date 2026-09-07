@@ -85,8 +85,8 @@ export default function ResultCard({
   const niveau =
     progression && hasLevel(progression)
       ? {
-          points: levelPoints(progression, globalScoreValue),
-          tier: levelTier(progression, globalScoreValue),
+          points: levelPoints(progression, globalScoreValue, holdDurationSeconds),
+          tier: levelTier(progression, globalScoreValue, holdDurationSeconds),
         }
       : null;
   // Critères classés du plus faible au plus fort. Cinq anneaux de même taille
