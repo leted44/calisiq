@@ -1,13 +1,19 @@
 "use client";
 
 import { useT, useLang } from "@/lib/i18n/client";
+import {
+  levelPoints,
+  hasLevel,
+  tierFor as levelTier,
+  TIER_STYLES,
+} from "@/lib/pose/level";
 import { useState } from "react";
 import type { CriterionScore } from "@/lib/pose/scoring";
 import type { Recommendation } from "@/lib/pose/recommendations";
 import {
   tierFor,
-  tierLabel,
   TIER_COLORS,
+  tierLabel,
   describeCriterion,
   formatHoldDuration,
   criterionDefinition,
@@ -55,6 +61,7 @@ export default function ResultCard({
   holdDurationSeconds,
   repCount,
   figure = "planche",
+  progression,
 }: {
   globalScoreValue: number;
   representativeFrame: string | null;
@@ -65,11 +72,23 @@ export default function ResultCard({
   // hold n'a pas de répétitions. L'un des deux est toujours null.
   repCount?: number | null;
   figure?: "planche" | "handstand" | "front_lever" | "dragon_flag" | "reps";
+  // Variation exacte, pas seulement la famille : c'est elle qui porte la
+  // difficulté, et un tuck n'a rien à voir avec un full.
+  progression?: string;
 }) {
   const t = useT();
   const lang = useLang();
   const [view, setView] = useState<"summary" | "details">("summary");
   const globalTier = tierFor(globalScoreValue);
+  // Null sur une variation sans difficulté déclarée : mieux vaut ne rien
+  // afficher qu'un palier calculé sur une valeur absente.
+  const niveau =
+    progression && hasLevel(progression)
+      ? {
+          points: levelPoints(progression, globalScoreValue),
+          tier: levelTier(progression, globalScoreValue),
+        }
+      : null;
   // Critères classés du plus faible au plus fort. Cinq anneaux de même taille
   // ne hiérarchisaient rien : l'œil ne savait pas où se poser et le critère à
   // corriger se noyait au milieu des autres. Classés, le premier de la liste
@@ -123,15 +142,26 @@ export default function ResultCard({
               </span>
               <span className="text-lg font-medium text-slate-500">/10</span>
             </p>
-            <span
-              className={`mt-2 inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${TIER_COLORS[globalTier]}`}
-            >
-              {globalTier === "optimal"
-                ? t.result.tierExcellent
-                : globalTier === "bon"
-                ? t.result.tierGood
-                : t.result.tierWork}
-            </span>
+            {/* Palier de niveau, à la place de l'ancien badge.
+                L'ancien disait « Excellent niveau » à partir de la note seule :
+                il ne faisait que répéter en mots le chiffre affiché juste
+                au-dessus, et surtout il mentait sur le niveau, puisqu'un tuck
+                planche parfait y devenait « excellent » au même titre qu'une
+                full planche. Le nouveau croise la difficulté de la variation
+                et la qualité d'exécution : il dit où la prise place, ce que le
+                chiffre ne dit pas. */}
+            {niveau && (
+              <span className="mt-2 flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${TIER_STYLES[niveau.tier]}`}
+                >
+                  {t.result.tiers[niveau.tier]}
+                </span>
+                <span className="font-mono text-[11px] tabular-nums text-slate-500">
+                  {t.result.points(Math.round(niveau.points))}
+                </span>
+              </span>
+            )}
           </div>
 
           {/* Mesure secondaire : répétitions ou durée de hold, jamais les deux.

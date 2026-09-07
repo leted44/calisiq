@@ -1877,6 +1877,7 @@ export default function AnalysisForm() {
                 </p>
               )}
               <ResultCard
+              progression={progression}
                 globalScoreValue={result.globalScoreValue}
                 representativeFrame={result.representativeFrameDataUrl}
                 scores={result.scores}

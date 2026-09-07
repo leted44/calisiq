@@ -187,6 +187,7 @@ export default function VideoPoseOverlay({
       {!analyzing && report && (
         <>
           <ResultCard
+              progression={progression}
             globalScoreValue={report.globalScoreValue}
             representativeFrame={freshResult?.representativeFrameDataUrl ?? null}
             scores={report.scores}
