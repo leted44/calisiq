@@ -754,15 +754,40 @@ export default function AnalysisForm() {
   // que de faire planter l'accueil.
   const t = useT();
   const lang = useLang();
+  // Ancre du défilement automatique et sonde de visibilité des actions.
+  //
+  // Avec neuf figures, la grille occupe plus d'un écran : choisir une figure
+  // révélait la progression et les boutons d'import bien plus bas, hors du
+  // champ de vision. Rien ne bougeait à l'écran, et l'utilisateur ne pouvait
+  // pas savoir que quelque chose s'était passé.
+  const progressionRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [actionsVisible, setActionsVisible] = useState(true);
+  // Incrémenté à chaque sélection explicite. Un effet sur `figure` seul
+  // raterait le choix d'un favori de la même figure mais d'une autre
+  // variation, qui mérite le même retour visuel.
+  const [selectionTick, setSelectionTick] = useState(0);
   const favorites = useFavorites();
+  // Variation sélectionnée et son rang, partagés entre la carte et la barre
+  // ancrée pour qu'elles ne puissent pas diverger.
+  const currentVariationIndex = figure
+    ? VARIATIONS_BY_FIGURE[figure].findIndex((o) => o.value === progression)
+    : -1;
+  const currentVariation =
+    figure && currentVariationIndex >= 0
+      ? VARIATIONS_BY_FIGURE[figure][currentVariationIndex]
+      : null;
   const favoriteEntries = favorites
     .map((value) => VARIATION_INDEX[value])
     .filter((entry): entry is VariationIndexEntry => entry !== undefined);
 
   function selectFigure(next: Figure) {
     setFigure((current) => {
+      // Refermer une figure déjà ouverte ne doit pas déclencher de
+      // défilement : il n'y a plus rien à montrer plus bas.
       if (current === next) return null;
       setProgression(VARIATIONS_BY_FIGURE[next][0].value);
+      setSelectionTick((n) => n + 1);
       return next;
     });
   }
@@ -847,6 +872,37 @@ export default function AnalysisForm() {
     setFileSource(source);
     setPerformedAt(todayLocalDateString());
   }
+
+  // Amène la progression et les actions dans le champ de vision après une
+  // sélection. Le défilement est doux, sauf si le système demande de réduire
+  // les animations.
+  useEffect(() => {
+    if (selectionTick === 0) return;
+    const cible = progressionRef.current;
+    if (!cible) return;
+    const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    cible.scrollIntoView({
+      behavior: reduit ? "auto" : "smooth",
+      block: "start",
+    });
+  }, [selectionTick]);
+
+  // Sonde la visibilité des boutons d'import : la barre ancrée ne s'affiche
+  // que lorsqu'ils sont sortis de l'écran, pour ne pas doubler inutilement une
+  // action déjà sous les yeux.
+  useEffect(() => {
+    const cible = actionsRef.current;
+    if (!cible) {
+      setActionsVisible(true);
+      return;
+    }
+    const observateur = new IntersectionObserver(
+      ([entree]) => setActionsVisible(entree.isIntersecting),
+      { rootMargin: "-80px 0px -140px 0px" }
+    );
+    observateur.observe(cible);
+    return () => observateur.disconnect();
+  }, [figure, progression, videoUrl, cameraMode]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];
@@ -1303,7 +1359,14 @@ export default function AnalysisForm() {
     : false;
 
   return (
-    <div className="w-full max-w-md space-y-6">
+    <div
+      className={`w-full max-w-md space-y-6 ${
+        // Réserve la hauteur de la barre ancrée quand elle est affichée :
+        // sans ça, elle recouvrirait les dernières figures de la grille et on
+        // ne pourrait plus les atteindre.
+        figure && variationAvailable && !videoUrl && !cameraMode && !actionsVisible ? "pb-32" : ""
+      }`}
+    >
       {pendingAction && (
         <CaptureTipsModal
           onContinue={confirmTips}
@@ -1341,6 +1404,7 @@ export default function AnalysisForm() {
                   onClick={() => {
                     setFigure(favFigure);
                     setProgression(option.value);
+                    setSelectionTick((n) => n + 1);
                   }}
                   className={`flex shrink-0 items-center gap-2.5 rounded-xl border py-2 pl-2 pr-3.5 transition-colors ${
                     active
@@ -1494,6 +1558,10 @@ export default function AnalysisForm() {
 
       {figure && (
       <>
+      {/* Cible du défilement automatique. La marge de défilement laisse
+          respirer le haut : arriver collé au bord donne l'impression d'une
+          page tronquée. */}
+      <div ref={progressionRef} className="scroll-mt-4" />
       <VariationRail
         options={VARIATIONS_BY_FIGURE[figure]}
         value={progression}
@@ -1541,7 +1609,7 @@ export default function AnalysisForm() {
       )}
 
       {variationAvailable && !videoUrl && !cameraMode && (
-        <div className="space-y-3">
+        <div ref={actionsRef} className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             {t.analysis.videoSection}
           </p>
@@ -1921,6 +1989,74 @@ export default function AnalysisForm() {
         </form>
       )}
       </>
+      )}
+
+      {/* Barre d'action ancrée.
+          Elle n'apparaît que lorsqu'une figure est choisie ET que les vrais
+          boutons d'import sont sortis de l'écran. Doubler une action déjà
+          sous les yeux encombrerait pour rien ; la montrer quand on remonte
+          parcourir les figures évite d'avoir à redescendre pour agir.
+          Ancrée au-dessus de la barre d'onglets, jamais par-dessus. */}
+      {figure && variationAvailable && !videoUrl && !cameraMode && !actionsVisible && (
+        <div className="fixed inset-x-0 bottom-16 z-20 px-4 pb-3">
+          <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-cyan-500/30 bg-slate-900/95 shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.95)] backdrop-blur-md">
+            <div className="flex items-center gap-3 px-3 pt-2.5">
+              {currentVariation?.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={currentVariation.image}
+                  alt=""
+                  className="h-11 w-12 shrink-0 object-contain"
+                />
+              ) : (
+                <span className="flex h-11 w-12 shrink-0 items-center justify-center">
+                  {currentVariation ? (
+                    <currentVariation.Icon className="h-6 w-6 text-slate-500" />
+                  ) : null}
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[11px] leading-tight text-cyan-300/80">
+                  {t.figures[figure].label}
+                </span>
+                <span className="block truncate text-[15px] font-semibold leading-tight text-white">
+                  {t.variations[progression].label}
+                </span>
+              </span>
+              {/* Même jauge que dans la carte de variation : le repère de
+                  difficulté suit la sélection au lieu de disparaître. */}
+              <span className="flex shrink-0 items-end gap-[3px] pr-1" aria-hidden>
+                {VARIATIONS_BY_FIGURE[figure].map((o, index) => (
+                  <span
+                    key={o.value}
+                    className={`w-[3px] rounded-full ${
+                      index <= currentVariationIndex ? "bg-cyan-400" : "bg-slate-700"
+                    }`}
+                    style={{ height: `${7 + index * 2}px` }}
+                  />
+                ))}
+              </span>
+            </div>
+            <div className="flex gap-2 p-2.5">
+              <button
+                type="button"
+                onClick={requestImport}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-[13px] font-medium text-slate-200 hover:border-cyan-700"
+              >
+                <UploadCloudIcon className="h-4 w-4 text-cyan-400" />
+                {t.analysis.import}
+              </button>
+              <button
+                type="button"
+                onClick={requestCamera}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 text-[13px] font-semibold text-white shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+              >
+                <CameraIcon className="h-4 w-4" />
+                {t.analysis.record}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
