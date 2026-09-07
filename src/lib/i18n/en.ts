@@ -465,7 +465,7 @@ export const en: Dictionary = {
   },
   handle: {
     label: "Public handle",
-    prefix: "calisiq.app/u/",
+    prefix: "calisiq.com/u/",
     placeholder: "teddy_974",
     hint: "This becomes your profile address. Lowercase, digits and underscore.",
     tooShort: "Three characters minimum.",

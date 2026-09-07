@@ -470,7 +470,7 @@ export const fr = {
   },
   handle: {
     label: "Pseudo public",
-    prefix: "calisiq.app/u/",
+    prefix: "calisiq.com/u/",
     placeholder: "teddy_974",
     hint: "Ce sera l'adresse de ton profil. Minuscules, chiffres et tiret bas.",
     tooShort: "Trois caractères minimum.",

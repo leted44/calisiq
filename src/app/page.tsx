@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   // relative : Instagram, TikTok et WhatsApp ne savent pas la résoudre et
   // affichent un lien nu. C'est précisément le lien qu'on partage partout.
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://calisiq.vercel.app"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://calisiq.com"
   ),
   title: t.landing.metaTitle,
   description: t.landing.metaDescription,

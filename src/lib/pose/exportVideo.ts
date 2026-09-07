@@ -38,7 +38,7 @@ const MAX_EXPORT_DIMENSION = 3840;
 // Adresse affichée en fin de vidéo. Lue depuis l'environnement pour suivre le
 // domaine du jour, avec le domaine actuel en repli.
 const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "calisiq.vercel.app"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "calisiq.com"
 ).replace(/^https?:[/][/]/, "");
 
 // Libellé d'un critère dans la langue de l'export.
