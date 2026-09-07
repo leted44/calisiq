@@ -13,7 +13,7 @@ import CaptureTipsModal, { shouldSkipTips } from "./CaptureTipsModal";
 import ResultCard from "./ResultCard";
 import ExportVideoButton from "./ExportVideoButton";
 import {
-  PROGRESSION_LABELS,
+  progressionLabel,
   figureFromProgression,
   isCalibrated,
 } from "@/lib/pose/report";
@@ -1936,7 +1936,7 @@ export default function AnalysisForm() {
           {result && result.ok && (
             <ExportVideoButton
               videoRef={previewVideoRef}
-              figureLabel={PROGRESSION_LABELS[progression] ?? progression}
+              figureLabel={progressionLabel(progression, lang)}
               globalScoreValue={result.globalScoreValue}
               scores={result.scores}
               progression={progression as Progression}

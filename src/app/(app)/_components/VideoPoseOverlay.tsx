@@ -1,12 +1,12 @@
 "use client";
 
-import { useT } from "@/lib/i18n/client";
+import { useT, useLang } from "@/lib/i18n/client";
 import { useRef, useState } from "react";
 import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis";
 import type { Progression } from "@/lib/pose/grid";
 import type { CriterionScore } from "@/lib/pose/scoring";
 import type { Recommendation } from "@/lib/pose/recommendations";
-import { figureFromProgression, PROGRESSION_LABELS } from "@/lib/pose/report";
+import { figureFromProgression, progressionLabel } from "@/lib/pose/report";
 import { createClient } from "@/lib/supabase/client";
 import ResultCard from "./ResultCard";
 import ExportVideoButton from "./ExportVideoButton";
@@ -37,6 +37,7 @@ export default function VideoPoseOverlay({
   initialReport?: PersistedReport | null;
 }) {
   const t = useT();
+  const lang = useLang();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -196,7 +197,7 @@ export default function VideoPoseOverlay({
           />
           <ExportVideoButton
             videoRef={videoRef}
-            figureLabel={PROGRESSION_LABELS[progression] ?? progression}
+            figureLabel={progressionLabel(progression, lang)}
             globalScoreValue={report.globalScoreValue}
             scores={report.scores}
             progression={progression}

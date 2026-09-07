@@ -35,6 +35,12 @@ function sleep(ms: number): Promise<void> {
 // pixels.
 const MAX_EXPORT_DIMENSION = 3840;
 
+// Adresse affichée en fin de vidéo. Lue depuis l'environnement pour suivre le
+// domaine du jour, avec le domaine actuel en repli.
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "calisiq.vercel.app"
+).replace(/^https?:[/][/]/, "");
+
 // Libellé d'un critère dans la langue de l'export.
 function critereLabel(critere: CriterionScore["critere"], lang: Lang): string {
   return lang === "en"
@@ -364,6 +370,7 @@ function drawOutro(
     holdDurationSeconds,
     scores,
     cardOpacity,
+    reveal,
   }: {
     figureLabel: string;
     globalScoreValue: number;
@@ -374,6 +381,20 @@ function drawOutro(
     // affiché en dernier bloc pour rappeler d'où vient le score final.
     scores: CriterionScore[];
     cardOpacity: number;
+    /**
+     * Avancement de la révélation, de 0 à 1.
+     *
+     * L'écran final affichait tout d'un bloc : le score était lu avant même
+     * que le spectateur ait compris de quelle figure il s'agissait, et il n'y
+     * avait aucune raison de regarder jusqu'au bout. Or le bout est
+     * précisément l'endroit où se trouve la marque.
+     *
+     * Ce qui est mis en scène, c'est uniquement l'ORDRE d'apparition. Les
+     * hauteurs de section restent calculées sur le contenu final, donc la
+     * carte ne change jamais de taille pendant la révélation — sans ça elle
+     * sauterait à chaque étape.
+     */
+    reveal: number;
   },
   lang: Lang
 ) {
@@ -398,7 +419,8 @@ function drawOutro(
     scores.length > 0
       ? 18 * scale + scores.length * detailRowHeight + 8 * scale
       : 0;
-  const brandSectionHeight = 22 * scale;
+  // Deux lignes désormais : la marque et l'adresse.
+  const brandSectionHeight = 36 * scale;
   const cardHeight =
     titleSectionHeight +
     scoreSectionHeight +
@@ -409,6 +431,17 @@ function drawOutro(
   const cardX = (w - cardWidth) / 2;
   const cardY = (h - cardHeight) / 2;
   const centerX = w / 2;
+
+  // Découpage de la révélation. Les bornes sont choisies pour que le score
+  // finisse de monter bien avant la fin : un chiffre qui s'arrête pile au
+  // dernier instant ne se lit pas.
+  const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+  // Amortissement en fin de course : le compteur ralentit en approchant de
+  // sa valeur, ce qui se lit comme un verdict qui se pose.
+  const easeOut = (v: number) => 1 - Math.pow(1 - v, 3);
+  const scoreProgress = easeOut(clamp01((reveal - 0.12) / 0.38));
+  const detailsAlpha = clamp01((reveal - 0.58) / 0.18);
+  const scoreAffiche = globalScoreValue * scoreProgress;
 
   ctx.globalAlpha = cardOpacity;
 
@@ -443,7 +476,7 @@ function drawOutro(
   drawMixedText(
     ctx,
     [
-      { text: globalScoreValue.toFixed(1), font: `800 ${40 * scale}px sans-serif`, color: tierColor },
+      { text: scoreAffiche.toFixed(1), font: `800 ${40 * scale}px sans-serif`, color: tierColor },
       { text: "/10", font: `700 ${16 * scale}px sans-serif`, color: tierColor },
     ],
     centerX,
@@ -451,6 +484,9 @@ function drawOutro(
     "center"
   );
   cursorY += scoreSectionHeight - 62 * scale;
+
+  // Sections suivantes en fondu : elles arrivent une fois le score posé.
+  ctx.globalAlpha = cardOpacity * detailsAlpha;
 
   // --- Section 3 : hold tenu (masquée si aucun hold détecté) ---
   if (holdDurationSeconds !== null) {
@@ -533,11 +569,19 @@ function drawOutro(
     cursorY += 8 * scale;
   }
 
-  // --- Section 5 : marque ---
+  // --- Section 5 : marque et adresse ---
+  //
+  // L'adresse est la seule chose qui manquait pour qu'une vidéo partagée soit
+  // exploitable : un spectateur convaincu devait deviner où aller. Rendue à
+  // pleine opacité, indépendamment du fondu des sections précédentes.
+  ctx.globalAlpha = cardOpacity;
   ctx.textAlign = "center";
-  ctx.fillStyle = "#475569";
+  ctx.fillStyle = "#64748b";
   ctx.font = `700 ${9 * scale}px sans-serif`;
-  ctx.fillText("CALISIQ", centerX, cardY + cardHeight - 12 * scale);
+  ctx.fillText("CALISIQ", centerX, cardY + cardHeight - 26 * scale);
+  ctx.fillStyle = "#475569";
+  ctx.font = `600 ${8 * scale}px sans-serif`;
+  ctx.fillText(SITE_URL, centerX, cardY + cardHeight - 12 * scale);
 
   ctx.globalAlpha = 1;
 }
@@ -1173,16 +1217,21 @@ export async function recordAnnotatedVideo({
   // fluide, et surtout la phase produit assez d'images pour peser dans le
   // fichier final au lieu de passer pour un gel d'image.
   const OUTRO_STEP_MS = 40;
-  const OUTRO_STEPS = 60;
+  // Rallongé de 60 à 90 images, soit environ une seconde de plus : la
+  // révélation du score a besoin de place, et le spectateur d'un instant pour
+  // lire le détail avant la fin.
+  const OUTRO_STEPS = 90;
   const OUTRO_FADE_STEPS = 15;
   for (let i = 0; i < OUTRO_STEPS; i++) {
     const cardOpacity = Math.min(1, (i + 1) / OUTRO_FADE_STEPS);
+    const reveal = (i + 1) / OUTRO_STEPS;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     drawOutro(ctx, canvas, {
       figureLabel,
       globalScoreValue,
       holdDurationSeconds: holdDurationSeconds ?? null,
       scores,
+      reveal,
       cardOpacity,
     }, lang);
     commitFrame();
