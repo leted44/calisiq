@@ -1,4 +1,7 @@
 import Link from "next/link";
+import type { CriterionScore } from "@/lib/pose/scoring";
+import { recommendationsFor } from "@/lib/pose/recommendations";
+import { getLang } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Progression } from "@/lib/pose/grid";
@@ -16,6 +19,8 @@ export default async function SessionDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
+  const lang = await getLang();
+
   const { data: session } = await supabase
     .from("sessions")
     .select(
@@ -32,7 +37,11 @@ export default async function SessionDetailPage({
 
   const scores = (session.scores ?? []).map(
     (s: { critere: string; score: number; valeur_mesuree: number; valeur_cible: number }) => ({
-      critere: s.critere as "shoulder_protraction" | "pelvis_deviation" | "hip_angle" | "elbow_angle",
+      // Type complet et non une liste de quatre critères : la base en stocke
+      // dix-sept, et cette énumération datait d'une époque où la planche était
+      // la seule figure. Elle empêchait de reconnaître les critères ajoutés
+      // depuis, à commencer par ceux des exercices à répétition.
+      critere: s.critere as CriterionScore["critere"],
       score: s.score,
       valeurMesuree: s.valeur_mesuree,
       valeurCible: s.valeur_cible,
@@ -41,13 +50,37 @@ export default async function SessionDetailPage({
 
   const globalScoreValue =
     scores.length > 0 ? scores.reduce((a, s) => a + s.score, 0) / scores.length : 0;
+  const weakest =
+    scores.length > 0
+      ? scores.reduce((worst, s) => (s.score < worst.score ? s : worst))
+      : null;
 
   const initialReport =
     session.status === "done" && scores.length > 0
+      && weakest
       ? {
           globalScoreValue,
           scores,
-          recommendations: session.recommendations ?? [],
+          // Régénérées à partir des mesures plutôt que lues en base.
+          //
+          // Les recommandations y sont enregistrées sous forme de texte, dans
+          // la langue en vigueur au moment de l'analyse : une séance analysée
+          // en français restait donc française sur un écran passé en anglais.
+          // Les scores, eux, sont stockés en clair et contiennent tout ce
+          // qu'il faut pour reconstruire le conseil. On dérive le texte des
+          // mesures, ce qui le rend juste dans les deux langues, y compris
+          // pour les séances antérieures à la traduction.
+          recommendations: recommendationsFor(
+            weakest.critere,
+            weakest.score,
+            // Signe de l'écart de bassin : disponible seulement si la séance
+            // porte le critère signé. Sinon zéro, qui oriente vers le conseil
+            // d'affaissement — le cas le plus fréquent et le plus grave.
+            scores.find((s) => s.critere === "pelvis_sag")?.valeurMesuree ?? 0,
+            weakest.valeurMesuree - weakest.valeurCible,
+            session.progression,
+            lang
+          ),
           holdDurationSeconds: session.hold_duration_seconds,
           repCount: session.rep_count,
         }

@@ -267,7 +267,7 @@ export default function ExportVideoButton({
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/5 py-2.5 text-sm font-medium text-cyan-200 transition-colors hover:border-cyan-400/50 hover:bg-cyan-500/10 disabled:opacity-60"
           >
             <DownloadIcon className="h-4 w-4" />
-            Télécharger la vidéo
+            {t.dashboard.downloadVideo}
           </button>
         </div>
 

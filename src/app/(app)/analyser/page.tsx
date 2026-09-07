@@ -29,13 +29,13 @@ export default async function AccueilPage() {
           className="h-40 w-auto mix-blend-screen"
         />
         <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
-          Analyse Intelligente de la Forme
+          {t.auth2.tagline}
         </p>
       </div>
 
       <div className="relative w-full max-w-md">
         <p className="text-sm text-slate-400">
-          Importe une vidéo ou filme-toi directement pour analyser ta forme avec CalisIQ.
+          {t.dashboard.homeIntro}
         </p>
       </div>
 

@@ -60,8 +60,7 @@ export default async function ProgressionPage() {
       <div className="w-full max-w-md">
         <h1 className="text-2xl font-bold text-white">{t.progressPage.title}</h1>
         <p className="text-sm text-slate-400">
-          Score, durée de hold et records — figure par figure, sur la période
-          de ton choix.
+          {t.dashboard.progressSubtitle}
         </p>
       </div>
 

@@ -246,7 +246,7 @@ export default function ProgressionDashboard({
             className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-slate-400 hover:border-cyan-700 hover:text-cyan-300"
           >
             <HelpCircleIcon className="h-3.5 w-3.5" />
-            Aide
+            {t.dashboard.help}
           </button>
         </div>
       )}
@@ -259,7 +259,7 @@ export default function ProgressionDashboard({
           <div>
             <p className="text-sm font-semibold text-white">{t.dashboard.beforeAfter}</p>
             <p className="text-[11px] text-slate-400">
-              Ta référence face à ta dernière analyse
+              {t.dashboard.beforeAfterHint}
             </p>
           </div>
           <TrendUpIcon className="h-5 w-5 text-cyan-400" />
@@ -269,7 +269,7 @@ export default function ProgressionDashboard({
       {variations.length > 1 && (
         <div data-tour="progression-variation-selector">
           <p className="mb-1.5 text-[10px] uppercase tracking-wide text-slate-500">
-            Exercice
+            {t.dashboard.exercise}
           </p>
           <button
             type="button"
@@ -313,7 +313,7 @@ export default function ProgressionDashboard({
 
       <div data-tour="progression-period-filter">
         <p className="mb-1.5 text-[10px] uppercase tracking-wide text-slate-500">
-          Période
+          {t.dashboard.period}
         </p>
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {PERIODS.map((p, i) => (

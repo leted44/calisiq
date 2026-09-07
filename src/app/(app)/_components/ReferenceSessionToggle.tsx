@@ -63,11 +63,10 @@ export default function ReferenceSessionToggle({
         className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 py-2.5 text-sm font-medium text-slate-200 hover:border-amber-600/50 disabled:opacity-50"
       >
         <StableIcon className="h-4 w-4 text-amber-400" />
-        {saving ? "Enregistrement..." : t.dashboard.setAsReference}
+        {saving ? t.dashboard.saving : t.dashboard.setAsReference}
       </button>
       <p className="text-center text-xs text-slate-500">
-        La référence est le point de départ auquel tes prochaines analyses
-        seront comparées.
+        {t.dashboard.referenceHint}
       </p>
       {error && <p className="text-center text-xs text-red-400">{error}</p>}
     </div>

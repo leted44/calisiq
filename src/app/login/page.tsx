@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useT } from "@/lib/i18n/client";
+import LanguagePicker from "../_components/LanguagePicker";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleIcon } from "@/components/icons";
@@ -126,6 +127,9 @@ export default function LoginPage() {
             noirs du logo — le halo cyan qui se trouvait à cet endroit a été
             retiré pour cette raison. Et pas de `drop-shadow` : le visuel porte
             déjà son propre éclairage. */}
+        <div className="mb-3 flex w-full max-w-sm justify-end">
+          <LanguagePicker />
+        </div>
         <div className="relative w-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

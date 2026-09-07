@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useEffect, useState } from "react";
 
 // Indicateur d'activité de l'accueil : « N ont analysé aujourd'hui ».
@@ -55,6 +56,7 @@ function simulatedCount(now: Date): number {
 const AVATAR_INITIALS = ["M", "W", "K"];
 
 export default function TodayActivity({ realCount }: { realCount: number }) {
+  const t = useT();
   // Rendu vide au premier passage : le serveur et le navigateur ne sont pas
   // dans le même fuseau, un calcul d'horloge côté serveur produirait une
   // valeur différente de celle du client et React signalerait l'écart.
@@ -85,8 +87,8 @@ export default function TodayActivity({ realCount }: { realCount: number }) {
             ))}
           </div>
           <p className="text-sm text-slate-400">
-            <span className="font-semibold text-cyan-400">{count}</span> ont
-            analysé aujourd&apos;hui
+            <span className="font-semibold text-cyan-400">{count}</span>{" "}
+            {t.dashboard.analysedToday}
           </p>
         </>
       )}

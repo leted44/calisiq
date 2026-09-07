@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LanguagePicker from "./_components/LanguagePicker";
 import { getDictionary } from "@/lib/i18n/server";
 import type { Dictionary } from "@/lib/i18n/fr";
 import { redirect } from "next/navigation";
@@ -128,6 +129,11 @@ export default async function LandingPage() {
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl"
         />
+        {/* Au-dessus du logo et aligné à droite : présent sans disputer la
+            place au message principal. */}
+        <div className="relative mx-auto mb-2 flex max-w-md justify-end">
+          <LanguagePicker />
+        </div>
         <div className="relative mx-auto flex max-w-md flex-col items-center text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -136,7 +142,7 @@ export default async function LandingPage() {
             className="w-full max-w-[300px] mix-blend-screen"
           />
           <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
-            Analyse Intelligente de la Forme
+            {t.auth2.tagline}
           </p>
 
           <h1 className="mt-7 text-[27px] font-bold leading-[1.15] text-white">
