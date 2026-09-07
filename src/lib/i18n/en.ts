@@ -192,6 +192,8 @@ export const en: Dictionary = {
       "No body detected in this image. Check that the person is fully visible.",
     lowDetection: (pct: number) =>
       `Body detected on only ${pct}% of frames — check the framing and camera angle for a reliable result.`,
+    figureNeverMatched:
+      "No part of this video really looks like the selected figure. The measurement falls back to the stillest segment: check that you picked the right variation.",
     noStableHold:
       "No position held still for long enough — the hold duration could not be measured. Film with the phone propped up rather than handheld if you can.",
     noReps:

@@ -459,13 +459,43 @@ function smooth(values: number[], windowSize = 5): number[] {
   });
 }
 
-export type HoldWindow = { start: number; end: number; detected: boolean };
+export type HoldWindow = {
+  start: number;
+  end: number;
+  detected: boolean;
+  /**
+   * Vrai quand la fenêtre retenue correspond bien à la figure demandée.
+   *
+   * Faux lorsqu'aucun segment ne ressemblait à la figure et qu'il a fallu
+   * retomber sur la simple immobilité. La mesure existe alors quand même,
+   * mais elle porte sur un segment dont rien ne garantit qu'il montre la
+   * position visée : l'appelant doit le dire.
+   */
+  matchedFigure: boolean;
+};
 
 // Trouve le plus long segment où le corps reste quasi immobile (le hold),
 // en excluant la mise en place avant et la sortie de figure après.
+//
+// L'IMMOBILITÉ NE SUFFIT PAS
+//
+// C'était le seul critère, et il produisait des mesures fausses. Quelqu'un
+// suspendu à une barre avant d'entamer son front lever est parfaitement
+// immobile : ce segment gagnait le concours de stabilité, le chrono partait
+// avant le début de la figure, et surtout la médiane des angles se calculait
+// en partie sur une suspension. Le défaut se voyait au chrono, il touchait
+// aussi la note.
+//
+// D'où le second critère : le segment doit RESSEMBLER à la figure. Le
+// prédicat est fourni par l'appelant, seul à connaître la grille de notation.
 export function detectHoldWindow(
   frames: NormalizedLandmark[][],
-  options?: { threshold?: number; minFrames?: number }
+  options?: {
+    threshold?: number;
+    minFrames?: number;
+    /** Vrai si l'image montre plausiblement la figure demandée. */
+    isInFigure?: (index: number) => boolean;
+  }
 ): HoldWindow {
   // Relevé de 0.004 à 0.008 puis à 0.02 : un hold réel tremble souvent
   // beaucoup (manque de force, fatigue) sans que ce soit un vrai mouvement
@@ -476,7 +506,8 @@ export function detectHoldWindow(
   const threshold = options?.threshold ?? 0.02;
   const minFrames = options?.minFrames ?? 15;
 
-  if (frames.length === 0) return { start: 0, end: 0, detected: false };
+  if (frames.length === 0)
+    return { start: 0, end: 0, detected: false, matchedFigure: false };
 
   const centers = frames.map(frameCenter);
   const rawMotion = [0];
@@ -485,27 +516,59 @@ export function detectHoldWindow(
   }
   const motion = smooth(rawMotion);
 
-  let bestStart = 0;
-  let bestLength = 0;
-  let currentStart = 0;
+  // Recherche du plus long segment stable, avec ou sans filtre de forme. Le
+  // même parcours sert deux fois : une passe filtrée, et une passe de repli
+  // si la première ne trouve rien.
+  function plusLongSegment(filtre?: (index: number) => boolean) {
+    let bestStart = 0;
+    let bestLength = 0;
+    let currentStart = 0;
 
-  for (let i = 0; i < motion.length; i++) {
-    if (motion[i] > threshold) {
-      currentStart = i + 1;
-      continue;
+    for (let i = 0; i < motion.length; i++) {
+      // Une image trop mobile OU qui ne montre pas la figure coupe le segment.
+      if (motion[i] > threshold || (filtre && !filtre(i))) {
+        currentStart = i + 1;
+        continue;
+      }
+      const length = i - currentStart + 1;
+      if (length > bestLength) {
+        bestLength = length;
+        bestStart = currentStart;
+      }
     }
-    const length = i - currentStart + 1;
-    if (length > bestLength) {
-      bestLength = length;
-      bestStart = currentStart;
-    }
+    return { bestStart, bestLength };
   }
 
-  if (bestLength < minFrames) {
-    return { start: 0, end: frames.length - 1, detected: false };
+  const filtre = plusLongSegment(options?.isInFigure);
+  if (filtre.bestLength >= minFrames) {
+    return {
+      start: filtre.bestStart,
+      end: filtre.bestStart + filtre.bestLength - 1,
+      detected: true,
+      matchedFigure: true,
+    };
   }
 
-  return { start: bestStart, end: bestStart + bestLength - 1, detected: true };
+  // Repli : aucun segment ne ressemblait à la figure assez longtemps. Plutôt
+  // que de ne rien mesurer, on reprend le plus long segment immobile — c'est
+  // l'ancien comportement — en signalant que la correspondance n'est pas
+  // établie.
+  const brut = plusLongSegment();
+  if (brut.bestLength < minFrames) {
+    return {
+      start: 0,
+      end: frames.length - 1,
+      detected: false,
+      matchedFigure: false,
+    };
+  }
+
+  return {
+    start: brut.bestStart,
+    end: brut.bestStart + brut.bestLength - 1,
+    detected: true,
+    matchedFigure: options?.isInFigure === undefined,
+  };
 }
 
 export function medianAngles(frames: PoseAngles[]): PoseAngles {

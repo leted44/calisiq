@@ -197,6 +197,8 @@ export const fr = {
       "Aucun corps détecté sur cette image. Vérifie que la personne est entièrement visible.",
     lowDetection: (pct: number) =>
       `Corps détecté seulement sur ${pct}% des frames — vérifie le cadrage et l'angle de caméra pour un résultat fiable.`,
+    figureNeverMatched:
+      "Aucun passage de cette vidéo ne ressemble vraiment à la figure choisie. La mesure porte sur le segment le plus immobile, faute de mieux : vérifie que tu as bien sélectionné la bonne variation.",
     noStableHold:
       "Aucune position stable assez longue détectée — la durée du hold n'a pas pu être mesurée. Filme si possible avec le téléphone posé/stable plutôt qu'à la main.",
     noReps:

@@ -41,6 +41,12 @@ import { en } from "@/lib/i18n/en";
 // une boucle d'animation, hors de tout composant.
 const w = (lang: Lang) => (lang === "en" ? en.warnings : fr.warnings);
 
+// Note minimale, sur le critère le plus faible, pour qu'une image compte
+// comme montrant la figure. Deux sur dix : assez bas pour accepter une
+// exécution médiocre, assez haut pour rejeter une position qui n'a rien à
+// voir, comme une suspension avant l'entrée en figure.
+const IN_FIGURE_FLOOR = 2;
+
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
 export function getLandmarker() {
@@ -230,7 +236,30 @@ export async function runPoseAnalysis({
     };
   }
 
-  const window = detectHoldWindow(frames);
+  // Filtre de forme passé à la détection de fenêtre.
+  //
+  // Une image compte comme « dans la figure » quand son critère le PLUS FAIBLE
+  // reste au-dessus d'un plancher. La moyenne ne suffisait pas : quelqu'un
+  // suspendu bras tendus avant son front lever obtient un excellent score de
+  // coude, ce qui remonte la moyenne alors que la hanche, elle, dit clairement
+  // qu'il n'est pas dans la figure. C'est le critère le plus bas qui trahit
+  // une position absente, pas la moyenne.
+  //
+  // Sans progression — mode mesure de la calibration — aucun filtre : on
+  // cherche alors les angles réels sans présumer d'une figure.
+  const isInFigure =
+    progression !== null && !isRepProgression(progression)
+      ? (index: number) => {
+          const scores = scoreAngles(
+            angles[index],
+            progression as Progression
+          ).filter((s) => Number.isFinite(s.score));
+          if (scores.length === 0) return false;
+          return Math.min(...scores.map((s) => s.score)) >= IN_FIGURE_FLOOR;
+        }
+      : undefined;
+
+  const window = detectHoldWindow(frames, { isInFigure });
   const holdAngles = angles.slice(window.start, window.end + 1);
   const median = medianAngles(holdAngles);
   // Si aucun segment immobile assez long n'est trouvé, detectHoldWindow
@@ -256,6 +285,12 @@ export async function runPoseAnalysis({
     warningParts.push(
       w(lang).lowDetection(Math.round(detectionRate * 100))
     );
+  }
+  // La fenêtre existe mais rien n'y ressemblait à la figure : la mesure est
+  // faite quand même, sur le segment le plus immobile, et il faut le dire.
+  // C'est presque toujours le signe d'une variation mal choisie.
+  if (window.detected && !window.matchedFigure) {
+    warningParts.push(w(lang).figureNeverMatched);
   }
   if (!window.detected) {
     warningParts.push(
@@ -563,7 +598,7 @@ export async function measureImage(
     framesAnalyzed: 1,
     detectionRate: 1,
     warning: null,
-    holdWindow: { start: 0, end: 0, detected: true },
+    holdWindow: { start: 0, end: 0, detected: true, matchedFigure: true },
     holdDurationSeconds: 0,
     holdStartSeconds: 0,
     repCount: null,
