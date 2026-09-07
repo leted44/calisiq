@@ -12,6 +12,7 @@ import { drawAngleLabels } from "./canvasHud";
 import { buildTargetPose, type TargetPose } from "./targetPose";
 import { isRepProgression, type AnyProgression, type Progression } from "./grid";
 import type { Lang } from "@/lib/i18n/config";
+import { en } from "@/lib/i18n/en";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -33,9 +34,21 @@ function sleep(ms: number): Promise<void> {
 // pixels.
 const MAX_EXPORT_DIMENSION = 3840;
 
+// Libellé d'un critère dans la langue de l'export.
+function critereLabel(critere: CriterionScore["critere"], lang: Lang): string {
+  return lang === "en"
+    ? CRITERE_LABELS_EN[critere] ?? CRITERE_LABELS[critere]
+    : CRITERE_LABELS[critere];
+}
+
 // Libellés dessinés dans la vidéo. Copie française conservée ici plutôt que
 // lue au dictionnaire : ce module tourne sur un canvas hors React, et la
 // langue lui est passée en paramètre.
+// Libellés anglais des mêmes critères, lus quand la vidéo est exportée en
+// anglais. Repris du dictionnaire d'interface pour que la vidéo et l'écran
+// disent le même mot.
+const CRITERE_LABELS_EN = en.criteria.labels;
+
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   rep_lockout: "Extension",
   rep_peak: "Amplitude",
@@ -151,7 +164,8 @@ function drawHud(
     repsDone: number | null;
     globalScoreValue: number;
     scores: CriterionScore[];
-  }
+  },
+  lang: Lang
 ) {
   const w = canvas.width;
   const h = canvas.height;
@@ -267,7 +281,7 @@ function drawHud(
     ctx.textAlign = "left";
     ctx.fillStyle = "#e2e8f0";
     ctx.font = `600 ${10 * scale}px sans-serif`;
-    ctx.fillText(CRITERE_LABELS[s.critere], cardX + cardPadding, textY);
+    ctx.fillText(critereLabel(s.critere, lang), cardX + cardPadding, textY);
 
     fillRoundedRect(ctx, barX, barY, barWidth, barHeight, barHeight / 2, "rgba(148,163,184,0.25)");
     const filledWidth = Math.max(
@@ -359,7 +373,8 @@ function drawOutro(
     // affiché en dernier bloc pour rappeler d'où vient le score final.
     scores: CriterionScore[];
     cardOpacity: number;
-  }
+  },
+  lang: Lang
 ) {
   const w = canvas.width;
   const h = canvas.height;
@@ -493,7 +508,7 @@ function drawOutro(
       ctx.textAlign = "left";
       ctx.fillStyle = "#e2e8f0";
       ctx.font = `600 ${9 * scale}px sans-serif`;
-      ctx.fillText(CRITERE_LABELS[s.critere], cardX + cardPaddingX, textY);
+      ctx.fillText(critereLabel(s.critere, lang), cardX + cardPaddingX, textY);
 
       fillRoundedRect(ctx, barX, barY, barWidth, barHeight, barHeight / 2, "rgba(148,163,184,0.25)");
       const filledWidth = Math.max(
@@ -593,7 +608,8 @@ function drawWeakPointOverlay(
     cue: string | null;
     // 0..1, avance en boucle pour animer la pulsation des anneaux.
     phase: number;
-  }
+  },
+  lang: Lang
 ) {
   const w = canvas.width;
   const h = canvas.height;
@@ -654,7 +670,7 @@ function drawWeakPointOverlay(
   ctx.fillStyle = "#f8fafc";
   ctx.font = `700 ${13 * scale}px sans-serif`;
   ctx.fillText(
-    CRITERE_LABELS[critere],
+    critereLabel(critere, lang),
     cardX + cardPadding,
     cardY + cardPadding + 27 * scale
   );
@@ -1031,7 +1047,7 @@ export async function recordAnnotatedVideo({
         repsDone,
         globalScoreValue: liveGlobalScoreValue,
         scores: liveScores,
-      });
+      }, lang);
       commitFrame();
     },
   });
@@ -1137,7 +1153,7 @@ export async function recordAnnotatedVideo({
             score: worstScore,
             cue: weakPointCue ?? null,
             phase,
-          });
+          }, lang);
           commitFrame();
         },
       });
@@ -1163,7 +1179,7 @@ export async function recordAnnotatedVideo({
       holdDurationSeconds: holdDurationSeconds ?? null,
       scores,
       cardOpacity,
-    });
+    }, lang);
     commitFrame();
     await sleep(OUTRO_STEP_MS);
   }

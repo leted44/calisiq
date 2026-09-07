@@ -296,6 +296,10 @@ export const fr = {
     photoUploadFailed: (m: string) => `La photo n'a pas pu être envoyée : ${m}`,
   },
   landing: {
+    heroQuestion: "Ta planche est-elle vraiment horizontale ?",
+    heroBody: "Filme ton hold. CalisIQ mesure tes angles articulaires réels, note chaque critère technique sur 10 et te désigne celui qui te coûte le plus de points.",
+    heroFree: "Gratuit, sans installation. Ton email suffit.",
+    heroPunch: "Un avis, ça se discute. Une mesure, non.",
     metaTitle: "CalisIQ — Analyse ta technique en calisthénie",
     metaDescription: "Filme ta planche, ton front lever ou ton handstand : CalisIQ mesure tes angles articulaires, note chaque critère et te dit exactement quoi corriger.",
     hero: "Une note sur 10 par critère technique, mesurée sur tes vraies articulations. Pas un avis, une mesure.",

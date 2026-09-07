@@ -140,12 +140,10 @@ export default async function LandingPage() {
           </p>
 
           <h1 className="mt-7 text-[27px] font-bold leading-[1.15] text-white">
-            Ta planche est-elle vraiment horizontale&nbsp;?
+            {t.landing.heroQuestion}
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-slate-400">
-            Filme ton hold. CalisIQ mesure tes angles articulaires réels, note
-            chaque critère technique sur 10 et te désigne celui qui te coûte le
-            plus de points.
+            {t.landing.heroBody}
           </p>
 
           <Link
@@ -155,7 +153,7 @@ export default async function LandingPage() {
             {t.landing.ctaFirst}
           </Link>
           <p className="mt-2.5 text-xs text-slate-500">
-            Gratuit, sans installation. Ton email suffit.
+            {t.landing.heroFree}
           </p>
         </div>
       </section>
@@ -167,7 +165,7 @@ export default async function LandingPage() {
             {t.landing.resultHeading}
           </p>
           <h2 className="mt-2 text-[22px] font-bold leading-tight text-white">
-            Un avis, ça se discute. Une mesure, non.
+            {t.landing.heroPunch}
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-slate-400">
             Chaque articulation est suivie image par image pendant ton hold. Le

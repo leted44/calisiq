@@ -291,6 +291,10 @@ export const en: Dictionary = {
     photoUploadFailed: (m: string) => `The photo could not be uploaded: ${m}`,
   },
   landing: {
+    heroQuestion: "Is your planche actually horizontal?",
+    heroBody: "Film your hold. CalisIQ measures your real joint angles, scores every technical criterion out of 10 and names the one costing you the most points.",
+    heroFree: "Free, nothing to install. Your email is enough.",
+    heroPunch: "An opinion is arguable. A measurement is not.",
     metaTitle: "CalisIQ — Analyse your calisthenics technique",
     metaDescription: "Film your planche, front lever or handstand: CalisIQ measures your joint angles, scores every criterion and tells you exactly what to fix.",
     hero: "A score out of 10 for every technical criterion, measured on your actual joints. Not an opinion, a measurement.",
