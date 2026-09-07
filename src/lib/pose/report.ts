@@ -1,4 +1,8 @@
 import type { CriterionScore } from "./scoring";
+import type { Lang } from "@/lib/i18n/config";
+import { reportEn } from "@/lib/i18n/report.en";
+import { figuresFr } from "@/lib/i18n/figures.fr";
+import { figuresEn } from "@/lib/i18n/figures.en";
 import { isRepProgression } from "./grid";
 
 export const PROGRESSION_LABELS: Record<string, string> = {
@@ -137,7 +141,7 @@ export const TIER_COLORS: Record<ScoreTier, string> = {
   faible: "text-orange-400 border-orange-500/40 bg-orange-500/10",
 };
 
-const PLANCHE_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
+export const PLANCHE_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   shoulder_protraction: {
     optimal: "Épaules bien avancées devant les poignets, la charge est correctement transférée sur les bras.",
     bon: "Protraction correcte, encore un peu de marge pour avancer les épaules.",
@@ -175,7 +179,7 @@ const PLANCHE_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   },
 };
 
-const HANDSTAND_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
+export const HANDSTAND_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   shoulder_flexion: {
     optimal: "Épaules bien ouvertes, bras overhead, oreilles cachées par les épaules.",
     bon: "Ouverture d'épaule correcte, encore un peu de marge pour pousser dans le sol.",
@@ -208,7 +212,7 @@ const HANDSTAND_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   },
 };
 
-const FRONT_LEVER_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
+export const FRONT_LEVER_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   hip_angle: {
     optimal: "Angle hanche-genou très proche de la cible pour cette variation.",
     bon: "Angle hanche-genou raisonnablement proche de la cible.",
@@ -231,7 +235,7 @@ const FRONT_LEVER_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   },
 };
 
-const DRAGON_FLAG_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
+export const DRAGON_FLAG_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   pelvis_sag: {
     optimal: "Gainage tenu du début à la fin, le bassin ne descend jamais sous la ligne du corps.",
     bon: "Le bassin descend un peu en fin de course, le gainage tient globalement.",
@@ -264,7 +268,7 @@ const DRAGON_FLAG_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   },
 };
 
-const REP_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
+export const REP_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   rep_lockout: {
     optimal: "Chaque répétition part d'une extension complète.",
     bon: "Extension presque complète en bas de chaque répétition.",
@@ -296,22 +300,54 @@ const REP_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
   },
 };
 
+// La langue est un paramètre et non une lecture de contexte : cette fonction
+// est appelée aussi bien depuis un composant client que depuis le rendu de la
+// vidéo annotée, où aucun contexte React n'existe.
 export function describeCriterion(
   critere: CriterionScore["critere"],
   score: number,
-  figure: "planche" | "handstand" | "front_lever" | "dragon_flag" | "reps"
+  figure: "planche" | "handstand" | "front_lever" | "dragon_flag" | "reps",
+  lang: Lang = "fr"
 ): string {
-  const map =
-    figure === "handstand"
-      ? HANDSTAND_DESCRIPTIONS
-      : figure === "front_lever"
-      ? FRONT_LEVER_DESCRIPTIONS
-      : figure === "dragon_flag"
-      ? DRAGON_FLAG_DESCRIPTIONS
-      : figure === "reps"
-      ? REP_DESCRIPTIONS
-      : PLANCHE_DESCRIPTIONS;
-  return map[critere]?.[tierFor(score)] ?? "";
+  const tables =
+    lang === "en"
+      ? {
+          handstand: reportEn.handstand,
+          front_lever: reportEn.front_lever,
+          dragon_flag: reportEn.dragon_flag,
+          reps: reportEn.reps,
+          planche: reportEn.planche,
+        }
+      : {
+          handstand: HANDSTAND_DESCRIPTIONS,
+          front_lever: FRONT_LEVER_DESCRIPTIONS,
+          dragon_flag: DRAGON_FLAG_DESCRIPTIONS,
+          reps: REP_DESCRIPTIONS,
+          planche: PLANCHE_DESCRIPTIONS,
+        };
+  return tables[figure][critere]?.[tierFor(score)] ?? "";
+}
+
+/** Nom complet d'une progression, dans la langue demandée. */
+export function progressionLabel(progression: string, lang: Lang = "fr"): string {
+  const table =
+    lang === "en" ? figuresEn.progressionLabels : figuresFr.progressionLabels;
+  return table[progression] ?? progression;
+}
+
+/** Ce que mesure un critère, dans la langue demandée. */
+export function criterionDefinition(
+  critere: CriterionScore["critere"],
+  lang: Lang = "fr"
+): string {
+  return lang === "en"
+    ? reportEn.critereDefinitions[critere] ?? ""
+    : CRITERE_DEFINITIONS[critere];
+}
+
+/** Libellé du palier de score, dans la langue demandée. */
+export function tierLabel(tier: ScoreTier, lang: Lang = "fr"): string {
+  return lang === "en" ? reportEn.tierLabels[tier] : TIER_LABELS[tier];
 }
 
 // Une progression est dite calibrée quand au moins un de ses critères a été
