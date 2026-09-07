@@ -1,9 +1,11 @@
 import AnalysisForm from "../_components/AnalysisForm";
+import { getDictionary } from "@/lib/i18n/server";
 import TodayActivity from "../_components/TodayActivity";
 import { createClient } from "@/lib/supabase/server";
 import { LightbulbIcon, BodyIcon, TimerIcon } from "@/components/icons";
 
 export default async function AccueilPage() {
+  const t = await getDictionary();
   const supabase = await createClient();
   // Total réel des analyses du jour, tous comptes confondus. La RLS empêche de
   // le calculer côté client, d'où la fonction dédiée. En cas d'échec — migration
@@ -40,15 +42,15 @@ export default async function AccueilPage() {
       <div className="relative grid w-full max-w-md grid-cols-3 gap-2">
         <div className="flex flex-col items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 p-3 text-center">
           <LightbulbIcon className="h-5 w-5 text-cyan-400" />
-          <span className="text-xs text-slate-400">Bonne lumière</span>
+          <span className="text-xs text-slate-400">{t.tips.goodLightShort}</span>
         </div>
         <div className="flex flex-col items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 p-3 text-center">
           <BodyIcon className="h-5 w-5 text-cyan-400" />
-          <span className="text-xs text-slate-400">Corps entier visible</span>
+          <span className="text-xs text-slate-400">{t.tips.fullBodyShort}</span>
         </div>
         <div className="flex flex-col items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 p-3 text-center">
           <TimerIcon className="h-5 w-5 text-cyan-400" />
-          <span className="text-xs text-slate-400">2-3 sec de hold</span>
+          <span className="text-xs text-slate-400">{t.tips.holdShort}</span>
         </div>
       </div>
 

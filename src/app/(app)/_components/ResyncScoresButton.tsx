@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +17,7 @@ type Report = {
 };
 
 export default function ResyncScoresButton() {
+  const t = useT();
   const router = useRouter();
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState("");
@@ -25,7 +27,7 @@ export default function ResyncScoresButton() {
   async function handleResync() {
     if (
       !confirm(
-        "Recalculer les notes des figures de ton Historique avec la grille actuelle ? Les angles mesurés ne changent pas, et les échantillons de calibration ne sont pas touchés."
+        t.dashboard.resyncConfirm
       )
     ) {
       return;

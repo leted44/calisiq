@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
+import type { Dictionary } from "@/lib/i18n/fr";
 import {
   BodyIcon,
   JointIcon,
@@ -8,12 +10,12 @@ import {
   AngleWarningIcon,
 } from "@/components/icons";
 
-const TIPS = [
-  { Icon: BodyIcon, text: "Cadre ton corps en entier, de la tête aux pieds." },
-  { Icon: JointIcon, text: "Évite les vêtements amples qui cachent tes articulations." },
-  { Icon: LightbulbIcon, text: "Filme dans un endroit bien éclairé." },
-  { Icon: StableIcon, text: "Stabilise la caméra (trépied ou support fixe)." },
-  { Icon: AngleWarningIcon, text: "Place la caméra à hauteur du buste, sans contre-plongée." },
+const TIPS: { Icon: typeof BodyIcon; text: (t: Dictionary) => string }[] = [
+  { Icon: BodyIcon, text: (t) => t.tips.fullBody },
+  { Icon: JointIcon, text: (t) => t.tips.tightClothes },
+  { Icon: LightbulbIcon, text: (t) => t.tips.goodLight },
+  { Icon: StableIcon, text: (t) => t.tips.stableCamera },
+  { Icon: AngleWarningIcon, text: (t) => t.tips.chestHeight },
 ];
 
 // En straddle, les jambes sont écartées de part et d'autre du corps : une
@@ -21,7 +23,7 @@ const TIPS = [
 // superposent à l'écran, et l'app perd le suivi d'une des deux.
 const STRADDLE_TIP = {
   Icon: AngleWarningIcon,
-  text: "Straddle : filme légèrement de biais (pas totalement de face ni de profil) pour bien distinguer tes deux jambes.",
+  text: (t: Dictionary) => t.tips.straddleAngle,
 };
 
 export const HIDE_TIPS_KEY = "calisiq_hide_capture_tips";
@@ -40,6 +42,8 @@ export default function CaptureTipsModal({
   onClose: () => void;
   isStraddle?: boolean;
 }) {
+  const t = useT();
+
   function handleContinue(hide: boolean) {
     if (hide) {
       window.localStorage.setItem(HIDE_TIPS_KEY, "1");
@@ -74,13 +78,13 @@ export default function CaptureTipsModal({
         <ul className="space-y-3">
           {tips.map(({ Icon, text }) => (
             <li
-              key={text}
+              key={text(t)}
               className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-2.5"
             >
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-400">
                 <Icon />
               </span>
-              <span className="text-sm text-slate-200">{text}</span>
+              <span className="text-sm text-slate-200">{text(t)}</span>
             </li>
           ))}
         </ul>

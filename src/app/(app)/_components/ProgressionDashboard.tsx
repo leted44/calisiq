@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
+import type { Dictionary } from "@/lib/i18n/fr";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -36,15 +38,16 @@ const GREEN = "#4ade80";
 const ORANGE = "#fb923c";
 const CYAN = "#22d3ee";
 
-type Period = { label: string; days: number | null };
+// Libellé résolu au rendu : la table est construite au chargement du module.
+type Period = { label: (t: Dictionary) => string; days: number | null };
 const PERIODS: Period[] = [
-  { label: "2 sem", days: 14 },
-  { label: "1 mois", days: 30 },
-  { label: "3 mois", days: 90 },
-  { label: "6 mois", days: 180 },
-  { label: "Tout", days: null },
+  { label: (t) => t.dashboard.weeks2, days: 14 },
+  { label: (t) => t.dashboard.month1, days: 30 },
+  { label: (t) => t.dashboard.months3, days: 90 },
+  { label: (t) => t.dashboard.months6, days: 180 },
+  { label: (t) => t.dashboard.all, days: null },
 ];
-const DEFAULT_PERIOD_INDEX = PERIODS.length - 1; // "Tout"
+const DEFAULT_PERIOD_INDEX = PERIODS.length - 1; // t.dashboard.all
 
 function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", {
@@ -125,6 +128,7 @@ export default function ProgressionDashboard({
 }: {
   variations: VariationProgression[];
 }) {
+  const t = useT();
   const [selected, setSelected] = useState<string | null>(
     variations[0]?.variation ?? null
   );
@@ -238,7 +242,7 @@ export default function ProgressionDashboard({
           <button
             type="button"
             onClick={() => setTourOpen(true)}
-            aria-label="Revoir l'aide de cet onglet"
+            aria-label={t.dashboard.reopenHelp}
             className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-slate-400 hover:border-cyan-700 hover:text-cyan-300"
           >
             <HelpCircleIcon className="h-3.5 w-3.5" />
@@ -253,7 +257,7 @@ export default function ProgressionDashboard({
           className="flex items-center justify-between rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-4 py-3 transition-colors hover:border-cyan-400/50"
         >
           <div>
-            <p className="text-sm font-semibold text-white">Avant / Après</p>
+            <p className="text-sm font-semibold text-white">{t.dashboard.beforeAfter}</p>
             <p className="text-[11px] text-slate-400">
               Ta référence face à ta dernière analyse
             </p>
@@ -314,7 +318,7 @@ export default function ProgressionDashboard({
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {PERIODS.map((p, i) => (
             <button
-              key={p.label}
+              key={p.label(t)}
               type="button"
               onClick={() => selectPeriod(i)}
               className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -323,27 +327,27 @@ export default function ProgressionDashboard({
                   : "border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-600"
               }`}
             >
-              {p.label}
+              {p.label(t)}
             </button>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2" data-tour="progression-stats">
-        <StatCard label="Séances" value={String(n)} />
+        <StatCard label={t.dashboard.sessions} value={String(n)} />
         <StatCard
-          label="Score actuel"
+          label={t.dashboard.currentScore}
           value={scoreStats ? `${scoreStats.latest.toFixed(1)}/10` : "—"}
           valueColor={scoreStats ? TIER_COLORS[tierFor(scoreStats.latest)] : undefined}
         />
         <StatCard
-          label="Record score"
+          label={t.dashboard.bestScore}
           value={scoreStats ? `${scoreStats.best.score.toFixed(1)}/10` : "—"}
           valueColor={GREEN}
           icon={<CrownIcon className="h-4 w-4 text-yellow-400" />}
         />
         <StatCard
-          label="Évolution score"
+          label={t.dashboard.scoreChange}
           value={
             scoreDelta === null ? "—" : `${scoreDelta >= 0 ? "+" : ""}${scoreDelta.toFixed(1)}`
           }
@@ -374,7 +378,7 @@ export default function ProgressionDashboard({
             data-tour="progression-chart"
           >
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold text-white">Score</p>
+              <p className="text-sm font-semibold text-white">{t.dashboard.score}</p>
               {isNewRecord && (
                 <div className="flex items-center gap-1 text-xs font-medium text-yellow-400">
                   <CrownIcon className="h-3.5 w-3.5" />
@@ -404,7 +408,7 @@ export default function ProgressionDashboard({
             data-tour="progression-hold-chart"
           >
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold text-white">Durée de hold</p>
+              <p className="text-sm font-semibold text-white">{t.dashboard.holdDuration}</p>
               <div className="flex gap-3 text-[11px] text-slate-500">
                 <span>
                   Meilleur{" "}
@@ -450,11 +454,12 @@ export default function ProgressionDashboard({
 }
 
 function EmptyPeriodPanel({ onReset }: { onReset: () => void }) {
+  const t = useT();
   return (
     <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900 p-6 text-center">
-      <p className="text-sm font-medium text-white">Aucune séance dans cette période</p>
+      <p className="text-sm font-medium text-white">{t.dashboard.emptyPeriod}</p>
       <p className="text-xs text-slate-500">
-        Élargis la période pour retrouver tes séances plus anciennes.
+        {t.dashboard.widenPeriod}
       </p>
       <button
         type="button"

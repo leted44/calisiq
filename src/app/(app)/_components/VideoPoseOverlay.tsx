@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useRef, useState } from "react";
 import { runPoseAnalysis, type PoseAnalysisResult } from "@/lib/pose/runAnalysis";
 import type { Progression } from "@/lib/pose/grid";
@@ -35,6 +36,7 @@ export default function VideoPoseOverlay({
   trimEnd?: number;
   initialReport?: PersistedReport | null;
 }) {
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -118,7 +120,7 @@ export default function VideoPoseOverlay({
       }
     } catch (err) {
       console.error(err);
-      setError("L'analyse a échoué : " + (err as Error).message);
+      setError(t.analysis.errors.analysisFailed((err as Error).message));
     } finally {
       setAnalyzing(false);
     }

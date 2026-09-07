@@ -1,11 +1,13 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
+import type { Dictionary } from "@/lib/i18n/fr";
 import { useState } from "react";
 
 type TourStep = {
   target: string;
-  title: string;
-  description: string;
+  title: (t: Dictionary) => string;
+  description: (t: Dictionary) => string;
 };
 
 // Chaque étape cible un élément marqué par un attribut data-tour="..." dans
@@ -14,42 +16,38 @@ type TourStep = {
 // si l'utilisateur en a analysé plusieurs), pour ne jamais pointer vers du
 // vide. Ce composant n'est monté par le parent que lorsque la visite est
 // ouverte, donc ce filtrage se fait une seule fois, au montage.
+// Titre et description sont des fonctions du dictionnaire : la table est
+// construite au chargement du module, avant que la langue soit connue.
 const STEPS: TourStep[] = [
   {
     target: "progression-variation-selector",
-    title: "Change de figure",
-    description:
-      "Bascule d'un tap entre toutes les figures que tu as déjà analysées plusieurs fois.",
+    title: (t) => t.tour.switchFigureTitle,
+    description: (t) => t.tour.switchFigure,
   },
   {
     target: "progression-period-filter",
-    title: "Filtre par période",
-    description:
-      "Concentre-toi sur une fenêtre précise (2 semaines, 1 mois...) ou regarde toute ton histoire sur cette figure.",
+    title: (t) => t.tour.filterPeriod,
+    description: (t) => t.tour.filterPeriodBody,
   },
   {
     target: "progression-stats",
-    title: "Tes chiffres clés",
-    description:
-      "Nombre de séances, score actuel, record personnel et évolution depuis ta toute première tentative sur cette figure.",
+    title: (t) => t.tour.keyNumbers,
+    description: (t) => t.tour.keyNumbersBody,
   },
   {
     target: "progression-chart",
-    title: "Ta courbe de progression",
-    description:
-      "Chaque point représente une séance analysée. Touche un point pour afficher sa date et son score exact.",
+    title: (t) => t.tour.chartTitle,
+    description: (t) => t.tour.chartBody,
   },
   {
     target: "progression-hold-chart",
-    title: "Ta durée de hold",
-    description:
-      "Suis aussi combien de temps tu tiens la position, pas seulement la qualité technique — les deux comptent pour progresser.",
+    title: (t) => t.tour.holdDuration,
+    description: (t) => t.tour.holdDurationBody,
   },
   {
     target: "progression-session-link",
-    title: "Retrouve le détail",
-    description:
-      "Une fois un point sélectionné, appuie sur « Voir cette séance » pour rouvrir l'analyse complète : squelette, critères et conseils.",
+    title: (t) => t.tour.findDetail,
+    description: (t) => t.tour.findDetailBody,
   },
 ];
 
@@ -77,6 +75,7 @@ function computeAvailableSteps(): TourStep[] {
 // gestionnaire de clic, jamais dans un effet, pour ne jamais déclencher de
 // setState en cascade depuis un effet.
 export default function ProgressionTour({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const [steps] = useState<TourStep[]>(() => computeAvailableSteps());
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(() =>
@@ -163,19 +162,19 @@ export default function ProgressionTour({ onClose }: { onClose: () => void }) {
             onClick={finish}
             className="text-slate-500 hover:text-slate-300"
           >
-            Passer
+            {t.tour.skip}
           </button>
         </div>
-        <h3 className="mb-1 text-base font-bold text-white">{currentStep.title}</h3>
+        <h3 className="mb-1 text-base font-bold text-white">{currentStep.title(t)}</h3>
         <p className="mb-4 text-sm leading-relaxed text-slate-400">
-          {currentStep.description}
+          {currentStep.description(t)}
         </p>
         <button
           type="button"
           onClick={next}
           className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 text-sm font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)]"
         >
-          {isLast ? "Terminé" : "Suivant"}
+          {isLast ? t.tour.done : t.tour.next}
         </button>
       </div>
     </div>

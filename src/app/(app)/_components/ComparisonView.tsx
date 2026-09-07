@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useRef, useState } from "react";
 import { formatHoldDuration } from "@/lib/pose/report";
 import { TrendUpIcon, TimerIcon } from "@/components/icons";
@@ -125,6 +126,7 @@ export default function ComparisonView({
   before: ComparisonSide;
   after: ComparisonSide;
 }) {
+  const t = useT();
   const beforeRef = useRef<HTMLVideoElement>(null);
   const afterRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -168,13 +170,13 @@ export default function ComparisonView({
       <div className="flex gap-3">
         <SideVideo
           side={before}
-          tag="Avant"
+          tag={t.dashboard.before}
           tagColor="bg-slate-800/90 text-slate-300"
           videoRef={beforeRef}
         />
         <SideVideo
           side={after}
-          tag="Après"
+          tag={t.dashboard.after}
           tagColor="bg-cyan-500/90 text-white"
           videoRef={afterRef}
         />
@@ -185,7 +187,7 @@ export default function ComparisonView({
         onClick={handleTogglePlay}
         className="w-full rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-sm font-medium text-slate-200 hover:border-cyan-700"
       >
-        {playing ? "Mettre en pause" : "Lancer les deux vidéos"}
+        {playing ? t.dashboard.pause : t.dashboard.playBoth}
       </button>
 
       {(scoreDelta !== null || holdDelta !== null) && (
@@ -194,7 +196,7 @@ export default function ComparisonView({
             <DeltaBadge
               value={scoreDelta}
               suffix=" pts"
-              label="Score"
+              label={t.dashboard.score}
               icon={TrendUpIcon}
             />
           )}
@@ -202,7 +204,7 @@ export default function ComparisonView({
             <DeltaBadge
               value={holdDelta}
               suffix="s"
-              label="Hold"
+              label={t.dashboard.hold}
               icon={TimerIcon}
             />
           )}

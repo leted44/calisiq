@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +13,7 @@ export default function ReferenceSessionToggle({
   sessionId: string;
   isReference: boolean;
 }) {
+  const t = useT();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function ReferenceSessionToggle({
         className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-700 py-2.5 text-sm font-medium text-slate-200 hover:border-amber-600/50 disabled:opacity-50"
       >
         <StableIcon className="h-4 w-4 text-amber-400" />
-        {saving ? "Enregistrement..." : "Définir comme référence"}
+        {saving ? "Enregistrement..." : t.dashboard.setAsReference}
       </button>
       <p className="text-center text-xs text-slate-500">
         La référence est le point de départ auquel tes prochaines analyses
