@@ -41,9 +41,12 @@ export const en: Dictionary = {
     reanalysePose: "Re-analyse the pose",
     weakPointBadge: "WEAK POINT",
     notAnalysable: "Not analysable yet",
+    approximate: "Approximate score: thresholds not yet validated on real figures",
     difficulty: "Difficulty",
     notAnalysableLong:
       "Not analysable yet, the scoring for this variation still has to be built.",
+    approximateLong:
+      "Approximate score: the thresholds for this variation have not been validated on real figures yet.",
     notAvailableYet:
       "Analysis for this variation is not available yet — its scoring criteria are still being calibrated.",
     videoSection: "Video",
@@ -382,7 +385,7 @@ export const en: Dictionary = {
     q3: "Do I need any equipment?",
     a3: "A phone and a way to film yourself from the side, whole body visible. That is all. No sensor, no desktop software to install.",
     q4: "What are the scores based on?",
-    a4: "On angle thresholds calibrated from real figures scored one by one, refined as samples accumulate.",
+    a4: "On angle thresholds calibrated from real figures scored one by one, refined as samples accumulate. Every criterion says whether it is calibrated or still approximate.",
     ctaFinal: "Start for free",
     privacy: "Privacy",
   },

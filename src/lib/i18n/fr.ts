@@ -43,9 +43,12 @@ export const fr = {
     reanalysePose: "Ré-analyser la pose",
     weakPointBadge: "POINT FAIBLE",
     notAnalysable: "Pas encore analysable",
+    approximate: "Note approximative : seuils pas encore validés sur des figures réelles",
     difficulty: "Difficulté",
     notAnalysableLong:
       "Pas encore analysable, la notation de cette variation reste à construire.",
+    approximateLong:
+      "Note approximative : les seuils de cette variation n'ont pas encore été validés sur des figures réelles.",
     notAvailableYet:
       "L'analyse pour cette variation n'est pas encore disponible — ses critères de score sont en cours de calibration.",
     videoSection: "Vidéo",
@@ -387,7 +390,7 @@ export const fr = {
     q3: "Il me faut du matériel ?",
     a3: "Un téléphone et de quoi te filmer de profil, corps entier visible. C'est tout. Pas de capteur, pas d'application à installer sur un ordinateur.",
     q4: "Sur quoi reposent les notes ?",
-    a4: "Sur des seuils d'angles calibrés à partir de figures réelles notées une par une, et affinés à mesure que les échantillons s'accumulent.",
+    a4: "Sur des seuils d'angles calibrés à partir de figures réelles notées une par une, et affinés à mesure que les échantillons s'accumulent. Chaque critère indique s'il est calibré ou encore approximatif.",
     ctaFinal: "Commencer gratuitement",
     privacy: "Confidentialité",
   },

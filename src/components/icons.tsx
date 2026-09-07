@@ -645,6 +645,24 @@ export function LockIcon({ className = base }: IconProps) {
   );
 }
 
+// Signe « environ » dans un cercle : la figure s'analyse, mais ses seuils
+// n'ont jamais été validés sur des vidéos réelles. La note est donc
+// approximative. Volontairement différent d'un cadenas, qui dirait à tort que
+// la figure est inutilisable.
+export function ApproximateIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M7.5 12.6c1.1-1.9 2.6-1.9 4.5 0s3.4 1.9 4.5 0"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 // Étoile de favori. Deux états dans une seule icône : le contour seul quand
 // la variation n'est pas en favori, le contour rempli quand elle l'est. Un
 // aplat sans contour perdrait sa lisibilité sur les fonds clairs des

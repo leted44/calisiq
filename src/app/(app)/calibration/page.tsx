@@ -153,25 +153,24 @@ export default async function CalibrationPage() {
                         Notes : {items.map((s) => s.rating).join(", ")}
                       </p>
                     )}
-                    {/* Seules les variations calibrées portent une pastille.
-                        L'étiquette « Aucun critère calibré » a été retirée :
-                        sur une page qui liste vingt-huit variations dont la
-                        plupart attendent encore des échantillons, elle
-                        répétait vingt fois la même absence sans rien
-                        apprendre. Le compteur d'échantillons juste au-dessus
-                        dit déjà où en est chacune. */}
-                    {calibrated.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-[11px] font-medium text-cyan-400">
-                          {calibrated.length} critère
-                          {calibrated.length > 1 ? "s" : ""} calibré
-                          {calibrated.length > 1 ? "s" : ""}
-                        </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          calibrated.length > 0
+                            ? "bg-cyan-500/15 text-cyan-400"
+                            : "bg-slate-800 text-slate-500"
+                        }`}
+                      >
+                        {calibrated.length > 0
+                          ? `${calibrated.length} critère${calibrated.length > 1 ? "s" : ""} calibré${calibrated.length > 1 ? "s" : ""}`
+                          : "Aucun critère calibré"}
+                      </span>
+                      {calibrated.length > 0 && (
                         <span className="text-[11px] text-slate-500">
                           ({calibrated.map((c) => CRITERE_LABELS[c] ?? c).join(", ")})
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 );
               })}
