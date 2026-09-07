@@ -13,6 +13,7 @@ import { buildTargetPose, type TargetPose } from "./targetPose";
 import { isRepProgression, type AnyProgression, type Progression } from "./grid";
 import type { Lang } from "@/lib/i18n/config";
 import { en } from "@/lib/i18n/en";
+import { fr } from "@/lib/i18n/fr";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -664,7 +665,11 @@ function drawWeakPointOverlay(
   ctx.textAlign = "left";
   ctx.fillStyle = accent;
   ctx.font = `700 ${9 * scale}px sans-serif`;
-  ctx.fillText("POINT FAIBLE", cardX + cardPadding, cardY + cardPadding + 8 * scale);
+  ctx.fillText(
+    lang === "en" ? en.analysis.weakPointBadge : fr.analysis.weakPointBadge,
+    cardX + cardPadding,
+    cardY + cardPadding + 8 * scale
+  );
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#f8fafc";

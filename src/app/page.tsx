@@ -184,13 +184,12 @@ export default async function LandingPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo-emblem.webp"
-              alt="Squelette superposé sur une planche, avec le score par critère"
+              alt={t.landing.resultAlt}
               className="w-full mix-blend-screen"
             />
           </div>
           <p className="mt-2.5 text-center text-xs text-slate-500">
-            Points articulaires suivis, score global et critères validés ou à
-            corriger.
+            {t.landing.resultCaption}
           </p>
         </div>
       </section>
@@ -329,11 +328,10 @@ export default async function LandingPage() {
         />
         <div className="relative mx-auto max-w-md text-center">
           <h2 className="text-[22px] font-bold leading-tight text-white">
-            Arrête de deviner si ta forme est bonne
+            {t.landing.finalHeading}
           </h2>
           <p className="mt-3 text-[15px] leading-relaxed text-slate-400">
-            Une vidéo de trois secondes, et tu sais quel critère travailler
-            cette semaine.
+            {t.landing.finalBody}
           </p>
           <Link
             href="/login"

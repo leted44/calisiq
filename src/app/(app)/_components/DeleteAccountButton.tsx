@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +12,7 @@ import { TrashIcon } from "@/components/icons";
 const CONFIRMATION_WORD = "SUPPRIMER";
 
 export default function DeleteAccountButton() {
+  const t = useT();
   const router = useRouter();
   const supabase = createClient();
   const [open, setOpen] = useState(false);
@@ -85,12 +87,10 @@ export default function DeleteAccountButton() {
     <div className="space-y-3 rounded-xl border border-red-900/60 bg-red-500/5 p-4">
       <div>
         <p className="text-sm font-semibold text-white">
-          Supprimer définitivement ton compte
+          {t.empty.deleteAccount}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-slate-400">
-          Ton profil, tes analyses, tes scores et toutes tes vidéos seront
-          effacés. Cette action est irréversible : rien n&apos;est conservé, et
-          nous ne pourrons rien restaurer.
+          {t.empty.deleteAccountBody2}
         </p>
       </div>
 

@@ -153,10 +153,10 @@ export default function VideoPoseOverlay({
           className="whitespace-nowrap rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:border-cyan-700 disabled:opacity-50"
         >
           {analyzing
-            ? "Analyse en cours..."
+            ? t.analysis.analysing
             : report
-            ? "Ré-analyser la pose"
-            : "Analyser la pose"}
+            ? t.analysis.reanalysePose
+            : t.analysis.analysePose}
         </button>
 
         {analyzing && (

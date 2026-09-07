@@ -68,7 +68,7 @@ export default async function HistoriquePage() {
                   {progressionLabel(session.progression, lang)}
                   {session.is_reference && (
                     <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
-                      Référence
+                      {t.empty.reference}
                     </span>
                   )}
                 </p>

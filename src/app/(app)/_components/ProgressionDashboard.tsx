@@ -162,11 +162,10 @@ export default function ProgressionDashboard({
       <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-6 text-center">
         <TrendUpIcon className="mx-auto h-8 w-8 text-slate-600" />
         <p className="text-sm font-medium text-white">
-          Pas encore de progression à afficher
+          {t.empty.noProgressYet}
         </p>
         <p className="text-xs text-slate-500">
-          Termine ta première analyse pour commencer à suivre ton évolution,
-          figure par figure.
+          {t.empty.noProgressBody}
         </p>
         <Link
           href="/analyser"
@@ -361,7 +360,7 @@ export default function ProgressionDashboard({
         current.points.length < 2 ? (
           <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900 p-6 text-center">
             <p className="text-sm font-medium text-white">
-              Une seule séance pour l&apos;instant
+              {t.empty.singleSession}
             </p>
             <p className="text-xs text-slate-500">
               Refais une analyse de {current.label} pour voir apparaître ta
@@ -426,7 +425,7 @@ export default function ProgressionDashboard({
             </div>
             {holdPoints.length < 2 ? (
               <p className="py-8 text-center text-xs text-slate-500">
-                Pas encore assez de données de hold sur cette période.
+                {t.empty.notEnoughHold}
               </p>
             ) : (
               <ChartWithTooltip
@@ -495,6 +494,7 @@ function ChartWithTooltip({
   formatValue: (v: number) => string;
   sessionLinkTourId?: string;
 }) {
+  const t = useT();
   const n = points.length;
 
   function xFor(i: number) {
@@ -618,7 +618,7 @@ function ChartWithTooltip({
           data-tour={sessionLinkTourId}
           className="block text-center text-xs text-cyan-400 hover:text-cyan-300"
         >
-          Voir cette séance
+          {t.empty.viewSession}
         </Link>
       )}
     </div>

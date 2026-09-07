@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getDictionary } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PROGRESSION_LABELS } from "@/lib/pose/report";
@@ -31,6 +32,7 @@ export default async function ComparisonPage({
 }: {
   params: Promise<{ progression: string }>;
 }) {
+  const t = await getDictionary();
   const { progression } = await params;
   const supabase = await createClient();
 
@@ -100,7 +102,7 @@ export default async function ComparisonPage({
         </Link>
         <h1 className="text-2xl font-bold text-white">{label}</h1>
         <p className="text-sm text-slate-400">
-          Ta référence face à ta dernière analyse.
+          {t.empty.beforeAfterSubtitle}
         </p>
       </div>
 

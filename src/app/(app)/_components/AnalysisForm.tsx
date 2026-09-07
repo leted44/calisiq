@@ -1791,8 +1791,10 @@ export default function AnalysisForm() {
               </div>
               {liveAngles && (
                 <p className="font-mono text-xs text-slate-500">
-                  coude: {liveAngles.elbowAngle.toFixed(0)}° · hanche:{" "}
-                  {liveAngles.hipAngle.toFixed(0)}°
+                  {t.analysis.liveAngles(
+                    liveAngles.elbowAngle.toFixed(0),
+                    liveAngles.hipAngle.toFixed(0)
+                  )}
                 </p>
               )}
             </div>
@@ -1841,8 +1843,8 @@ export default function AnalysisForm() {
               {compressing
                 ? t.analysis.preparingVideo(compressionProgress)
                 : saving
-                ? "Enregistrement..."
-                : "Enregistrer cette figure"}
+                ? t.analysis.saving
+                : t.analysis.saveFigure}
             </button>
           )}
 
@@ -1905,14 +1907,14 @@ export default function AnalysisForm() {
                 disabled
                 className="w-full rounded-lg bg-slate-800 py-2.5 font-medium text-slate-400"
               >
-                Analyse en cours...
+                {t.analysis.analysing}
               </button>
               <button
                 type="button"
                 onClick={handleCancelAnalysis}
                 className="w-full rounded-lg border border-slate-700 py-2.5 text-sm font-medium text-slate-300 hover:border-red-800 hover:text-red-400"
               >
-                Annuler l&apos;analyse
+                {t.analysis.cancelAnalysis}
               </button>
             </div>
           )}

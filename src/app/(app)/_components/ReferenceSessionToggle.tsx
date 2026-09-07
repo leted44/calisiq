@@ -44,10 +44,10 @@ export default function ReferenceSessionToggle({
       <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
         <p className="flex items-center gap-2 text-sm font-medium text-amber-300">
           <StableIcon className="h-4 w-4" />
-          Référence de cette figure
+          {t.empty.referenceTitle}
         </p>
         <p className="mt-1 text-xs text-slate-400">
-          Cette vidéo sert de point de départ pour mesurer ta progression. Elle
+          {t.empty.referenceBody}
           est conservée sans limite de durée.
         </p>
       </div>

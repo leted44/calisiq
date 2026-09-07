@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CriterionScore } from "@/lib/pose/scoring";
 import { recommendationsFor } from "@/lib/pose/recommendations";
-import { getLang } from "@/lib/i18n/server";
+import { getLang, getDictionary } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Progression } from "@/lib/pose/grid";
@@ -20,6 +20,7 @@ export default async function SessionDetailPage({
   const supabase = await createClient();
 
   const lang = await getLang();
+  const t = await getDictionary();
 
   const { data: session } = await supabase
     .from("sessions")
@@ -139,7 +140,7 @@ export default async function SessionDetailPage({
         ) : (
           <p className="flex items-center gap-2 text-sm text-slate-500">
             <ChangeVideoIcon className="h-4 w-4" />
-            Vidéo introuvable.
+            {t.empty.videoNotFoundDot}
           </p>
         )}
       </div>

@@ -77,6 +77,7 @@ function SideVideo({
   tagColor: string;
   videoRef: React.RefObject<HTMLVideoElement | null>;
 }) {
+  const t = useT();
   return (
     <div className="flex-1">
       <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
@@ -91,7 +92,7 @@ function SideVideo({
           />
         ) : (
           <div className="flex aspect-[9/16] w-full items-center justify-center px-2 text-center text-xs text-slate-500">
-            Vidéo introuvable
+            {t.empty.videoNotFound}
           </div>
         )}
         <span

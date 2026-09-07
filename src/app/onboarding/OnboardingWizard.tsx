@@ -1,6 +1,7 @@
 "use client";
 
 import { useT } from "@/lib/i18n/client";
+import type { Dictionary } from "@/lib/i18n/fr";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -16,7 +17,13 @@ type InitialProfile = {
 };
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-const STEP_LABELS = ["Informations", "Mensurations", "Photo de profil"];
+// Résolus au rendu : la table est construite au chargement du module, avant
+// que la langue soit connue.
+const STEP_LABELS: ((t: Dictionary) => string)[] = [
+  (t) => t.onboarding.stepInfo,
+  (t) => t.onboarding.stepMeasurements,
+  (t) => t.onboarding.stepPhoto,
+];
 
 export default function OnboardingWizard({
   userId,
@@ -104,7 +111,7 @@ export default function OnboardingWizard({
     setSaving(false);
 
     if (updateError) {
-      setError("Enregistrement impossible : " + updateError.message);
+      setError(t.onboarding.saveFailed(updateError.message));
       return;
     }
 
@@ -128,15 +135,15 @@ export default function OnboardingWizard({
 
       <div>
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Bienvenue
+          {t.onboarding.welcome}
         </p>
-        <h1 className="text-xl font-semibold text-white">Configure ton profil</h1>
+        <h1 className="text-xl font-semibold text-white">{t.onboarding.setUpProfile}</h1>
       </div>
 
       <div className="flex gap-1.5">
         {STEP_LABELS.map((label, i) => (
           <div
-            key={label}
+            key={label(t)}
             className={`h-1.5 flex-1 rounded-full ${
               i <= step ? "bg-gradient-to-r from-cyan-400 to-blue-500" : "bg-slate-800"
             }`}
@@ -146,14 +153,14 @@ export default function OnboardingWizard({
 
       {step === 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-white">Informations personnelles</h2>
+          <h2 className="text-lg font-semibold text-white">{t.onboarding.personalInfo}</h2>
           <p className="text-sm text-slate-400">
-            Facultatif — utilisé pour affiner les repères de progression.
+            {t.onboarding.optionalProgress}
           </p>
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Date de naissance
+              {t.onboarding.birthDate}
             </label>
             <input
               type="date"
@@ -165,7 +172,7 @@ export default function OnboardingWizard({
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Sexe
+              {t.onboarding.gender}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {(["homme", "femme", "autre"] as const).map((g) => (
@@ -189,14 +196,14 @@ export default function OnboardingWizard({
 
       {step === 1 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-white">Tes mensurations</h2>
+          <h2 className="text-lg font-semibold text-white">{t.onboarding.yourMeasurements}</h2>
           <p className="text-sm text-slate-400">
-            Facultatif — utilisé pour affiner les repères de progression.
+            {t.onboarding.optionalProgress}
           </p>
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Taille (cm)
+              {t.onboarding.height}
             </label>
             <input
               type="number"
@@ -205,14 +212,14 @@ export default function OnboardingWizard({
               max={250}
               value={heightCm}
               onChange={(e) => setHeightCm(e.target.value)}
-              placeholder="Ex. 178"
+              placeholder={t.onboarding.heightPlaceholder}
               className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Poids (kg)
+              {t.onboarding.weight}
             </label>
             <input
               type="number"
@@ -221,7 +228,7 @@ export default function OnboardingWizard({
               max={300}
               value={weightKg}
               onChange={(e) => setWeightKg(e.target.value)}
-              placeholder="Ex. 72"
+              placeholder={t.onboarding.weightPlaceholder}
               className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
             />
           </div>
@@ -232,7 +239,7 @@ export default function OnboardingWizard({
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white">Photo de profil</h2>
           <p className="text-sm text-slate-400">
-            Facultatif — tu peux passer cette étape.
+            {t.onboarding.optionalSkip}
           </p>
 
           <div className="flex flex-col items-center gap-3">
@@ -240,7 +247,7 @@ export default function OnboardingWizard({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={avatarPreview}
-                alt="Photo de profil"
+                alt={t.onboarding.stepPhoto}
                 className="h-24 w-24 rounded-full object-cover"
               />
             ) : (
@@ -254,7 +261,7 @@ export default function OnboardingWizard({
               onClick={() => fileInputRef.current?.click()}
               className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:border-slate-600"
             >
-              Choisir une photo
+              {t.onboarding.choosePhoto}
             </button>
             <input
               ref={fileInputRef}
@@ -280,7 +287,7 @@ export default function OnboardingWizard({
             onClick={() => setStep(step + 1)}
             className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)]"
           >
-            Suivant
+            {t.onboarding.next}
           </button>
         ) : (
           <button
@@ -289,7 +296,7 @@ export default function OnboardingWizard({
             disabled={saving}
             className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 py-2.5 font-medium text-white shadow-[0_0_20px_rgba(34,211,238,0.35)] disabled:opacity-50"
           >
-            {saving ? "Enregistrement..." : "Terminer"}
+            {saving ? t.onboarding.saving : t.onboarding.finish}
           </button>
         )}
 
@@ -300,7 +307,7 @@ export default function OnboardingWizard({
               onClick={() => setStep(step - 1)}
               className="text-sm text-slate-400 hover:text-slate-300"
             >
-              Retour
+              {t.onboarding.back}
             </button>
           ) : (
             <span />
@@ -312,7 +319,7 @@ export default function OnboardingWizard({
               onClick={() => setStep(step + 1)}
               className="text-sm text-slate-400 underline underline-offset-2 hover:text-slate-300"
             >
-              Passer cette étape
+              {t.onboarding.skipStep}
             </button>
           ) : (
             <button
@@ -321,7 +328,7 @@ export default function OnboardingWizard({
               disabled={saving}
               className="text-sm text-slate-400 underline underline-offset-2 hover:text-slate-300 disabled:opacity-50"
             >
-              Passer
+              {t.onboarding.skip}
             </button>
           )}
         </div>
