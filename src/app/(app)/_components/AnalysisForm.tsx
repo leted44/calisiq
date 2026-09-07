@@ -17,7 +17,12 @@ import {
   figureFromProgression,
   isCalibrated,
 } from "@/lib/pose/report";
-import { LockIcon, ApproximateIcon, StarIcon } from "@/components/icons";
+import {
+  LockIcon,
+  ApproximateIcon,
+  StarIcon,
+  ChevronDownIcon,
+} from "@/components/icons";
 import { useFavorites, toggleFavorite } from "./favorites";
 import { useT, useLang } from "@/lib/i18n/client";
 import {
@@ -763,10 +768,6 @@ export default function AnalysisForm() {
   const progressionRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
   const [actionsVisible, setActionsVisible] = useState(true);
-  // Incrémenté à chaque sélection explicite. Un effet sur `figure` seul
-  // raterait le choix d'un favori de la même figure mais d'une autre
-  // variation, qui mérite le même retour visuel.
-  const [selectionTick, setSelectionTick] = useState(0);
   const favorites = useFavorites();
   // Variation sélectionnée et son rang, partagés entre la carte et la barre
   // ancrée pour qu'elles ne puissent pas diverger.
@@ -787,7 +788,6 @@ export default function AnalysisForm() {
       // défilement : il n'y a plus rien à montrer plus bas.
       if (current === next) return null;
       setProgression(VARIATIONS_BY_FIGURE[next][0].value);
-      setSelectionTick((n) => n + 1);
       return next;
     });
   }
@@ -873,11 +873,14 @@ export default function AnalysisForm() {
     setPerformedAt(todayLocalDateString());
   }
 
-  // Amène la progression et les actions dans le champ de vision après une
-  // sélection. Le défilement est doux, sauf si le système demande de réduire
-  // les animations.
-  useEffect(() => {
-    if (selectionTick === 0) return;
+  // Défilement vers la progression, sur demande explicite.
+  //
+  // Il a d'abord été déclenché automatiquement à chaque sélection. Mauvaise
+  // idée à l'usage : la page partait vers le bas dès qu'on touchait une
+  // figure, et il fallait remonter pour en essayer une autre. Comparer deux
+  // figures devenait pénible. Le geste reste donc à l'initiative de
+  // l'utilisateur, depuis la barre ancrée.
+  function scrollToProgression() {
     const cible = progressionRef.current;
     if (!cible) return;
     const reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -885,7 +888,7 @@ export default function AnalysisForm() {
       behavior: reduit ? "auto" : "smooth",
       block: "start",
     });
-  }, [selectionTick]);
+  }
 
   // Sonde la visibilité des boutons d'import : la barre ancrée ne s'affiche
   // que lorsqu'ils sont sortis de l'écran, pour ne pas doubler inutilement une
@@ -1404,8 +1407,7 @@ export default function AnalysisForm() {
                   onClick={() => {
                     setFigure(favFigure);
                     setProgression(option.value);
-                    setSelectionTick((n) => n + 1);
-                  }}
+                                }}
                   className={`flex shrink-0 items-center gap-2.5 rounded-xl border py-2 pl-2 pr-3.5 transition-colors ${
                     active
                       ? "border-cyan-400/60 bg-slate-900"
@@ -2000,7 +2002,11 @@ export default function AnalysisForm() {
       {figure && variationAvailable && !videoUrl && !cameraMode && !actionsVisible && (
         <div className="fixed inset-x-0 bottom-16 z-20 px-4 pb-3">
           <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-cyan-500/30 bg-slate-900/95 shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.95)] backdrop-blur-md">
-            <div className="flex items-center gap-3 px-3 pt-2.5">
+            <button
+              type="button"
+              onClick={scrollToProgression}
+              className="flex w-full items-center gap-3 px-3 pt-2.5 text-left"
+            >
               {currentVariation?.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -2025,7 +2031,7 @@ export default function AnalysisForm() {
               </span>
               {/* Même jauge que dans la carte de variation : le repère de
                   difficulté suit la sélection au lieu de disparaître. */}
-              <span className="flex shrink-0 items-end gap-[3px] pr-1" aria-hidden>
+              <span className="flex shrink-0 items-end gap-[3px]" aria-hidden>
                 {VARIATIONS_BY_FIGURE[figure].map((o, index) => (
                   <span
                     key={o.value}
@@ -2036,7 +2042,10 @@ export default function AnalysisForm() {
                   />
                 ))}
               </span>
-            </div>
+              {/* Chevron : sans lui, rien n'indique que cette ligne mène
+                  quelque part. */}
+              <ChevronDownIcon className="h-4 w-4 shrink-0 text-slate-600" />
+            </button>
             <div className="flex gap-2 p-2.5">
               <button
                 type="button"
