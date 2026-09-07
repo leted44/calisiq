@@ -46,7 +46,7 @@ scoring.
 | Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
 | Illustrations front lever | Tuck, advanced tuck, single leg et full faites | Il manque la straddle, qui affiche encore une icône |
 | Single Leg Front Lever | Actif | Genou de la jambe libre calibré le 2026-09-01 sur 6 échantillons |
-| Dragon Flag (tuck, straddle, full) | Actif, seuils DRAFT | Aucun échantillon réel, seuils entièrement raisonnés |
+| Dragon Flag (tuck, single leg, full) | Actif, full calibrée | 19 échantillons le 2026-09-07 : full confirmée sur 3 exécutions conformes, single leg confrontée à 4, tuck toujours DRAFT avec une seule |
 | Drapeau (tuck, straddle, full) | Actif, seuils DRAFT | Aucun échantillon réel, seuils entièrement raisonnés |
 | Traction, Dips, Pompes, Pistol squat | Actif, seuils DRAFT | Exercices à répétition, aucun échantillon réel |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
@@ -109,6 +109,25 @@ d’abord que le critère a la bonne forme.
 
 Vision plus long terme, hors scope : tractions, muscle-up. Ne pas
 commencer une nouvelle figure sans validation explicite.
+
+Passe de calibration du 2026-09-07 sur les trois variantes du Dragon Flag,
+19 échantillons. **Aucun seuil n'a bougé.** La full est confirmée sur ses
+trois exécutions conformes, à 0,0, 0,0 et 0,2 de la note humaine, et le
+balayage place hanche 9 et genou 8 pile à l'optimum. La single leg tient à
+0,94 sur quatre exécutions conformes. La tuck reste en brouillon : sur cinq
+échantillons, un seul est une vraie tuck.
+
+Le résultat marquant n'est pas dans les seuils. Douze des dix-neuf
+échantillons sont la même vidéo soumise dans la mauvaise variante, et c'est
+là que la grille dérape, d'environ 1,5 point de trop. La cause est la
+moyenne, pas un seuil : sur un full dragon flag exécuté à une jambe,
+l'inclinaison et le bassin restent parfaits, donc deux critères sur quatre
+valent 10 et la note ne peut pas descendre sous 5. Le plafonnement sur faute
+majeure, déjà en place sur les exercices à répétition, ramènerait l'écart de
+1,48 à 0,61 sur la tuck et de 0,94 à 0,68 sur les exécutions conformes de la
+single leg. Il n'a pas été activé : c'est une décision d'agrégation qui
+vaudrait pour toutes les figures de hold, à prendre pour elles toutes ou pour
+aucune.
 
 ## Ce qui existe aujourd'hui
 

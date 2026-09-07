@@ -282,8 +282,27 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
 
   // --- Dragon flag ---
   //
-  // SEUILS DRAFT, entièrement raisonnés, aucun échantillon réel. À calibrer
-  // via /calibration avant de se fier aux notes.
+  // CALIBRATION DU 2026-09-07, sur les 19 échantillons enregistrés via
+  // /calibration. État par variante : full confirmée sur 3 exécutions
+  // conformes, single leg confrontée à 4, tuck toujours en brouillon avec une
+  // seule. Aucun seuil n'a bougé, le détail est noté sur chaque variante.
+  //
+  // CE QUE MESURE VRAIMENT CE LOT
+  //
+  // Douze des dix-neuf échantillons sont la même vidéo soumise dans la
+  // mauvaise variante, et c'est là que la grille s'écarte le plus de l'œil
+  // humain : environ 1,5 point trop généreuse. La cause n'est pas un seuil,
+  // c'est la moyenne. Sur un full dragon flag exécuté à une jambe,
+  // l'inclinaison et le bassin restent parfaits : deux critères sur quatre
+  // valent 10, et la note ne peut pas descendre sous 5 quels que soient les
+  // seuils des deux autres.
+  //
+  // Aucun réglage de cette grille ne corrige ça. Le plafonnement sur faute
+  // majeure, lui, le ferait : testé sur ce lot, il ramène l'écart de 1,48 à
+  // 0,61 sur la tuck, et de 0,94 à 0,68 sur les exécutions conformes de la
+  // single leg. C'est une décision d'agrégation qui vaudrait pour toutes les
+  // figures de hold, pas un réglage de dragon flag, donc elle n'est pas prise
+  // ici.
   //
   // Deux partis pris à connaître avant d'y toucher.
   //
@@ -295,6 +314,21 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   // La tuck est notée sur le tronc seul et non sur la ligne épaule-cheville :
   // genoux repliés, cette ligne traverse un corps qui n'existe pas, exactement
   // le problème déjà rencontré sur les figures asymétriques.
+  //
+  // CONFRONTÉE À CINQ ÉCHANTILLONS le 2026-09-07, et toujours en brouillon :
+  // un seul montre une vraie tuck, les quatre autres sont des exécutions
+  // tendues ou à une jambe soumises dans cette catégorie. Sur cette unique
+  // exécution conforme la grille tombe à 0,3 de l'œil humain, 9,3 contre 9,
+  // ce qui ne prouve rien tout seul.
+  //
+  // Rien n'a bougé, faute de matière. Le balayage désigne bien des valeurs
+  // plus serrées — hanche 20, genou 32, tronc 30 — mais elles s'ajustent sur
+  // ce point unique, exactement le réglage à un échantillon qu'on s'interdit
+  // ici. À reprendre quand plusieurs vraies tuck auront été enregistrées.
+  //
+  // Le seuil de tronc à 40 est le seul que l'échantillon conforme soutienne
+  // vraiment : ce tronc à 37 degrés a été noté 9 à l'œil, donc un tronc haut
+  // n'est pas une faute sur cette variante.
   tuck_dragon_flag: {
     torso_angle: { target: 40, tolerance: 50, mode: "maximum" },
     hip_angle: { target: 100, tolerance: 35 },
@@ -306,22 +340,27 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
   // deux jambes. Les critères ci-dessous isolent celle qui porte la
   // difficulté.
   //
-  // CONFRONTÉS À DEUX ÉCHANTILLONS le 2026-09-07, sans qu'aucune valeur ait
-  // eu à bouger : écart absolu moyen de 0,33 entre la grille et l'œil, et
-  // symétrique — une note au-dessus, une en dessous, donc pas de biais à
-  // corriger. Les deux échantillons encadrent exactement ce que mesure
-  // bent_knee_angle, une jambe repliée à 108 degrés notée 9,8 et deux jambes
-  // tendues notées 7, et le critère les sépare correctement (8,7 contre 0).
+  // CONFRONTÉS À SIX ÉCHANTILLONS le 2026-09-07, dont quatre exécutions
+  // conformes, sans qu'aucune valeur ait eu à bouger. Écart absolu moyen de
+  // 0,94 sur ces quatre, mais mal réparti : trois tombent à 0,4 ou moins, et
+  // tout l'écart tient dans une exécution notée 4,5 à l'œil contre 7,5 par la
+  // grille, tronc à 38 degrés et jambe active à 164.
   //
-  // Reste en brouillon malgré ce bon résultat : sur les deux échantillons un
-  // seul est une exécution réelle de la figure, l'autre est un full soumis
-  // dans cette catégorie. Une variation ne se déclare pas calibrée sur une
-  // exécution.
+  // La grille voit pourtant les deux défauts — genou à 4,4, hanche de la
+  // jambe tendue à 7,0 — mais la moyenne les dilue derrière un tronc à 8,4 et
+  // une jambe repliée à 10. Encore le problème d'agrégation décrit en tête de
+  // section, pas un problème de seuil.
   //
-  // Déplacer la cible de bent_knee_angle de 100 à 110 ferait tomber l'écart
-  // moyen à 0,17. Non fait : ça revient à régler un seuil sur un unique
-  // point, et la calibration de la Single Leg Front Lever avait montré que
-  // toute valeur entre 90 et 120 y donnait le même résultat.
+  // Resserrer la rampe du tronc de 50 à 10 ferait tomber l'écart moyen de
+  // 0,94 à 0,54. Non fait : cette rampe ne touche qu'un seul échantillon du
+  // lot, tous les autres troncs étant déjà sous le seuil de 30 degrés, donc
+  // notés 10 quelle que soit la rampe. C'est un réglage sur un point unique.
+  //
+  // bent_knee_angle : déplacer la cible de 100 à 120 ne gagne plus que 0,09
+  // sur l'écart moyen, contre 0,16 annoncé sur le lot de deux échantillons.
+  // Le gain fond à mesure que le lot grandit, ce qui confirme ce que la
+  // calibration de la Single Leg Front Lever avait montré : toute valeur
+  // entre 90 et 120 donne le même résultat. La cible reste à 100.
   //
   // torso_angle plutôt que body_line_angle_from_horizontal, comme sur le
   // tuck : la ligne épaule-cheville suppose deux jambes dans la même
@@ -341,6 +380,12 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     bent_knee_angle: { target: 100, tolerance: 60, mode: "maximum" },
   },
   full_dragon_flag: {
+    // Rampe encore invérifiée au 2026-09-07 : les trois exécutions conformes
+    // du lot tiennent leur corps entre 1 et 19 degrés, donc toutes sous le
+    // seuil de 20 et notées 10 quelle que soit la rampe. La faire varier de
+    // 20 à 75 ne change pas d'un centième l'écart à l'œil humain. Il faudra
+    // une exécution franchement haute pour que ce réglage veuille dire
+    // quelque chose.
     body_line_angle_from_horizontal: { target: 20, tolerance: 55, mode: "maximum" },
     // SEUIL DRAFT, aucun échantillon. Échelle reprise des tolérances de
     // pelvis_deviation déjà calibrées ailleurs (0,12 sur la full planche et
@@ -357,10 +402,16 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     //
     // Calibré le 2026-09-07 sur 4 échantillons. Tolérances resserrées de 10 à
     // 9 pour la hanche et de 12 à 8 pour le genou : écart absolu moyen entre
-    // la grille et les notes humaines 0,80 avant, 0,54 après, et les trois
-    // exécutions réelles tombent désormais à 0,0, 0,0 et 0,2 de la note
-    // donnée à l'œil. Le genou rejoint la valeur déjà calibrée sur la full
-    // planche, où la même exigence de jambes tendues s'applique.
+    // la grille et les notes humaines 0,80 avant, 0,54 après. Le genou rejoint
+    // la valeur déjà calibrée sur la full planche, où la même exigence de
+    // jambes tendues s'applique.
+    //
+    // REVU LE MÊME JOUR SUR 8 ÉCHANTILLONS, dont trois exécutions conformes :
+    // la grille tombe à 0,0, 0,0 et 0,2 des notes données à l'œil. Le balayage
+    // place les deux valeurs actuelles pile à l'optimum — hanche 9 (écart
+    // 0,08, contre 0,13 à 7 et 0,16 à 11) et genou 8 (0,08, contre 0,17 à 6 et
+    // 0,22 à 10). C'est la seule variante du dragon flag qu'on puisse dire
+    // calibrée ; rien à y changer.
     hip_angle: { target: 180, tolerance: 9 },
     knee_angle: { target: 180, tolerance: 8 },
   },
