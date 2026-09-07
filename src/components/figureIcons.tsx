@@ -353,6 +353,20 @@ export function TuckHumanFlagIcon({ className = base }: IconProps) {
   );
 }
 
+export function OneLegHumanFlagIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path d="M18 3v18" {...stroke} />
+      <path d="M18 7 15 11" {...stroke} />
+      <path d="M18 16 15 12.5" {...stroke} />
+      <circle cx="14" cy="11.6" r="1.5" {...stroke} />
+      <path d="M12.6 11.8 9 12" {...stroke} />
+      <path d="M9 12 3 12" {...stroke} />
+      <path d="M9 12 7 9.5" {...stroke} />
+    </svg>
+  );
+}
+
 export function StraddleHumanFlagIcon({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className}>

@@ -47,7 +47,7 @@ scoring.
 | Illustrations front lever | Tuck, advanced tuck, single leg et full faites | Il manque la straddle, qui affiche encore une icône |
 | Single Leg Front Lever | Actif | Genou de la jambe libre calibré le 2026-09-01 sur 6 échantillons |
 | Dragon Flag (tuck, single leg, full) | Actif, full calibrée | 19 échantillons le 2026-09-07 : full confirmée sur 3 exécutions conformes, single leg confrontée à 4, tuck toujours DRAFT avec une seule |
-| Drapeau (tuck, straddle, full) | Actif, seuils DRAFT | Aucun échantillon réel, seuils entièrement raisonnés |
+| Drapeau (tuck, single leg, straddle, full) | Actif, seuils DRAFT | Aucun échantillon réel, seuils entièrement raisonnés. Single leg ajoutée le 2026-09-07 |
 | Traction, Dips, Pompes, Pistol squat | Actif, seuils DRAFT | Exercices à répétition, aucun échantillon réel |
 | Handstand Push-up, One Arm Handstand | Non commencé | — |
 
@@ -478,6 +478,24 @@ division un simple ralenti du décodage suffisait à couper un hold tenu.
 Conséquence à connaître : le seuil de mouvement a changé d'unité et a donc été
 repris à zéro. Sa valeur et le raisonnement qui la fixe vivent dans
 `angles.ts`, et restent à revalider sur des vidéos réelles.
+
+**Le drapeau a désormais sa Single Leg.** Il manquait l'étape la plus utilisée
+de la progression réelle : une jambe se tend le long du mât, la seconde reste
+repliée. C'est le premier moment où le levier s'allonge vraiment, sans encore
+demander l'ouverture de hanche de la straddle, et l'écart de difficulté entre
+la tuck et la straddle était trop grand pour n'avoir aucun palier au milieu.
+
+Elle reprend les trois critères de jambe de la Single Leg Front Lever,
+calibrés eux sur 6 échantillons, et l'inclinaison en bande de la famille
+drapeau. Ses seuils d'inclinaison et de coude sont interpolés entre la tuck et
+la straddle : entièrement raisonnés, donc DRAFT, et la marque « environ »
+s'affiche tant qu'un échantillon réel n'aura pas été enregistré.
+
+Une chose reste à faire quand la variation aura servi : `recommendations.ts`
+n'a pas d'entrée pour `straightest_knee_angle`, `straightest_leg_hip_angle` ni
+`bent_knee_angle`. Ces trois critères ne produisent donc aucun exercice
+correctif, ici comme sur la Single Leg Dragon Flag et la Single Leg Front
+Lever, où le trou existe déjà.
 
 ## Exercices à répétition
 

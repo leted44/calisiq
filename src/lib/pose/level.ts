@@ -58,6 +58,7 @@ export const VARIATION_DIFFICULTY: Record<string, number> = {
   one_leg_dragon_flag: 45,
   advanced_tuck_front_lever: 48,
   tuck_human_flag: 55,
+  one_leg_human_flag: 65,
   one_leg_front_lever: 58,
   handstand_push_up: 60,
   full_dragon_flag: 65,
@@ -132,6 +133,7 @@ export const HOLD_TARGET_SECONDS: Record<string, number> = {
   // Drapeau. Seuils courts : la position est brutale, personne ne s'y
   // installe confortablement.
   tuck_human_flag: 10,
+  one_leg_human_flag: 8,
   straddle_human_flag: 7,
   full_human_flag: 5,
 };

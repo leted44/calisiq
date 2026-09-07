@@ -49,6 +49,7 @@ const VARIATIONS = [
   { value: "one_leg_dragon_flag", label: "Single Leg Dragon Flag", figure: "dragon_flag" },
   { value: "full_dragon_flag", label: "Full Dragon Flag", figure: "dragon_flag" },
   { value: "tuck_human_flag", label: "Tuck Drapeau", figure: "human_flag" },
+  { value: "one_leg_human_flag", label: "Single Leg Drapeau", figure: "human_flag" },
   { value: "straddle_human_flag", label: "Straddle Drapeau", figure: "human_flag" },
   { value: "full_human_flag", label: "Full Drapeau", figure: "human_flag" },
   { value: "australian_pull_up", label: "Traction australienne", figure: "traction" },

@@ -56,6 +56,7 @@ import {
   FullDragonFlagIcon,
   HumanFlagFigureIcon,
   TuckHumanFlagIcon,
+  OneLegHumanFlagIcon,
   StraddleHumanFlagIcon,
   FullHumanFlagIcon,
   PullUpFigureIcon,
@@ -295,6 +296,11 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
     {
       value: "tuck_human_flag",
       Icon: TuckHumanFlagIcon,
+      available: true,
+    },
+    {
+      value: "one_leg_human_flag",
+      Icon: OneLegHumanFlagIcon,
       available: true,
     },
     {

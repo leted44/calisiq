@@ -74,6 +74,7 @@ export type Progression =
   | "one_leg_dragon_flag"
   | "full_dragon_flag"
   | "tuck_human_flag"
+  | "one_leg_human_flag"
   | "straddle_human_flag"
   | "full_human_flag";
 
@@ -432,6 +433,33 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
     elbow_angle: { target: 175, tolerance: 25 },
     hip_angle: { target: 100, tolerance: 35 },
     knee_angle: { target: 70, tolerance: 40 },
+  },
+  // Étape manquante entre la tuck et la straddle, et la plus utilisée des
+  // deux dans la progression réelle : une jambe se tend le long du mât, la
+  // seconde reste repliée. C'est le premier moment où le levier s'allonge
+  // vraiment, sans encore demander l'ouverture de hanche de la straddle.
+  //
+  // Mêmes critères que la Single Leg Front Lever et la Single Leg Dragon
+  // Flag, pour la même raison : jambe tendue d'un côté, repliée de l'autre,
+  // hip_angle et knee_angle ne sont plus que des moyennes gauche/droite qui
+  // ne décrivent aucune des deux jambes.
+  //
+  // torso_angle plutôt que la ligne épaule-cheville, qui traverse un corps
+  // qui n'existe pas dès qu'une jambe est repliée. En bande et non en seuil
+  // maximum, comme le reste de la famille drapeau : la cible est
+  // l'horizontale, et pointer vers le haut en éloigne autant que piquer vers
+  // le bas.
+  //
+  // SEUILS DRAFT, aucun échantillon. Les valeurs sont interpolées entre la
+  // tuck et la straddle du drapeau pour l'inclinaison et le coude, et
+  // reprises telles quelles de la Single Leg Front Lever pour les trois
+  // critères de jambe, où elles ont été calibrées sur 6 échantillons.
+  one_leg_human_flag: {
+    torso_angle: { target: 8, tolerance: 22 },
+    elbow_angle: { target: 175, tolerance: 24 },
+    straightest_knee_angle: { target: 180, tolerance: 14 },
+    straightest_leg_hip_angle: { target: 170, tolerance: 20 },
+    bent_knee_angle: { target: 100, tolerance: 60, mode: "maximum" },
   },
   straddle_human_flag: {
     body_line_angle_from_horizontal: { target: 5, tolerance: 20 },
