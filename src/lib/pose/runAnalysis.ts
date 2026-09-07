@@ -259,7 +259,7 @@ export async function runPoseAnalysis({
         }
       : undefined;
 
-  const window = detectHoldWindow(frames, { isInFigure });
+  const window = detectHoldWindow(frames, { isInFigure, times: frameTimes });
   const holdAngles = angles.slice(window.start, window.end + 1);
   const median = medianAngles(holdAngles);
   // Si aucun segment immobile assez long n'est trouvé, detectHoldWindow

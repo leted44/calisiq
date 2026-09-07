@@ -439,15 +439,59 @@ export function computeAngles(
 // Points du tronc/des membres, hors visage (0-10), utilisés pour détecter l'immobilité
 const STABILITY_LANDMARK_INDICES = Array.from({ length: 22 }, (_, i) => i + 11);
 
-function frameCenter(landmarks: NormalizedLandmark[]): Point {
+// Pose ramenée dans son propre repère : centrée sur son barycentre, puis
+// divisée par son étalement.
+//
+// LA CAMÉRA N'EST PAS UNE RÉFÉRENCE FIXE
+//
+// La détection d'immobilité suivait le barycentre du corps DANS L'IMAGE.
+// Quand quelqu'un filme à main levée, le corps traverse l'image sans que la
+// personne bouge : chaque image dépassait le seuil de mouvement, aucun
+// segment stable n'était trouvé, et le chrono restait vide alors que la
+// figure était tenue. C'est le cas le plus courant en handstand, où l'on se
+// fait presque toujours filmer par quelqu'un d'autre.
+//
+// Recentrer annule ce déplacement d'ensemble. Diviser par l'étalement annule
+// le zoom et la distance de la caméra, qui faisaient qu'une même oscillation
+// comptait double filmée de près et pour presque rien filmée de loin — deux
+// vidéos de la même tenue n'étaient donc pas jugées avec la même exigence.
+//
+// Ce qui reste après ces deux opérations est la déformation de la
+// silhouette, seul mouvement qui appartienne vraiment à la personne filmée.
+function normalizedPose(landmarks: NormalizedLandmark[]): Point[] {
+  const points = STABILITY_LANDMARK_INDICES.map((i) => landmarks[i]);
   let sx = 0;
   let sy = 0;
-  for (const i of STABILITY_LANDMARK_INDICES) {
-    sx += landmarks[i].x;
-    sy += landmarks[i].y;
+  for (const p of points) {
+    sx += p.x;
+    sy += p.y;
   }
-  const n = STABILITY_LANDMARK_INDICES.length;
-  return { x: sx / n, y: sy / n };
+  const centre = { x: sx / points.length, y: sy / points.length };
+
+  const centres = points.map((p) => ({
+    x: p.x - centre.x,
+    y: p.y - centre.y,
+  }));
+
+  let carres = 0;
+  for (const p of centres) carres += p.x * p.x + p.y * p.y;
+  const etalement = Math.sqrt(carres / centres.length);
+  // Corps réduit à un point : division par zéro, donc des NaN qui
+  // contamineraient toute la recherche de segment. Le cas ne se produit que
+  // sur une détection dégénérée, où l'échelle n'a de toute façon aucun sens.
+  if (etalement === 0) return centres;
+
+  return centres.map((p) => ({ x: p.x / etalement, y: p.y / etalement }));
+}
+
+// Déformation moyenne de la silhouette entre deux poses normalisées, en
+// largeurs de silhouette.
+function poseShift(a: Point[], b: Point[]): number {
+  let somme = 0;
+  for (let i = 0; i < a.length; i++) {
+    somme += Math.hypot(b[i].x - a[i].x, b[i].y - a[i].y);
+  }
+  return somme / a.length;
 }
 
 function smooth(values: number[], windowSize = 5): number[] {
@@ -493,26 +537,58 @@ export function detectHoldWindow(
   options?: {
     threshold?: number;
     minFrames?: number;
+    /**
+     * Instants des images, en secondes. Permet de mesurer une vitesse plutôt
+     * qu'un déplacement par image. Absents, un rythme régulier est supposé.
+     */
+    times?: number[];
     /** Vrai si l'image montre plausiblement la figure demandée. */
     isInFigure?: (index: number) => boolean;
   }
 ): HoldWindow {
-  // Relevé de 0.004 à 0.008 puis à 0.02 : un hold réel tremble souvent
-  // beaucoup (manque de force, fatigue) sans que ce soit un vrai mouvement
-  // vers/hors de la figure — l'ancien seuil classait ce tremblement comme
-  // "non détecté" alors que la figure était bien tenue. Il y a une limite à
-  // ce réglage : trop haut, on finit par inclure la mise en place ou la
-  // sortie de figure dans le hold, ce qui fausserait les angles mesurés.
-  const threshold = options?.threshold ?? 0.02;
+  // Seuil en largeurs de silhouette par seconde (voir normalizedPose).
+  //
+  // Le réglage historique (0.004 puis 0.008 puis 0.02) portait sur le
+  // déplacement du corps dans l'image, une grandeur que la mesure n'utilise
+  // plus : il a fallu le reprendre à zéro. Valeurs obtenues en simulant un
+  // corps qui pivote sur ses appuis, à 30 images par seconde :
+  //
+  //   tenue calme (±1.5°, 1 Hz)        0.09 à 0.14
+  //   tenue très instable (±6°, 1.5 Hz) 0.55, pointes à 0.86
+  //   sortie lente (90° en 1.5 s)       0.92
+  //   entrée en figure (90° en 0.6 s)   2.31
+  //
+  // 0.9 passe donc entre la tenue la plus instable et la sortie la plus
+  // lente. La marge côté tremblement est volontairement large : un hold qui
+  // tremble beaucoup (manque de force, fatigue) doit rester détecté, et
+  // c'est le filtre de forme ci-dessous, pas ce seuil, qui empêche d'avaler
+  // la mise en place.
+  //
+  // À revalider sur les vidéos réelles : ces chiffres viennent d'un modèle
+  // géométrique, pas encore d'un lot d'échantillons notés.
+  const threshold = options?.threshold ?? 0.9;
   const minFrames = options?.minFrames ?? 15;
+  // Repli quand les instants ne sont pas fournis : le déplacement par image
+  // est ramené à une vitesse en supposant ce rythme.
+  const IMAGES_PAR_SECONDE_SUPPOSE = 30;
 
   if (frames.length === 0)
     return { start: 0, end: 0, detected: false, matchedFigure: false };
 
-  const centers = frames.map(frameCenter);
+  const poses = frames.map(normalizedPose);
   const rawMotion = [0];
-  for (let i = 1; i < centers.length; i++) {
-    rawMotion.push(Math.hypot(centers[i].x - centers[i - 1].x, centers[i].y - centers[i - 1].y));
+  for (let i = 1; i < poses.length; i++) {
+    const deformation = poseShift(poses[i - 1], poses[i]);
+    // Vitesse plutôt que déplacement par image : les images d'analyse ne sont
+    // pas capturées à intervalle régulier, le décodage suit ce que le
+    // téléphone arrive à fournir. Sans cette division, un simple ralenti du
+    // décodage double le mouvement mesuré et coupe un hold pourtant tenu.
+    const dt = options?.times
+      ? options.times[i] - options.times[i - 1]
+      : 0;
+    rawMotion.push(
+      dt > 0 ? deformation / dt : deformation * IMAGES_PAR_SECONDE_SUPPOSE
+    );
   }
   const motion = smooth(rawMotion);
 

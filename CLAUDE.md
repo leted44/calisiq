@@ -1,6 +1,6 @@
 # CalisIQ — Spec projet pour Claude Code
 
-> Mise à jour : 2026-09-01. Ce document décrit les **décisions et le
+> Mise à jour : 2026-09-07. Ce document décrit les **décisions et le
 > contexte** ; il ne recopie plus les données qui vivent dans le code
 > (grille de scoring, schéma SQL), parce que toute duplication finit par
 > diverger. Voir les pointeurs « source de vérité » ci-dessous.
@@ -433,6 +433,32 @@ en touchant aux seuils : son inclinaison est une vraie **bande** centrée sur
 l'horizontale, là où celle du dragon flag est un seuil maximum. Sur un drapeau,
 un corps qui pointe vers le haut s'éloigne de la figure autant qu'un corps qui
 pique vers le bas ; sur un dragon flag, descendre plus bas est toujours mieux.
+
+**L'immobilité se mesure sur la silhouette, pas sur l'image.** La fenêtre de
+hold était trouvée en suivant le centre du corps dans l'image. Ça supposait une
+caméra fixe : dès que quelqu'un filmait à main levée, le corps traversait
+l'image sans que la personne bouge, chaque image dépassait le seuil de
+mouvement, aucun segment stable n'était trouvé et le chrono restait vide alors
+que la figure était tenue. Le handstand en souffrait le plus, parce qu'on s'y
+fait presque toujours filmer par quelqu'un d'autre.
+
+`detectHoldWindow` ramène désormais chaque pose dans son propre repère avant de
+comparer : recentrée sur son barycentre, divisée par son étalement. Un
+panoramique et un zoom disparaissent de la mesure, il ne reste que la
+déformation de la silhouette, seul mouvement qui appartienne à la personne
+filmée. La division par l'étalement corrige au passage un biais plus discret :
+à oscillation égale, un corps filmé de près bougeait beaucoup de pixels et un
+corps filmé de loin presque aucun, donc deux vidéos de la même tenue n'étaient
+pas jugées avec la même exigence.
+
+Le mouvement est en plus rapporté au temps écoulé entre deux images, et non
+plus compté par image. Les images d'analyse ne sont pas capturées à intervalle
+régulier — le décodage suit ce que le téléphone fournit — et sans cette
+division un simple ralenti du décodage suffisait à couper un hold tenu.
+
+Conséquence à connaître : le seuil de mouvement a changé d'unité et a donc été
+repris à zéro. Sa valeur et le raisonnement qui la fixe vivent dans
+`angles.ts`, et restent à revalider sur des vidéos réelles.
 
 ## Exercices à répétition
 
