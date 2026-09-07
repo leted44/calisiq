@@ -1,62 +1,25 @@
 "use client";
 
+import { useT, useLang } from "@/lib/i18n/client";
 import { useState } from "react";
 import type { CriterionScore } from "@/lib/pose/scoring";
 import type { Recommendation } from "@/lib/pose/recommendations";
 import {
   tierFor,
-  TIER_LABELS,
+  tierLabel,
   TIER_COLORS,
   describeCriterion,
   formatHoldDuration,
-  CRITERE_DEFINITIONS,
+  criterionDefinition,
   type ScoreTier,
 } from "@/lib/pose/report";
 
-const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
-  rep_lockout: "Extension",
-  rep_peak: "Amplitude",
-  rep_control: "Contrôle",
-  rep_form: "Forme",
-  rep_tempo: "Tempo",
-  shoulder_protraction: "Épaules",
-  shoulder_flexion: "Épaules",
-  pelvis_deviation: "Bassin",
-  pelvis_sag: "Gainage",
-  hip_angle: "Hanches",
-  knee_angle: "Genoux",
-  elbow_angle: "Coudes",
-  body_line_angle: "Axe du corps",
-  torso_angle: "Tronc",
-  straightest_knee_angle: "Jambe tendue",
-  straightest_leg_hip_angle: "Hanche jambe tendue",
-  bent_knee_angle: "Jambe repliée",
-};
-
-// Titres plus descriptifs pour la vue "Détail par catégorie" — les labels
-// courts ci-dessus restent utilisés dans les barres du résumé.
-const CRITERE_DETAIL_TITLES: Record<CriterionScore["critere"], string> = {
-  rep_lockout: "Extension complète",
-  rep_peak: "Amplitude du mouvement",
-  rep_control: "Contrôle du corps",
-  rep_form: "Tenue du corps",
-  rep_tempo: "Régularité du tempo",
-  shoulder_protraction: "Protraction des épaules",
-  shoulder_flexion: "Ouverture des épaules",
-  pelvis_deviation: "Alignement du bassin",
-  pelvis_sag: "Bassin qui s'affaisse",
-  hip_angle: "Position des hanches",
-  knee_angle: "Extension des jambes",
-  elbow_angle: "Verrouillage des coudes",
-  body_line_angle: "Alignement du corps",
-  torso_angle: "Alignement du tronc",
-  straightest_knee_angle: "Extension de la jambe tendue",
-  straightest_leg_hip_angle: "Ouverture de hanche (jambe tendue)",
-  bent_knee_angle: "Repli de la jambe libre",
-};
-
 // Mots-clés techniques associés à chaque critère, purement indicatifs (pas
 // des mesures) — aident à reconnaître le vocabulaire coaching courant.
+//
+// Non traduits, et volontairement : « lockout », « kipping », « hollow body »
+// ou « banana » s'emploient tels quels en français comme en anglais. Les
+// traduire ferait perdre au francophone le mot qu'il entendra en salle.
 const CRITERE_TAGS: Record<CriterionScore["critere"], string[]> = {
   rep_lockout: ["Lockout", "Bas de rep"],
   rep_peak: ["Amplitude", "Haut de rep"],
@@ -81,14 +44,6 @@ const TIER_HEX: Record<ScoreTier, string> = {
   optimal: "#4ade80",
   bon: "#22d3ee",
   faible: "#fb923c",
-};
-
-// Badge d'ensemble sur le score global — reste honnête par rapport aux
-// seuils réels de tierFor plutôt que de gonfler la formulation.
-const GLOBAL_TIER_LABELS: Record<ScoreTier, string> = {
-  optimal: "Excellent niveau",
-  bon: "Bon niveau",
-  faible: "Encore du travail",
 };
 
 function scoreTextColor(score: number): string {
@@ -128,6 +83,8 @@ export default function ResultCard({
   repCount?: number | null;
   figure?: "planche" | "handstand" | "front_lever" | "dragon_flag" | "reps";
 }) {
+  const t = useT();
+  const lang = useLang();
   const [view, setView] = useState<"summary" | "details">("summary");
   const globalTier = tierFor(globalScoreValue);
   // Critères classés du plus faible au plus fort. Cinq anneaux de même taille
@@ -172,7 +129,7 @@ export default function ResultCard({
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Score global
+              {t.result.globalScore}
             </p>
             <p className="mt-0.5 flex items-baseline gap-1">
               <span
@@ -186,7 +143,11 @@ export default function ResultCard({
             <span
               className={`mt-2 inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${TIER_COLORS[globalTier]}`}
             >
-              {GLOBAL_TIER_LABELS[globalTier]}
+              {globalTier === "optimal"
+                ? t.result.tierExcellent
+                : globalTier === "bon"
+                ? t.result.tierGood
+                : t.result.tierWork}
             </span>
           </div>
 
@@ -204,7 +165,7 @@ export default function ResultCard({
                 ) : null}
               </p>
               <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                {repCount !== undefined && repCount !== null ? "Répétitions" : "Hold"}
+                {repCount !== undefined && repCount !== null ? t.result.reps : t.result.hold}
               </p>
             </div>
           ) : null}
@@ -221,7 +182,7 @@ export default function ResultCard({
               : "text-slate-500 hover:text-slate-300"
           }`}
         >
-          Résumé
+          {t.result.summary}
         </button>
         <button
           type="button"
@@ -232,7 +193,7 @@ export default function ResultCard({
               : "text-slate-500 hover:text-slate-300"
           }`}
         >
-          Détail par catégorie
+          {t.result.detail}
         </button>
       </div>
 
@@ -247,7 +208,7 @@ export default function ResultCard({
                 {repCount}
               </span>
               <span className="text-sm text-slate-300">
-                {repCount > 1 ? "répétitions complètes" : "répétition complète"}
+                {t.result.completedReps(repCount)}
               </span>
             </div>
           )}
@@ -258,7 +219,7 @@ export default function ResultCard({
             <div className="rounded-xl border border-slate-800 bg-slate-950/50 px-3.5 py-3">
               <div className="flex items-baseline justify-between gap-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">
-                  Point faible
+                  {t.result.weakPoint}
                 </p>
                 <p
                   className="text-sm font-bold tabular-nums"
@@ -269,10 +230,10 @@ export default function ResultCard({
                 </p>
               </div>
               <p className="mt-0.5 text-[15px] font-semibold text-white">
-                {CRITERE_DETAIL_TITLES[weakest.critere]}
+                {t.criteria.titles[weakest.critere]}
               </p>
               <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                {describeCriterion(weakest.critere, weakest.score, figure)}
+                {describeCriterion(weakest.critere, weakest.score, figure, lang)}
               </p>
             </div>
           )}
@@ -286,7 +247,7 @@ export default function ResultCard({
             {ranked.map((s) => (
               <div key={s.critere} className="flex items-center gap-3">
                 <span className="w-[92px] shrink-0 truncate text-xs text-slate-400">
-                  {CRITERE_LABELS[s.critere]}
+                  {t.criteria.labels[s.critere]}
                 </span>
                 <div className="flex-1">
                   <ScoreBar value={s.score} color={TIER_HEX[tierFor(s.score)]} />
@@ -304,7 +265,7 @@ export default function ResultCard({
           {recommendations && recommendations.length > 0 && (
             <div className="rounded-lg border border-cyan-900/50 bg-cyan-500/10 p-3">
               <p className="mb-1 text-sm font-semibold text-cyan-300">
-                À travailler en priorité
+                {t.result.priority}
               </p>
               <ul className="space-y-1 text-xs text-slate-300">
                 {recommendations.map((r) => (
@@ -339,12 +300,12 @@ export default function ResultCard({
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div>
                     <h4 className="text-base font-bold text-white">
-                      {CRITERE_DETAIL_TITLES[s.critere]}
+                      {t.criteria.titles[s.critere]}
                     </h4>
                     <span
                       className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium ${TIER_COLORS[tier]}`}
                     >
-                      {TIER_LABELS[tier]}
+                      {tierLabel(tier, lang)}
                     </span>
                   </div>
                   <span className={`text-2xl font-bold ${scoreTextColor(s.score)}`}>
@@ -356,10 +317,10 @@ export default function ResultCard({
                 <ScoreBar value={s.score} color={TIER_HEX[tier]} />
 
                 <p className="mt-3 text-sm leading-relaxed text-slate-300">
-                  {describeCriterion(s.critere, s.score, figure)}
+                  {describeCriterion(s.critere, s.score, figure, lang)}
                 </p>
                 <p className="mt-1 text-[11px] italic text-slate-500">
-                  {CRITERE_DEFINITIONS[s.critere]}
+                  {criterionDefinition(s.critere, lang)}
                 </p>
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
