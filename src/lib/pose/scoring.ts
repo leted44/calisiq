@@ -1,5 +1,11 @@
 import type { PoseAngles } from "./angles";
-import { hipSwing, meanHipAngle, tempoRegularity, type Rep } from "./repAnalysis";
+import {
+  hipSwing,
+  meanHipAngle,
+  meanProtraction,
+  tempoRegularity,
+  type Rep,
+} from "./repAnalysis";
 import { SCORING_GRID, type Progression, type RepThresholds } from "./grid";
 
 export type CriterionScore = {
@@ -23,6 +29,7 @@ export type CriterionScore = {
     | "rep_peak"
     | "rep_control"
     | "rep_form"
+    | "rep_protraction"
     | "rep_tempo";
   score: number;
   valeurMesuree: number;
@@ -319,6 +326,11 @@ export type RepMeasures = {
   peak: number;
   hipSwing: number | null;
   form: number | null;
+  /**
+   * Avancée des épaules devant les poignets. Null sur tout mouvement où elle
+   * ne veut rien dire, c'est-à-dire partout sauf sur les pompes planche.
+   */
+  protraction: number | null;
   // Null quand la série est trop courte pour que la régularité veuille dire
   // quelque chose. Le critère est alors ÉCARTÉ de la moyenne, et non noté 10 :
   // sur une seule répétition il n'y a rien à comparer, et créditer un 10
@@ -398,6 +410,22 @@ export function scoreRepMeasures(
     });
   }
 
+  if (thresholds.protraction && measures.protraction !== null) {
+    // Seuil minimum, comme sur les holds de planche : avancer les épaules
+    // plus loin que demandé n'est jamais une faute, c'est même ce qui rend
+    // la figure plus dure.
+    scores.push({
+      critere: "rep_protraction",
+      score: scoreFromMinimum(
+        measures.protraction,
+        thresholds.protraction.target,
+        thresholds.protraction.tolerance
+      ),
+      valeurMesuree: measures.protraction,
+      valeurCible: thresholds.protraction.target,
+    });
+  }
+
   if (measures.tempo !== null) {
     scores.push({
       critere: "rep_tempo",
@@ -443,6 +471,7 @@ export function scoreReps({
       peak: meanAt((rep) => rep.flexedIndex),
       hipSwing: thresholds.hipSwing ? hipSwing(angles, reps) : null,
       form: thresholds.form ? meanHipAngle(angles, reps) : null,
+      protraction: thresholds.protraction ? meanProtraction(angles, reps) : null,
       // Exprimé en pourcentage pour rester lisible à côté d'angles en degrés.
       // Sous trois répétitions, l'écart type des durées porte sur un ou deux
       // écarts : le chiffre existe mais ne décrit rien.

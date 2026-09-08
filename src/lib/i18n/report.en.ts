@@ -23,6 +23,8 @@ export const reportEn = {
       "Standard deviation of the hip angle over the set. Measures swing: a hip that oscillates gives away a movement thrown rather than pulled.",
     rep_form:
       "Mean hip angle over the set. Measures how the body is held during the movement, where control measures the swing.",
+    rep_protraction:
+      "Mean forward lean of the shoulders past the wrists during the set, relative to torso length. This is what separates a planche push-up from an ordinary one: the other criteria only look at the elbow, the hip and the rhythm.",
     rep_tempo:
       "Consistency of rep duration, as a percentage. A set that fades gets slower on the last reps.",
     elbow_angle:

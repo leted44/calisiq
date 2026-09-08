@@ -81,6 +81,19 @@ export function FullPlancheIcon({ className = base }: IconProps) {
   );
 }
 
+// La full planche avec le bras fléchi : c'est la flexion du coude qui
+// distingue la pompe du hold, tout le reste de la position est identique.
+export function PlanchePushUpIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <circle cx="4.2" cy="10.5" r="1.6" {...stroke} />
+      <path d="M5.6 11.5 8 12h12" {...stroke} />
+      <path d="M8 12l-1.5 4" {...stroke} />
+      <path d="M6.5 16 8.5 20" {...stroke} />
+    </svg>
+  );
+}
+
 export function HandstandPushUpIcon({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className}>

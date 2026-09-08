@@ -928,6 +928,33 @@ export const recommendationsEn: Record<
       },
     ],
   },
+  rep_protraction: {
+    faible: [
+      {
+        exercice: "Static planche lean, 4 x 15 s, shoulders pushed far past the hands",
+        raison:
+          "The shoulders do not travel far enough past the wrists: the weight stays on the hands instead of loading the arms, and the movement is a push-up, not a planche push-up.",
+      },
+      {
+        exercice: "Pseudo planche push-up, slow tempo, 4 x 6",
+        raison:
+          "Trains the exact missing action, the forward shoulder lean, at an intensity where you can still control it.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue \"push the floor far behind you\" on every rep",
+        raison:
+          "The lean is there on the first rep and fades during the set, often as early as the second.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Shoulder lean held through the whole set — make the set longer",
+        raison: "The position holds from start to finish; it is no longer the limit.",
+      },
+    ],
+  },
   rep_tempo: {
     faible: [
       {

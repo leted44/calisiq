@@ -33,6 +33,7 @@ function repMeasure(
 }
 
 const VARIATIONS = [
+  { value: "planche_push_up", label: "Pompe Planche", figure: "planche" },
   { value: "tuck_planche", label: "Tuck Planche", figure: "planche" },
   { value: "advanced_tuck_planche", label: "Advanced Tuck Planche", figure: "planche" },
   { value: "straddle_planche", label: "Straddle Planche", figure: "planche" },
@@ -413,6 +414,7 @@ export default function CalibrationForm() {
       rep_peak: repMeasure(result.scores, "rep_peak"),
       rep_hip_swing: repMeasure(result.scores, "rep_control"),
       rep_form: repMeasure(result.scores, "rep_form"),
+      rep_protraction: repMeasure(result.scores, "rep_protraction"),
       rep_tempo: repMeasure(result.scores, "rep_tempo"),
       user_rating: ratingValue,
       // Notes humaines détaillées : c'est ce qui permet de savoir QUEL seuil
@@ -668,6 +670,12 @@ export default function CalibrationForm() {
                     value: repMeasure(result.scores, "rep_form"),
                     t: grid?.form,
                     unit: "°",
+                  },
+                  {
+                    label: "Avancée des épaules",
+                    value: repMeasure(result.scores, "rep_protraction"),
+                    t: grid?.protraction,
+                    unit: "",
                   },
                   {
                     label: "Régularité du tempo",

@@ -551,6 +551,7 @@ export const SCORING_GRID: Record<Progression, ProgressionThresholds> = {
 // dans les deux sens.
 
 export type RepProgression =
+  | "planche_push_up"
   | "australian_pull_up"
   | "strict_pull_up"
   | "bench_dip"
@@ -608,6 +609,18 @@ export type RepThresholds = {
    * construction : sa moyenne y décrirait le milieu du squat, pas une faute.
    */
   form?: Threshold;
+  /**
+   * Avancée moyenne des épaules devant les poignets sur la série, rapportée
+   * à la longueur du buste. Seuil MINIMUM : en avancer plus n'est jamais une
+   * faute.
+   *
+   * Optionnel, et réservé aux mouvements de planche. C'est le seul critère
+   * qui sépare une pompe planche d'une pompe ordinaire : les quatre autres
+   * ne regardent que le coude, la hanche et le rythme, et une pompe au sol
+   * bien exécutée les satisfait tous. Sans lui, la variation serait
+   * décorative.
+   */
+  protraction?: Threshold;
   /**
    * Régularité du tempo entre répétitions, en pourcentage. Seuil MINIMUM.
    * Une série qui se dégrade se voit ici avant de se voir ailleurs.
@@ -742,6 +755,50 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
   // L'oscillation de hanche est conservée et serrée : la triche classique du
   // HSPU consiste à casser à la hanche pour raccourcir la course, et le corps
   // doit rester gainé du bassin aux pieds pendant toute la descente.
+  // Pompe planche : une planche complète dont on plie puis retend les bras.
+  //
+  // SEUILS TRANSFÉRÉS, aucun échantillon propre. Ils ne sont pas devinés pour
+  // autant : chacun vient d'un lot déjà calibré, et deux d'entre eux se
+  // recoupent depuis des figures indépendantes.
+  //
+  // lockout à 170 : le haut d'une répétition EST une full planche. Sur les 6
+  // full planches notées 8 ou plus, le coude mesure de 165 à 176 degrés,
+  // moyenne 169,4. Viser 180, la valeur théorique, aurait pénalisé toutes les
+  // exécutions réelles — aucune n'atteint l'extension parfaite sous ce levier.
+  // Rampe de 25, la même que sur le handstand push-up, où elle a été discutée
+  // puis confirmée sur 7 échantillons.
+  //
+  // form à 170 : c'est la valeur la mieux soutenue de la grille. La hanche
+  // moyenne de ces mêmes 6 full planches vaut 169,9, et le handstand push-up
+  // a été recalé sur 6 échantillons à exactement 170. Deux lots
+  // indépendants, deux figures différentes, la même valeur. Tolérance 22
+  // reprise de la hanche calibrée de la full planche, plus large que les 15
+  // du handstand push-up : la dispersion réellement observée sur des planches
+  // va de 158 à 178 degrés.
+  //
+  // protraction à 0,7 : valeur calibrée de la full planche, reprise telle
+  // quelle. Les 6 bonnes planches mesurent 0,79 en moyenne. C'est le critère
+  // qui empêche une pompe ordinaire de passer pour une pompe planche.
+  //
+  // peak à 100 et hipSwing à 6 : raisonnés, sans données. Une pompe planche
+  // descend beaucoup moins qu'un handstand push-up, le levier l'interdit ;
+  // et une hanche qui oscille sous ce levier signale une planche qu'on perd,
+  // d'où le seuil de la pompe au sol plutôt que celui du handstand push-up.
+  planche_push_up: {
+    driver: "elbowAngle",
+    extendedValue: 170,
+    flexedValue: 100,
+    // Plus bas que les 0,55 du handstand push-up : l'amplitude d'une pompe
+    // planche est courte par nature, une fraction trop haute rejetterait des
+    // répétitions bien réelles.
+    minRangeRatio: 0.5,
+    lockout: { target: 170, tolerance: 25 },
+    peak: { target: 100, tolerance: 40 },
+    hipSwing: { target: 6, tolerance: 18 },
+    form: { target: 170, tolerance: 22 },
+    protraction: { target: 0.7, tolerance: 0.2 },
+    tempo: { target: 65, tolerance: 45 },
+  },
   handstand_push_up: {
     driver: "elbowAngle",
     extendedValue: 175,

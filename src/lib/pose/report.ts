@@ -6,6 +6,7 @@ import { figuresEn } from "@/lib/i18n/figures.en";
 import { isRepProgression } from "./grid";
 
 export const PROGRESSION_LABELS: Record<string, string> = {
+  planche_push_up: "Pompe planche",
   tuck_planche: "Tuck planche",
   advanced_tuck_planche: "Advanced tuck planche",
   straddle_planche: "Straddle planche",
@@ -41,6 +42,11 @@ export const PROGRESSION_LABELS: Record<string, string> = {
 // que le code a déjà été mis à jour avec. Tenu à jour manuellement à
 // chaque recalibration (voir aussi les commentaires dans grid.ts).
 export const CALIBRATED_CRITERIA: Record<string, string[]> = {
+  // Seuils transférés depuis la full planche et le handstand push-up, tous
+  // deux calibrés, mais aucun échantillon de pompe planche : rien n'est
+  // vérifié sur la figure elle-même. Voir grid.ts pour la provenance de
+  // chaque valeur.
+  planche_push_up: [],
   tuck_planche: ["hip_angle"],
   advanced_tuck_planche: ["shoulder_protraction", "hip_angle"],
   straddle_planche: [],
@@ -114,6 +120,8 @@ export const CRITERE_DEFINITIONS: Record<CriterionScore["critere"], string> = {
     "Écart type de l'angle de hanche sur la série. Mesure l'élan : une hanche qui oscille trahit un mouvement lancé plutôt que tiré.",
   rep_form:
     "Angle de hanche moyen sur la série. Mesure la tenue du corps pendant le mouvement, là où le contrôle mesure l'élan.",
+  rep_protraction:
+    "Avancée moyenne des épaules devant les poignets pendant la série, rapportée à la longueur du buste. C'est elle qui distingue une pompe planche d'une pompe ordinaire : les autres critères ne regardent que le coude, la hanche et le rythme.",
   rep_tempo:
     "Régularité de la durée des répétitions, en pourcentage. Une série qui se dégrade s'allonge sur les dernières répétitions.",
   elbow_angle:

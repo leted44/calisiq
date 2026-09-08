@@ -68,6 +68,8 @@ export const VARIATION_DIFFICULTY: Record<string, number> = {
   straddle_front_lever: 72,
   straddle_human_flag: 75,
 
+  planche_push_up: 92,
+
   // Élite. Des années, et pas pour tout le monde.
   full_human_flag: 88,
   full_front_lever: 90,

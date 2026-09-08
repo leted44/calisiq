@@ -309,6 +309,26 @@ export const REP_EXERCISES: Record<string, RepExerciseConfig> = {
  * donc un bon score de contrôle, alors que sa position est mauvaise du début
  * à la fin. C'est cette moyenne qui le voit.
  */
+/**
+ * Avancée moyenne des épaules devant les poignets sur la série.
+ *
+ * Moyennée sur les répétitions et non sur toute la vidéo, comme la hanche :
+ * la mise en place et la sortie de position n'ont pas à peser sur une mesure
+ * censée décrire le mouvement.
+ */
+export function meanProtraction(angles: PoseAngles[], reps: Rep[]): number {
+  if (reps.length === 0) return 0;
+  let sum = 0;
+  let count = 0;
+  for (const rep of reps) {
+    for (let i = rep.start; i <= rep.end && i < angles.length; i++) {
+      sum += angles[i].shoulderProtraction;
+      count++;
+    }
+  }
+  return count > 0 ? sum / count : 0;
+}
+
 export function meanHipAngle(angles: PoseAngles[], reps: Rep[]): number {
   if (reps.length === 0) return 0;
   let sum = 0;

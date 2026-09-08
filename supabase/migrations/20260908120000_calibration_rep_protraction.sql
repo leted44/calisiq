@@ -1,0 +1,21 @@
+-- Avancée des épaules pendant une série, pour la pompe planche.
+--
+-- POURQUOI UNE COLONNE DE PLUS
+--
+-- Le modèle à répétitions note quatre choses : l'extension, l'amplitude,
+-- l'oscillation de hanche et le tempo. Une pompe au sol correctement exécutée
+-- les satisfait toutes, et une pompe planche aussi : rien là-dedans ne
+-- regarde où sont les épaules par rapport aux poignets, qui est pourtant la
+-- seule différence entre les deux mouvements.
+--
+-- Sans cette mesure, la variation pompe planche noterait une pompe ordinaire
+-- exactement comme une pompe planche. La colonne existe donc pour que la page
+-- de calibration puisse rejouer la note d'un échantillon à l'identique de ce
+-- que l'analyse a calculé : sans elle, le rejeu noterait sans ce critère et
+-- s'écarterait de la note affichée, ce qui rendrait toute comparaison fausse.
+--
+-- Null sur tous les échantillons enregistrés avant, et sur tous les
+-- mouvements où le critère n'existe pas — c'est-à-dire partout sauf la pompe
+-- planche.
+alter table public.calibration_samples
+  add column if not exists rep_protraction double precision;

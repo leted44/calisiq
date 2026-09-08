@@ -40,7 +40,8 @@ scoring.
 
 | Figure | Statut | Base des seuils |
 |---|---|---|
-| Planche (tuck, advanced tuck, full) | Actif | Hanche recalibrée le 2026-09-01 sur 34 échantillons notés |
+| Planche (tuck, advanced tuck, straddle, full) | Actif | Hanche recalibrée le 2026-09-01 sur 34 échantillons notés |
+| Pompe planche | Actif, seuils transférés | Ajoutée le 2026-09-08. Aucun échantillon propre, seuils repris de la full planche et du handstand push-up |
 | Straddle planche | Actif, seuils DRAFT | 3 échantillons seulement |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
 | Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
@@ -587,6 +588,32 @@ le contrôle est un écart type sur toute la série, le tempo un pourcentage,
 aucun des deux n'est un angle isolé. Les recalibrer demandera de réanalyser la
 vidéo.
 
+**La pompe planche, et le critère qui la rend possible.** Ajoutée le
+2026-09-08 comme exercice à répétitions de la famille planche. Le modèle à
+répétitions notait quatre choses : extension, amplitude, oscillation de
+hanche, tempo. Une pompe au sol bien exécutée les satisfait toutes, et une
+pompe planche aussi — rien n'y regardait où sont les épaules par rapport aux
+poignets, qui est pourtant la seule différence entre les deux mouvements. La
+variation aurait été décorative.
+
+D'où `rep_protraction`, cinquième critère du modèle, optionnel et réservé
+aux mouvements de planche : avancée moyenne des épaules devant les poignets
+sur la série, notée en seuil minimum comme sur les holds.
+
+**Ses seuils sont transférés, pas devinés.** Le haut d'une répétition est une
+full planche : sur les 6 full planches notées 8 ou plus, le coude mesure 165
+à 176 degrés, moyenne 169,4, d'où un verrouillage visé à 170 plutôt qu'aux
+180 théoriques que personne n'atteint sous ce levier. La tenue du corps est
+la valeur la mieux soutenue de la grille : la hanche moyenne de ces mêmes 6
+planches vaut 169,9, et le handstand push-up a été recalé indépendamment à
+exactement 170. L'avancée d'épaules reprend le 0,7 calibré de la full
+planche, dont les bonnes exécutions mesurent 0,79. Restent l'amplitude et
+l'oscillation, raisonnées sans données.
+
+La variation porte donc la marque « environ » : aucun échantillon ne la
+concerne elle. La migration `20260908120000` ajoute la colonne
+`rep_protraction` aux échantillons, sans quoi la page de calibration
+rejouerait la note sans ce critère et s'écarterait de celle affichée.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4

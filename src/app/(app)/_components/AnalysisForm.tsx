@@ -42,6 +42,7 @@ import {
   AdvancedTuckIcon,
   StraddlePlancheIcon,
   FullPlancheIcon,
+  PlanchePushUpIcon,
   HandstandPushUpIcon,
   OneArmHandstandIcon,
   TuckFrontLeverIcon,
@@ -199,6 +200,11 @@ const VARIATIONS_BY_FIGURE: Record<Figure, VariationOption[]> = {
       Icon: StraddlePlancheIcon,
       available: true,
       image: "/figures/straddle-planche.png",
+    },
+    {
+      value: "planche_push_up",
+      Icon: PlanchePushUpIcon,
+      available: true,
     },
     {
       value: "full_planche",

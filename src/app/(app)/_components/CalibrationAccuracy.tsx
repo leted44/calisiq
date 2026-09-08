@@ -51,6 +51,7 @@ export type CalibrationSampleRow = {
   rep_peak: number | null;
   rep_hip_swing: number | null;
   rep_form: number | null;
+  rep_protraction: number | null;
   rep_tempo: number | null;
   // Notes humaines par critère, facultatives. Une note globale seule ne dit
   // pas QUEL seuil recaler quand elle s'écarte de celle de la grille.
@@ -112,6 +113,7 @@ function sampleScores(sample: CalibrationSampleRow): CriterionScore[] | null {
         peak: sample.rep_peak,
         hipSwing: sample.rep_hip_swing,
         form: sample.rep_form,
+        protraction: sample.rep_protraction,
         // Même règle qu'à l'analyse : sous trois répétitions le tempo n'est
         // pas noté, sinon la grille se jugerait ici sur un critère qu'elle
         // n'applique plus.

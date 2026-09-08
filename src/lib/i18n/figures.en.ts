@@ -16,6 +16,7 @@ export const figuresEn: typeof figuresFr = {
     pistol: { label: "Pistol Squat", tagline: "Single-leg squat" },
   },
   progressionLabels: {
+    planche_push_up: "Planche push-up",
     tuck_planche: "Tuck planche",
     advanced_tuck_planche: "Advanced tuck planche",
     straddle_planche: "Straddle planche",
@@ -47,6 +48,7 @@ export const figuresEn: typeof figuresFr = {
     pistol_squat: "Pistol squat",
   } as Record<string, string>,
   variations: {
+    planche_push_up: { label: "Planche push-up", cue: "Push-ups in a full planche, shoulders far past the wrists" },
     tuck_planche: { label: "Tuck", cue: "Knees drawn in to the chest" },
     advanced_tuck_planche: { label: "Advanced tuck", cue: "Hips open, knees still tucked" },
     straddle_planche: { label: "Straddle", cue: "Legs straight and spread wide" },

@@ -977,6 +977,35 @@ const REP_EXERCISE_MAP: Record<string, TieredRecommendations> = {
       },
     ],
   },
+  // Ne concerne que la pompe planche, seul mouvement à répétitions qui porte
+  // ce critère.
+  rep_protraction: {
+    faible: [
+      {
+        exercice: "Planche lean tenu, 4 x 15 s, épaules poussées loin devant les mains",
+        raison:
+          "Les épaules ne dépassent pas assez les poignets : le poids reste sur les mains au lieu de passer dans les bras, et le mouvement est une pompe, pas une pompe planche.",
+      },
+      {
+        exercice: "Pseudo planche push-up, tempo lent, 4 x 6",
+        raison:
+          "Fait travailler exactement le geste manquant, l'avancée des épaules, à une intensité où tu peux encore la contrôler.",
+      },
+    ],
+    bon: [
+      {
+        exercice: "Cue « pousser le sol loin derrière » à chaque répétition",
+        raison:
+          "L'avancée est là au départ et se perd en cours de série, souvent dès la deuxième répétition.",
+      },
+    ],
+    optimal: [
+      {
+        exercice: "Avancée d'épaules tenue sur toute la série — allonge la série",
+        raison: "La position est bonne du début à la fin, ce n'est plus elle qui limite.",
+      },
+    ],
+  },
   rep_tempo: {
     faible: [
       {

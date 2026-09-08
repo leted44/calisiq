@@ -61,6 +61,7 @@ const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   rep_peak: "Amplitude",
   rep_control: "Contrôle",
   rep_form: "Forme",
+  rep_protraction: "Épaules",
   rep_tempo: "Tempo",
   shoulder_protraction: "Épaules",
   shoulder_flexion: "Épaules",
@@ -614,6 +615,8 @@ const CRITERION_LANDMARKS: Record<CriterionScore["critere"], number[]> = {
   rep_peak: [13, 14, 25, 26],
   rep_control: [23, 24],
   rep_form: [11, 12, 23, 24],
+  // Épaules et poignets : c'est l'écart entre les deux que mesure l'avancée.
+  rep_protraction: [11, 12, 15, 16],
   rep_tempo: [11, 12, 23, 24],
   shoulder_protraction: [11, 12],
   shoulder_flexion: [11, 12],
