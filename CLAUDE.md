@@ -41,7 +41,7 @@ scoring.
 | Figure | Statut | Base des seuils |
 |---|---|---|
 | Planche (tuck, advanced tuck, straddle, full) | Actif | Hanche recalibrée le 2026-09-01 sur 34 échantillons notés |
-| Pompe planche | Actif, calibrée | Ajoutée puis recalée le 2026-09-08 sur 3 séries notées, écart moyen 0,68 vers 0,19 |
+| Planche push-up | Actif, calibrée | Ajoutée puis recalée le 2026-09-08 sur 3 séries notées, écart moyen 0,68 vers 0,19 |
 | Straddle planche | Actif, seuils DRAFT | 3 échantillons seulement |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
 | Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
@@ -588,11 +588,11 @@ le contrôle est un écart type sur toute la série, le tempo un pourcentage,
 aucun des deux n'est un angle isolé. Les recalibrer demandera de réanalyser la
 vidéo.
 
-**La pompe planche, et le critère qui la rend possible.** Ajoutée le
+**La planche push-up, et le critère qui la rend possible.** Ajoutée le
 2026-09-08 comme exercice à répétitions de la famille planche. Le modèle à
 répétitions notait quatre choses : extension, amplitude, oscillation de
 hanche, tempo. Une pompe au sol bien exécutée les satisfait toutes, et une
-pompe planche aussi — rien n'y regardait où sont les épaules par rapport aux
+planche push-up aussi — rien n'y regardait où sont les épaules par rapport aux
 poignets, qui est pourtant la seule différence entre les deux mouvements. La
 variation aurait été décorative.
 
@@ -630,7 +630,7 @@ côtés.
 Elle arrive en fondu une fois le compteur posé, pas pendant qu'il monte :
 annoncer « Élite » alors que le chiffre défile encore vend la mèche et vide
 la montée de son intérêt.
-Recalibration de la pompe planche le 2026-09-08, 3 séries notées, quelques
+Recalibration de la planche push-up le 2026-09-08, 3 séries notées, quelques
 heures après sa création. Écart absolu moyen 0,68 puis **0,19**, et les
 erreurs cessent d'être toutes du même côté.
 
@@ -657,6 +657,28 @@ Réserve : les trois séries sont notées 9,5 et plus. La calibration prouve que
 la grille n'était pas trop sévère, pas encore qu'elle est assez exigeante. Il
 y faudrait une série volontairement ratée, comme celle qui a servi au
 handstand push-up.
+**Sur une série, les barres se construisent au lieu d'attendre.** Le HUD
+recalcule le score image par image sur un hold, mais une série se note sur
+l'ensemble de ses répétitions : les barres restaient donc figées du début à
+la fin, à afficher un verdict avant même la première répétition.
+
+`runAnalysis` renvoie désormais `repProgressScores`, la même notation rejouée
+sur les k premières répétitions pour chaque k. Le HUD affiche l'instantané
+correspondant au nombre de répétitions achevées à cet instant. **Rien n'est
+simulé** : chaque valeur est la vraie note de ce qui a été exécuté jusque-là,
+et la dernière est exactement la note finale. Tant qu'aucune répétition n'est
+terminée, les barres sont vides, ce qui est exact et non décoratif.
+
+La liste des critères reste celle du résultat final, y compris le tempo qui
+n'existe pas sous trois répétitions : il garde sa ligne à zéro plutôt que
+d'apparaître en cours de route et de faire grandir la carte au milieu de la
+vidéo.
+
+Au passage, l'export lancé depuis l'historique ne transmettait ni les
+instants de répétition ni ces instantanés : son compteur de répétitions
+affichait le total dès la première image, alors que celui de l'écran
+d'analyse s'incrémentait correctement. Les deux chemins passent maintenant
+les mêmes données.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4

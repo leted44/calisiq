@@ -17,7 +17,7 @@ export const figuresFr = {
     pistol: { label: "Pistol Squat", tagline: "Jambes, unilatéral" },
   },
   progressionLabels: {
-    planche_push_up: "Pompe planche",
+    planche_push_up: "Planche push-up",
     tuck_planche: "Tuck planche",
     advanced_tuck_planche: "Advanced tuck planche",
     straddle_planche: "Straddle planche",
@@ -49,7 +49,7 @@ export const figuresFr = {
     pistol_squat: "Pistol squat",
   } as Record<string, string>,
   variations: {
-    planche_push_up: { label: "Pompe planche", cue: "Pompes en planche complète, épaules loin devant les poignets" },
+    planche_push_up: { label: "Planche push-up", cue: "Pompes en planche complète, épaules loin devant les poignets" },
     tuck_planche: { label: "Tuck", cue: "Genoux ramenés contre la poitrine" },
     advanced_tuck_planche: { label: "Advanced tuck", cue: "Hanches ouvertes, genoux encore repliés" },
     straddle_planche: { label: "Straddle", cue: "Jambes tendues et écartées" },

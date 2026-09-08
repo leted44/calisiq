@@ -3,7 +3,12 @@ import {
   DrawingUtils,
   type NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
-import { scoreAngles, globalScore, type CriterionScore } from "./scoring";
+import {
+  scoreAngles,
+  globalScore,
+  globalScoreWithMajorFault,
+  type CriterionScore,
+} from "./scoring";
 import { getLandmarker } from "./runAnalysis";
 import { seekTo, playSegment } from "@/lib/video/playback";
 import { createVideoWriter } from "@/lib/video/writer";
@@ -981,6 +986,7 @@ export async function recordAnnotatedVideo({
   holdEndSeconds,
   holdDurationSeconds,
   repTimes,
+  repProgressScores,
   weakPointCue,
   forceLegacyEncoder,
   onProgress,
@@ -1022,6 +1028,19 @@ export async function recordAnnotatedVideo({
   // s'en sert pour incrémenter un compteur au fil de la lecture. Absent sur un
   // hold, où le chrono garde sa place.
   repTimes?: number[] | null;
+  /**
+   * Notes cumulées après chaque répétition, produites par l'analyse.
+   *
+   * Sur une série, la note se calcule sur l'ensemble et non image par image :
+   * les barres restaient donc figées du début à la fin, à afficher un verdict
+   * avant même la première répétition. Avec ces instantanés elles se
+   * construisent au fil de la lecture, et chacun est la vraie note de ce qui a
+   * été exécuté jusque-là — le dernier est exactement la note finale.
+   *
+   * Absent (export d'un historique sans ré-analyse), on retombe sur les barres
+   * figées comme avant.
+   */
+  repProgressScores?: CriterionScore[][] | null;
   // Conseil affiché pendant le ralenti sur le point faible (typiquement la
   // première recommandation de l'analyse).
   weakPointCue?: string | null;
@@ -1186,6 +1205,36 @@ export async function recordAnnotatedVideo({
       const repsDone = repTimes
         ? repTimes.filter((time) => time <= mediaTime).length
         : null;
+
+      // Notation en construction sur une série.
+      //
+      // Tant qu'aucune répétition n'est terminée il n'y a rien à noter, et les
+      // barres restent vides : c'est exact, pas décoratif. Chaque répétition
+      // achevée remplace ensuite l'instantané par celui, réel, de la série
+      // réduite à ce qui a été fait.
+      if (isRepExercise && repProgressScores && repProgressScores.length > 0) {
+        const acheves = repsDone ?? 0;
+        const partiel =
+          acheves > 0
+            ? repProgressScores[Math.min(acheves, repProgressScores.length) - 1]
+            : null;
+        if (partiel) {
+          // L'ordre et la liste des critères restent ceux du résultat final :
+          // un critère qui apparaîtrait en cours de route ferait grandir la
+          // carte au milieu de la vidéo. Le tempo, absent sous trois
+          // répétitions, garde donc sa ligne, à zéro.
+          const parCritere = new Map(partiel.map((s) => [s.critere, s]));
+          liveScores = scores.map(
+            (s) => parCritere.get(s.critere) ?? { ...s, score: 0 }
+          );
+          // Même agrégation que le résultat final, plafond sur faute majeure
+          // compris, sinon le chiffre du HUD ne serait pas celui de la carte.
+          liveGlobalScoreValue = globalScoreWithMajorFault(partiel);
+        } else {
+          liveScores = scores.map((s) => ({ ...s, score: 0 }));
+          liveGlobalScoreValue = 0;
+        }
+      }
 
       drawHud(ctx, canvas, {
         figureLabel,

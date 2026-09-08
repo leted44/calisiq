@@ -755,7 +755,7 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
   // L'oscillation de hanche est conservée et serrée : la triche classique du
   // HSPU consiste à casser à la hanche pour raccourcir la course, et le corps
   // doit rester gainé du bassin aux pieds pendant toute la descente.
-  // Pompe planche : une planche complète dont on plie puis retend les bras.
+  // Planche push-up : une planche complète dont on plie puis retend les bras.
   //
   // CALIBRÉE le 2026-09-08 sur 3 séries notées, après avoir été montée sur des
   // seuils transférés de la full planche et du handstand push-up. Écart absolu

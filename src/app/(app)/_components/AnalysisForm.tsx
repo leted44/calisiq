@@ -1961,6 +1961,7 @@ export default function AnalysisForm() {
               holdEndSeconds={result.holdEndSeconds}
               holdDurationSeconds={result.holdDurationSeconds}
               repTimes={result.repTimes}
+              repProgressScores={result.repProgressScores}
               weakPointCue={result.recommendations[0]?.exercice ?? null}
             />
           )}

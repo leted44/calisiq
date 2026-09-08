@@ -6,7 +6,7 @@ import { figuresEn } from "@/lib/i18n/figures.en";
 import { isRepProgression } from "./grid";
 
 export const PROGRESSION_LABELS: Record<string, string> = {
-  planche_push_up: "Pompe planche",
+  planche_push_up: "Planche push-up",
   tuck_planche: "Tuck planche",
   advanced_tuck_planche: "Advanced tuck planche",
   straddle_planche: "Straddle planche",

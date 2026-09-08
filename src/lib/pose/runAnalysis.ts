@@ -93,6 +93,16 @@ export type PoseAnalysisResult =
       // un compteur qui s'incrémente au fil de la lecture, comme le chrono le
       // fait sur un hold, plutôt que d'afficher le total dès la première image.
       repTimes: number[] | null;
+      /**
+       * Notes cumulées après chaque répétition : l'entrée k contient la
+       * notation de la série réduite à ses k+1 premières répétitions.
+       *
+       * Sert au HUD de l'export à faire évoluer les barres pendant la
+       * lecture. Ce ne sont pas des valeurs décoratives : chacune est la
+       * vraie note de ce qui a été exécuté jusque-là, et la dernière est
+       * exactement la note finale.
+       */
+      repProgressScores: CriterionScore[][] | null;
       // Bornes temporelles (dans le référentiel de la vidéo entière, pas
       // de la plage rognée) du hold réellement détecté — utilisées par
       // l'export vidéo pour que le chrono affiché ne défile que pendant la
@@ -368,6 +378,7 @@ export async function runPoseAnalysis({
       holdEndSeconds,
       repCount: null,
       repTimes: null,
+      repProgressScores: null,
       summaryAngles: median,
       scores: [],
       globalScoreValue: 0,
@@ -457,6 +468,18 @@ export async function runPoseAnalysis({
       frameTimes,
       thresholds,
     });
+    // La même notation rejouée sur les k premières répétitions, pour chaque k.
+    // Coût négligeable — une série dépasse rarement la vingtaine — et c'est ce
+    // qui permet à l'export de montrer un calcul qui se construit plutôt qu'un
+    // verdict posé dès la première image.
+    const repProgressScores = reps.map((_, k) =>
+      scoreReps({
+        angles: repAngles,
+        reps: reps.slice(0, k + 1),
+        frameTimes,
+        thresholds,
+      })
+    );
     const weakestRep = pickWeakestCriterion(repScores);
     const repWarnings = [...warningParts];
 
@@ -505,6 +528,7 @@ export async function runPoseAnalysis({
       repTimes: reps.map(
         (r) => frameTimes[Math.min(r.end, frameTimes.length - 1)]
       ),
+      repProgressScores,
       summaryAngles: median,
       scores: repScores,
       globalScoreValue: globalScoreWithMajorFault(repScores),
@@ -544,6 +568,7 @@ export async function runPoseAnalysis({
     holdEndSeconds,
     repCount: null,
     repTimes: null,
+    repProgressScores: null,
     summaryAngles: median,
     scores,
     globalScoreValue: globalScore(scores),
@@ -603,6 +628,7 @@ export async function measureImage(
     holdStartSeconds: 0,
     repCount: null,
     repTimes: null,
+    repProgressScores: null,
     holdEndSeconds: 0,
     summaryAngles: angles,
     scores: [],

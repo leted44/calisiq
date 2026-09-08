@@ -40,6 +40,7 @@ export default function ExportVideoButton({
   holdEndSeconds,
   holdDurationSeconds,
   repTimes,
+  repProgressScores,
   weakPointCue,
 }: {
   videoRef: RefObject<HTMLVideoElement | null>;
@@ -55,6 +56,7 @@ export default function ExportVideoButton({
   holdEndSeconds?: number | null;
   holdDurationSeconds?: number | null;
   repTimes?: number[] | null;
+  repProgressScores?: CriterionScore[][] | null;
   weakPointCue?: string | null;
 }) {
   const t = useT();
@@ -140,6 +142,7 @@ export default function ExportVideoButton({
         holdEndSeconds,
         holdDurationSeconds,
         repTimes,
+        repProgressScores,
         weakPointCue,
         forceLegacyEncoder,
         onProgress: setProgress,

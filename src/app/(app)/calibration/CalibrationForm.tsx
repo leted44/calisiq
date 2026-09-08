@@ -33,7 +33,7 @@ function repMeasure(
 }
 
 const VARIATIONS = [
-  { value: "planche_push_up", label: "Pompe Planche", figure: "planche" },
+  { value: "planche_push_up", label: "Planche Push-up", figure: "planche" },
   { value: "tuck_planche", label: "Tuck Planche", figure: "planche" },
   { value: "advanced_tuck_planche", label: "Advanced Tuck Planche", figure: "planche" },
   { value: "straddle_planche", label: "Straddle Planche", figure: "planche" },
