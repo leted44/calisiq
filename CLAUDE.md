@@ -614,6 +614,22 @@ La variation porte donc la marque « environ » : aucun échantillon ne la
 concerne elle. La migration `20260908120000` ajoute la colonne
 `rep_protraction` aux échantillons, sans quoi la page de calibration
 rejouerait la note sans ce critère et s'écarterait de celle affichée.
+**Le palier est gravé dans la vidéo exportée.** L'écran de fin n'affichait
+que le score sur 10, or ce chiffre ne situe rien tout seul : 9 sur 10 en tuck
+planche et 9 sur 10 en full planche racontent deux histoires différentes, et
+c'est le palier qui fait la différence. C'est aussi le mot qu'on retient et
+qu'on répète, bien avant la décimale — « je suis passé Élite » se dit, « j'ai
+eu 9,0 » beaucoup moins.
+
+Une pastille apparaît donc sous le score, avec le palier et ses points, aux
+couleurs de `TIER_CANVAS_COLORS`. Cette table double `TIER_STYLES`, qui ne
+contient que des classes Tailwind illisibles pour un canvas ; les deux vivent
+côte à côte dans `level.ts` pour qu'un palier recoloré le soit des deux
+côtés.
+
+Elle arrive en fondu une fois le compteur posé, pas pendant qu'il monte :
+annoncer « Élite » alors que le chiffre défile encore vend la mèche et vide
+la montée de son intérêt.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4

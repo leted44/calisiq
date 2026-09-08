@@ -278,6 +278,22 @@ export const TIER_STYLES: Record<Tier, string> = {
 };
 
 /**
+ * Mêmes paliers, en couleurs directes.
+ *
+ * TIER_STYLES ne sert qu'à l'interface : ce sont des classes Tailwind, que le
+ * canvas de l'export vidéo ne sait pas lire. Les deux tables décrivent le même
+ * palier et doivent bouger ensemble — d'où leur voisinage immédiat plutôt
+ * qu'une couleur recopiée au fond d'exportVideo.
+ */
+export const TIER_CANVAS_COLORS: Record<Tier, string> = {
+  foundations: "#cbd5e1",
+  solid: "#67e8f9",
+  mastery: "#4ade80",
+  elite: "#c4b5fd",
+  legendary: "#fcd34d",
+};
+
+/**
  * Niveau global d'un pratiquant : la somme de son meilleur résultat sur
  * chaque figure.
  *

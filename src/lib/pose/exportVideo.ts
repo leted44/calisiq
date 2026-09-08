@@ -11,6 +11,7 @@ import { computeAngles } from "./angles";
 import { drawAngleLabels } from "./canvasHud";
 import { buildTargetPose, type TargetPose } from "./targetPose";
 import { isRepProgression, type AnyProgression, type Progression } from "./grid";
+import { levelPoints, tierForPoints, TIER_CANVAS_COLORS } from "./level";
 import type { Lang } from "@/lib/i18n/config";
 import { en } from "@/lib/i18n/en";
 import { fr } from "@/lib/i18n/fr";
@@ -367,6 +368,7 @@ function drawOutro(
   canvas: HTMLCanvasElement,
   {
     figureLabel,
+    progression,
     globalScoreValue,
     holdDurationSeconds,
     scores,
@@ -375,6 +377,11 @@ function drawOutro(
     reveal,
   }: {
     figureLabel: string;
+    /**
+     * Nécessaire au palier, et à lui seul : une note de 9 ne vaut pas le même
+     * niveau selon qu'elle récompense une tuck ou une full.
+     */
+    progression: AnyProgression;
     globalScoreValue: number;
     // Durée réelle du hold à afficher à côté du score final ; null si la
     // détection n'a rien identifié de stable (voir hold-window plus haut).
@@ -422,7 +429,8 @@ function drawOutro(
   const cardWidth = Math.min(w - 32 * scale, 280 * scale);
   const cardPaddingX = 20 * scale;
   const titleSectionHeight = 44 * scale;
-  const scoreSectionHeight = (handle ? 96 : 78) * scale;
+  // 32 de plus qu'avant : la pastille de palier et l'air qui l'entoure.
+  const scoreSectionHeight = (handle ? 128 : 110) * scale;
   const holdSectionHeight = holdDurationSeconds !== null ? 62 * scale : 0;
   const detailRowHeight = 20 * scale;
   const detailSectionHeight =
@@ -493,15 +501,80 @@ function drawOutro(
     cursorY,
     "center"
   );
+  // --- Palier atteint ---
+  //
+  // Le chiffre seul ne situe rien : 9 sur 10 en tuck planche et 9 sur 10 en
+  // full planche racontent deux histoires différentes, et c'est le palier qui
+  // fait la différence. C'est aussi le mot qu'on retient et qu'on répète, bien
+  // avant la décimale.
+  const palierPoints = levelPoints(
+    progression,
+    globalScoreValue,
+    holdDurationSeconds
+  );
+  const palier = tierForPoints(palierPoints);
+  const palierCouleur = TIER_CANVAS_COLORS[palier];
+  const mots = lang === "en" ? en.result : fr.result;
+  const palierTexte = mots.tiers[palier] ?? palier;
+  const pointsTexte = mots.points(Math.round(palierPoints));
+
+  const policePalier = `700 ${11 * scale}px sans-serif`;
+  const policePoints = `600 ${10 * scale}px sans-serif`;
+  ctx.font = policePalier;
+  const largeurPalier = ctx.measureText(palierTexte).width;
+  ctx.font = policePoints;
+  const largeurPoints = ctx.measureText(pointsTexte).width;
+
+  const ecart = 8 * scale;
+  const marge = 13 * scale;
+  const pastilleLargeur = marge * 2 + largeurPalier + ecart + largeurPoints;
+  const pastilleHauteur = 22 * scale;
+  const pastilleHaut = cursorY + 10 * scale;
+  const pastilleX = centerX - pastilleLargeur / 2;
+
+  // Le palier apparaît une fois le compteur posé, pas pendant qu'il monte :
+  // annoncer « Élite » alors que le chiffre défile encore vend la mèche et
+  // vide la montée de son intérêt.
+  const palierAlpha = clamp01((reveal - 0.42) / 0.14);
+  ctx.globalAlpha = cardOpacity * palierAlpha;
+
+  roundedRectPath(
+    ctx,
+    pastilleX,
+    pastilleHaut,
+    pastilleLargeur,
+    pastilleHauteur,
+    pastilleHauteur / 2
+  );
+  // Couleur du palier en fond très dilué et en liseré franc : la pastille se
+  // lit d'un coup d'œil sur une capture, sans concurrencer le score.
+  ctx.fillStyle = palierCouleur + "26";
+  ctx.fill();
+  ctx.lineWidth = 1.5 * scale;
+  ctx.strokeStyle = palierCouleur + "99";
+  ctx.stroke();
+
+  const ligneBase = pastilleHaut + pastilleHauteur / 2 + 3.5 * scale;
+  ctx.textAlign = "left";
+  ctx.font = policePalier;
+  ctx.fillStyle = palierCouleur;
+  ctx.fillText(palierTexte, pastilleX + marge, ligneBase);
+  ctx.font = policePoints;
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillText(pointsTexte, pastilleX + marge + largeurPalier + ecart, ligneBase);
+
+  ctx.globalAlpha = cardOpacity;
+  cursorY = pastilleHaut + pastilleHauteur;
+
   if (handle) {
     cursorY += 18 * scale;
     ctx.textAlign = "center";
     ctx.fillStyle = "#64748b";
     ctx.font = `600 ${11 * scale}px sans-serif`;
     ctx.fillText("@" + handle, centerX, cursorY);
-    cursorY += scoreSectionHeight - 80 * scale;
+    cursorY += scoreSectionHeight - 112 * scale;
   } else {
-    cursorY += scoreSectionHeight - 62 * scale;
+    cursorY += scoreSectionHeight - 94 * scale;
   }
 
   // Sections suivantes en fondu : elles arrivent une fois le score posé.
@@ -1252,6 +1325,7 @@ export async function recordAnnotatedVideo({
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     drawOutro(ctx, canvas, {
       figureLabel,
+      progression,
       globalScoreValue,
       holdDurationSeconds: holdDurationSeconds ?? null,
       scores,
