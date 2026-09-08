@@ -41,7 +41,7 @@ scoring.
 | Figure | Statut | Base des seuils |
 |---|---|---|
 | Planche (tuck, advanced tuck, straddle, full) | Actif | Hanche recalibrée le 2026-09-01 sur 34 échantillons notés |
-| Pompe planche | Actif, seuils transférés | Ajoutée le 2026-09-08. Aucun échantillon propre, seuils repris de la full planche et du handstand push-up |
+| Pompe planche | Actif, calibrée | Ajoutée puis recalée le 2026-09-08 sur 3 séries notées, écart moyen 0,68 vers 0,19 |
 | Straddle planche | Actif, seuils DRAFT | 3 échantillons seulement |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
 | Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
@@ -630,6 +630,33 @@ côtés.
 Elle arrive en fondu une fois le compteur posé, pas pendant qu'il monte :
 annoncer « Élite » alors que le chiffre défile encore vend la mèche et vide
 la montée de son intérêt.
+Recalibration de la pompe planche le 2026-09-08, 3 séries notées, quelques
+heures après sa création. Écart absolu moyen 0,68 puis **0,19**, et les
+erreurs cessent d'être toutes du même côté.
+
+**Ce que le transfert avait manqué est instructif pour les prochains.** Les
+trois seuils repris de figures *tenues* étaient tous trop sévères, et
+toujours dans le même sens. La raison est mécanique : un hold mesure une
+position immobile, une répétition moyenne un corps en mouvement qui passe
+par la position idéale sans y rester. Une valeur moyennée sur une série est
+donc structurellement plus basse que celle d'une tenue. Verrouillage 170 vers
+165, amplitude 100 vers 110, protraction 0,7 vers 0,6.
+
+À retenir pour tout futur transfert entre un hold et sa version dynamique :
+**décaler les seuils repris vers le bas, ou s'attendre à un biais dans ce
+sens.**
+
+Chaque valeur retenue est la plus exigeante que les données admettent, et les
+dents ont été vérifiées sur des contre-exemples construits : la grille note
+2,0 une pompe au sol impeccable, 4,5 la même avec les épaules déjà avancées,
+5,5 une série cassée à la hanche. C'est le plafond sur faute majeure qui fait
+ce travail — la protraction tombe à 0 et écrase la moyenne au lieu d'y être
+diluée, exactement ce qui manque aux figures tenues.
+
+Réserve : les trois séries sont notées 9,5 et plus. La calibration prouve que
+la grille n'était pas trop sévère, pas encore qu'elle est assez exigeante. Il
+y faudrait une série volontairement ratée, comme celle qui a servi au
+handstand push-up.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4

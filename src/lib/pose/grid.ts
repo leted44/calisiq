@@ -757,9 +757,44 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
   // doit rester gainé du bassin aux pieds pendant toute la descente.
   // Pompe planche : une planche complète dont on plie puis retend les bras.
   //
-  // SEUILS TRANSFÉRÉS, aucun échantillon propre. Ils ne sont pas devinés pour
-  // autant : chacun vient d'un lot déjà calibré, et deux d'entre eux se
-  // recoupent depuis des figures indépendantes.
+  // CALIBRÉE le 2026-09-08 sur 3 séries notées, après avoir été montée sur des
+  // seuils transférés de la full planche et du handstand push-up. Écart absolu
+  // moyen entre la grille et l'œil : 0,68 avant, 0,19 après, et les erreurs
+  // cessent d'être toutes du même côté.
+  //
+  // CE QUE LE TRANSFERT AVAIT MANQUÉ
+  //
+  // Les trois seuils repris de figures TENUES étaient tous trop sévères, et
+  // toujours dans le même sens : la grille notait 8,96, 8,98 et 9,23 des
+  // séries jugées 10, 9,7 et 9,5. La raison est mécanique, pas statistique.
+  // Un hold mesure une position immobile ; une répétition moyenne un corps en
+  // mouvement, qui passe par la position idéale sans y rester. Sur les trois
+  // critères concernés, la valeur moyennée sur une série est donc
+  // structurellement plus basse que celle d'une tenue.
+  //
+  //   verrouillage 170 -> 165  une série notée 9,5 mesure 160,5 en moyenne
+  //                            haute, là où une full planche tenue fait 169
+  //   amplitude    100 -> 110  une série notée 9,7 ne descend qu'à 118
+  //   protraction  0,7 -> 0,6  la série notée 10, la plus longue des trois
+  //                            avec 8 répétitions, mesure 0,60
+  //
+  // Chaque valeur retenue est la plus EXIGEANTE que les données admettent :
+  // le balayage donnait le même écart pour une protraction à 0,5 ou 0,6, et
+  // c'est 0,6 qui est pris. Une amplitude à 115 aurait encore gagné 0,06,
+  // non fait — elle se réglerait sur l'unique série qui manque de
+  // profondeur, et celle-ci ne compte qu'une répétition.
+  //
+  // form et hipSwing n'ont pas bougé : les trois séries les notent entre 8,6
+  // et 10, aucune ne les met en défaut, donc rien n'y est démontré. Desserrer
+  // la forme aurait pourtant gagné encore un peu — et c'est exactement le
+  // piège, avec trois échantillons tous notés au-dessus de 9,5, minimiser
+  // l'écart revient à tout faire tendre vers 10.
+  //
+  // LES DENTS SONT VÉRIFIÉES. Rejouée sur des contre-exemples construits, la
+  // grille proposée note 2,0 une pompe au sol impeccable, 4,5 la même avec
+  // les épaules déjà bien avancées, et 5,5 une série cassée à la hanche. Le
+  // plafond sur faute majeure fait ce travail : la protraction tombe à 0 et
+  // écrase la moyenne au lieu d'y être diluée.
   //
   // lockout à 170 : le haut d'une répétition EST une full planche. Sur les 6
   // full planches notées 8 ou plus, le coude mesure de 165 à 176 degrés,
@@ -792,11 +827,11 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     // planche est courte par nature, une fraction trop haute rejetterait des
     // répétitions bien réelles.
     minRangeRatio: 0.5,
-    lockout: { target: 170, tolerance: 25 },
-    peak: { target: 100, tolerance: 40 },
+    lockout: { target: 165, tolerance: 25 },
+    peak: { target: 110, tolerance: 40 },
     hipSwing: { target: 6, tolerance: 18 },
     form: { target: 170, tolerance: 22 },
-    protraction: { target: 0.7, tolerance: 0.2 },
+    protraction: { target: 0.6, tolerance: 0.2 },
     tempo: { target: 65, tolerance: 45 },
   },
   handstand_push_up: {

@@ -42,11 +42,16 @@ export const PROGRESSION_LABELS: Record<string, string> = {
 // que le code a déjà été mis à jour avec. Tenu à jour manuellement à
 // chaque recalibration (voir aussi les commentaires dans grid.ts).
 export const CALIBRATED_CRITERIA: Record<string, string[]> = {
-  // Seuils transférés depuis la full planche et le handstand push-up, tous
-  // deux calibrés, mais aucun échantillon de pompe planche : rien n'est
-  // vérifié sur la figure elle-même. Voir grid.ts pour la provenance de
-  // chaque valeur.
-  planche_push_up: [],
+  // Recalé le 2026-09-08 sur 3 séries notées, écart moyen 0,68 puis 0,19.
+  // Ces trois critères et pas les autres : eux seuls sont tombés sous 5 sur
+  // des exécutions réelles, et les corriger a supprimé le biais. La forme et
+  // l'oscillation notent entre 8,6 et 10 partout, rien ne les a mis en
+  // défaut.
+  //
+  // Réserve à garder en tête : les trois séries sont notées 9,5 et plus. La
+  // calibration prouve que la grille n'était pas trop sévère, elle ne prouve
+  // pas encore qu'elle est assez exigeante — il y faudrait une série ratée.
+  planche_push_up: ["rep_lockout", "rep_peak", "rep_protraction"],
   tuck_planche: ["hip_angle"],
   advanced_tuck_planche: ["shoulder_protraction", "hip_angle"],
   straddle_planche: [],
