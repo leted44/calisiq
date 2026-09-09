@@ -796,14 +796,28 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
   // bande, donc le recentrer ne l'émousse pas — une hanche cassée à 140 vaut
   // 4,2 avant comme après.
   //
-  // L'AMPLITUDE N'A PAS BOUGÉ, ET C'EST UN CHOIX. La déplacer de 110 à 118
-  // ferait tomber l'écart à 0,15, le meilleur gain disponible : deux des
-  // quatre séries ne descendent qu'à 118 degrés et sont notées 9,7 et 10.
-  // Mais rejouée sur un contre-exemple, cette valeur note 9,3 une planche à
-  // peine fléchie à 135 degrés, contre 5,8 aujourd'hui. Le critère perdrait
-  // exactement ce qu'il sert à mesurer. Avec quatre séries toutes notées 9,5
-  // et plus, minimiser l'écart revient à tout faire tendre vers 10, et
-  // l'amplitude est le premier endroit où ça se paie.
+  // TROISIÈME PASSE le 2026-09-09, cinquième série. Écart 0,18 puis 0,08.
+  // L'amplitude passe de 110 à 118 degrés, et sa rampe de 40 à 25.
+  //
+  // La passe précédente avait refusé le déplacement de la cible, pour une
+  // bonne raison : à rampe inchangée, viser 118 notait 9,3 une planche à
+  // peine fléchie à 135 degrés. Ce que ce refus manquait, c'est que la cible
+  // et la rampe répondent à deux questions différentes. La cible dit à partir
+  // de quelle profondeur une répétition est pleine ; la rampe dit à quelle
+  // vitesse une répétition trop courte perd ses points. Corriger la première
+  // sans resserrer la seconde étalait la pénalité sur 40 degrés et vidait le
+  // critère.
+  //
+  // Les deux ensemble : trois des cinq séries descendent à 118 degrés et sont
+  // notées 9,7, 10 et 10, donc 118 est bien la profondeur d'une bonne
+  // exécution. Et avec une rampe de 25, une flexion à 135 degrés retombe à
+  // 3,2, sous le seuil de faute majeure, ce qui plafonne la série à 5,2 —
+  // exactement la sévérité d'avant. Le critère gagne en justesse sans rien
+  // perdre en dents.
+  //
+  // Une réserve sur ce lot : les séries 4 et 5 sont à quelques dixièmes l'une
+  // de l'autre sur les six mesures. Ce sont probablement deux prises de la
+  // même exécution, donc cinq échantillons pour quatre exécutions distinctes.
   //
   // LES DENTS SONT VÉRIFIÉES. Rejouée sur des contre-exemples construits, la
   // grille proposée note 2,0 une pompe au sol impeccable, 4,5 la même avec
@@ -843,7 +857,7 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     // répétitions bien réelles.
     minRangeRatio: 0.5,
     lockout: { target: 165, tolerance: 25 },
-    peak: { target: 110, tolerance: 40 },
+    peak: { target: 118, tolerance: 25 },
     hipSwing: { target: 6, tolerance: 18 },
     form: { target: 166, tolerance: 22 },
     protraction: { target: 0.6, tolerance: 0.2 },

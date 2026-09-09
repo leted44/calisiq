@@ -41,7 +41,7 @@ scoring.
 | Figure | Statut | Base des seuils |
 |---|---|---|
 | Planche (tuck, advanced tuck, straddle, full) | Actif | Hanche recalibrée le 2026-09-01 sur 34 échantillons notés |
-| Planche push-up | Actif, calibrée | Ajoutée le 2026-09-08, recalée deux fois sur 4 séries notées. Écart moyen 0,68 puis 0,19 puis 0,14 |
+| Planche push-up | Actif, calibrée | Ajoutée le 2026-09-08, recalée trois fois sur 5 séries notées. Écart moyen 0,68 puis 0,19, 0,14, 0,08 |
 | Straddle planche | Actif, seuils DRAFT | 3 échantillons seulement |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
 | Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
@@ -697,6 +697,29 @@ au-dessus de 9,5, minimiser l'écart revient à tout faire tendre vers 10.**
 Chaque seuil candidat doit donc être rejoué sur un contre-exemple construit
 avant d'être retenu, et celui qui perd ses dents est refusé même s'il gagne
 sur l'écart moyen.
+Troisième passe le 2026-09-09, cinquième série. Écart moyen 0,18 puis
+**0,08**. L'amplitude passe de 110 à 118 degrés, et sa rampe de 40 à 25.
+
+**Ce refus de la veille était à moitié juste, et c'est la leçon.** La passe
+précédente avait écarté le déplacement de la cible parce qu'à rampe
+inchangée, viser 118 notait 9,3 une planche à peine fléchie à 135 degrés. Le
+raisonnement était bon, la conclusion trop courte : **la cible et la rampe
+répondent à deux questions différentes.** La cible dit à partir de quelle
+profondeur une répétition est pleine, la rampe dit à quelle vitesse une
+répétition trop courte perd ses points. Corriger la première sans resserrer
+la seconde étale la pénalité sur 40 degrés et vide le critère.
+
+Les deux ensemble tiennent : trois des cinq séries descendent à 118 degrés et
+sont notées 9,7, 10 et 10, donc 118 est bien la profondeur d'une bonne
+exécution ; et avec une rampe de 25, une flexion à 135 degrés retombe à 3,2,
+sous le seuil de faute majeure, ce qui plafonne la série à 5,2, exactement la
+sévérité d'avant.
+
+Réserve sur ce lot : les séries 4 et 5 sont à quelques dixièmes l'une de
+l'autre sur les six mesures, ce sont probablement deux prises de la même
+exécution. Cinq échantillons pour quatre exécutions distinctes. Et les cinq
+restent notées 9,5 et plus : toujours aucune série ratée pour vérifier que la
+grille est assez exigeante.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4

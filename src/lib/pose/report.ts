@@ -43,7 +43,10 @@ export const PROGRESSION_LABELS: Record<string, string> = {
 // chaque recalibration (voir aussi les commentaires dans grid.ts).
 export const CALIBRATED_CRITERIA: Record<string, string[]> = {
   // Recalé le 2026-09-08 sur 3 séries, écart moyen 0,68 puis 0,19, puis le
-  // 2026-09-09 sur une quatrième, 0,24 puis 0,14.
+  // 2026-09-09 sur une quatrième, 0,24 puis 0,14, puis sur une cinquième,
+  // 0,18 puis 0,08. La dernière passe corrige l'amplitude, cible ET rampe :
+  // les corriger séparément ne marchait pas, la première seule vidait le
+  // critère de ses dents.
   //
   // rep_form entre à la seconde passe, mais seulement pour son CENTRE : la
   // hanche moyenne des quatre séries vaut 166,0 là où la grille visait 170.
