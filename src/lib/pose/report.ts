@@ -42,16 +42,25 @@ export const PROGRESSION_LABELS: Record<string, string> = {
 // que le code a déjà été mis à jour avec. Tenu à jour manuellement à
 // chaque recalibration (voir aussi les commentaires dans grid.ts).
 export const CALIBRATED_CRITERIA: Record<string, string[]> = {
-  // Recalé le 2026-09-08 sur 3 séries notées, écart moyen 0,68 puis 0,19.
-  // Ces trois critères et pas les autres : eux seuls sont tombés sous 5 sur
-  // des exécutions réelles, et les corriger a supprimé le biais. La forme et
-  // l'oscillation notent entre 8,6 et 10 partout, rien ne les a mis en
-  // défaut.
+  // Recalé le 2026-09-08 sur 3 séries, écart moyen 0,68 puis 0,19, puis le
+  // 2026-09-09 sur une quatrième, 0,24 puis 0,14.
   //
-  // Réserve à garder en tête : les trois séries sont notées 9,5 et plus. La
+  // rep_form entre à la seconde passe, mais seulement pour son CENTRE : la
+  // hanche moyenne des quatre séries vaut 166,0 là où la grille visait 170.
+  // Sa tolérance, elle, reste invérifiée — aucune série n'a encore cassé à la
+  // hanche, le critère n'est jamais descendu sous 8,6.
+  //
+  // rep_control n'y figure toujours pas : il note 10 sur les quatre séries.
+  //
+  // Réserve à garder en tête : les quatre séries sont notées 9,5 et plus. La
   // calibration prouve que la grille n'était pas trop sévère, elle ne prouve
   // pas encore qu'elle est assez exigeante — il y faudrait une série ratée.
-  planche_push_up: ["rep_lockout", "rep_peak", "rep_protraction"],
+  planche_push_up: [
+    "rep_lockout",
+    "rep_peak",
+    "rep_form",
+    "rep_protraction",
+  ],
   tuck_planche: ["hip_angle"],
   advanced_tuck_planche: ["shoulder_protraction", "hip_angle"],
   straddle_planche: [],

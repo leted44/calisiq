@@ -41,7 +41,7 @@ scoring.
 | Figure | Statut | Base des seuils |
 |---|---|---|
 | Planche (tuck, advanced tuck, straddle, full) | Actif | Hanche recalibrée le 2026-09-01 sur 34 échantillons notés |
-| Planche push-up | Actif, calibrée | Ajoutée puis recalée le 2026-09-08 sur 3 séries notées, écart moyen 0,68 vers 0,19 |
+| Planche push-up | Actif, calibrée | Ajoutée le 2026-09-08, recalée deux fois sur 4 séries notées. Écart moyen 0,68 puis 0,19 puis 0,14 |
 | Straddle planche | Actif, seuils DRAFT | 3 échantillons seulement |
 | Handstand | Actif | Hanche/bassin calibrés sur 8 échantillons réels, coude/épaules raisonnés |
 | Front Lever (tuck, advanced tuck, straddle, full) | Actif | Recalibré le 2026-09-01 sur 20 échantillons réels |
@@ -679,6 +679,24 @@ instants de répétition ni ces instantanés : son compteur de répétitions
 affichait le total dès la première image, alors que celui de l'écran
 d'analyse s'incrémentait correctement. Les deux chemins passent maintenant
 les mêmes données.
+Seconde passe sur la planche push-up le 2026-09-09, une quatrième série.
+Écart moyen 0,24 puis **0,14**. Un seul seuil bouge, la tenue du corps, de
+170 à 166 : c'est le même décalage hold vers série que la veille, et il se
+lit directement, la hanche moyenne des quatre séries valant 166,0 quand la
+même mesure sur des full planches tenues donne 169,9. Le critère est une
+bande, le recentrer ne l'émousse donc pas.
+
+**Un gain refusé, et c'est le plus instructif.** Déplacer l'amplitude de 110
+à 118 aurait ramené l'écart à 0,15 — deux des quatre séries ne descendent
+qu'à 118 degrés et sont notées 9,7 et 10. Mais rejouée sur un contre-exemple,
+cette valeur note **9,3 une planche à peine fléchie à 135 degrés**, contre 5,8
+aujourd'hui. Le critère perdrait exactement ce qu'il sert à mesurer.
+
+Règle qui se dégage de ces deux passes : **avec des échantillons tous notés
+au-dessus de 9,5, minimiser l'écart revient à tout faire tendre vers 10.**
+Chaque seuil candidat doit donc être rejoué sur un contre-exemple construit
+avant d'être retenu, et celui qui perd ses dents est refusé même s'il gagne
+sur l'écart moyen.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4

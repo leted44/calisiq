@@ -784,11 +784,26 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
   // non fait — elle se réglerait sur l'unique série qui manque de
   // profondeur, et celle-ci ne compte qu'une répétition.
   //
-  // form et hipSwing n'ont pas bougé : les trois séries les notent entre 8,6
-  // et 10, aucune ne les met en défaut, donc rien n'y est démontré. Desserrer
-  // la forme aurait pourtant gagné encore un peu — et c'est exactement le
-  // piège, avec trois échantillons tous notés au-dessus de 9,5, minimiser
-  // l'écart revient à tout faire tendre vers 10.
+  // hipSwing n'a pas bougé : les séries le notent à 10 partout, aucune ne le
+  // met en défaut, donc rien n'y est démontré.
+  //
+  // SECONDE PASSE le 2026-09-09, sur une quatrième série. Écart absolu moyen
+  // 0,24 puis 0,14. Un seul seuil bouge, la tenue du corps, de 170 à 166.
+  //
+  // C'est le même décalage hold vers série que la première passe, et il se lit
+  // directement : la hanche moyenne des quatre séries vaut 166,0, quand la
+  // même mesure sur des full planches tenues donnait 169,9. Le critère est une
+  // bande, donc le recentrer ne l'émousse pas — une hanche cassée à 140 vaut
+  // 4,2 avant comme après.
+  //
+  // L'AMPLITUDE N'A PAS BOUGÉ, ET C'EST UN CHOIX. La déplacer de 110 à 118
+  // ferait tomber l'écart à 0,15, le meilleur gain disponible : deux des
+  // quatre séries ne descendent qu'à 118 degrés et sont notées 9,7 et 10.
+  // Mais rejouée sur un contre-exemple, cette valeur note 9,3 une planche à
+  // peine fléchie à 135 degrés, contre 5,8 aujourd'hui. Le critère perdrait
+  // exactement ce qu'il sert à mesurer. Avec quatre séries toutes notées 9,5
+  // et plus, minimiser l'écart revient à tout faire tendre vers 10, et
+  // l'amplitude est le premier endroit où ça se paie.
   //
   // LES DENTS SONT VÉRIFIÉES. Rejouée sur des contre-exemples construits, la
   // grille proposée note 2,0 une pompe au sol impeccable, 4,5 la même avec
@@ -830,7 +845,7 @@ export const REP_SCORING_GRID: Record<RepProgression, RepThresholds> = {
     lockout: { target: 165, tolerance: 25 },
     peak: { target: 110, tolerance: 40 },
     hipSwing: { target: 6, tolerance: 18 },
-    form: { target: 170, tolerance: 22 },
+    form: { target: 166, tolerance: 22 },
     protraction: { target: 0.6, tolerance: 0.2 },
     tempo: { target: 65, tolerance: 45 },
   },
