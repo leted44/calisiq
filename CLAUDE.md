@@ -772,6 +772,37 @@ chaque rafraîchissement de session et emporterait un cookie posé plus tôt.
 
 Un choix explicite n'est jamais écrasé : dès que le cookie existe, l'en-tête
 est ignoré.
+**Signaler un bug, depuis le profil.** Formulaire sur `/bug`, accessible à
+tout le monde depuis les réglages du profil, et enregistré dans la table
+`bug_reports`.
+
+**Une table plutôt qu'un lien mailto.** Le mailto coûte une ligne et paraît
+suffisant, mais il perd l'essentiel : le signalement arrive sans structure,
+sans contexte technique, et on ne peut ni le retrouver ni savoir lequel a
+déjà été traité. Surtout, trois rapports sur la même figure disent quelque
+chose qu'aucun d'eux ne dit seul, et ça ne se voit que dans une table.
+
+**La catégorie est demandée avant le texte.** Un champ libre seul produit
+des « ça marche pas ». Six catégories en gros boutons — analyse, import,
+export, progression, compte, autre — chacune avec ses exemples. Elle coûte
+un geste, elle trie, et surtout elle oriente ce que la personne écrit
+ensuite : on décrit mieux un problème quand on vient de choisir sa famille.
+
+La figure concernée n'est proposée que sur les catégories analyse et export,
+les seules où elle veut dire quelque chose ; la demander sur un bug de
+connexion ferait hésiter pour rien. La liste est dérivée des grilles, donc
+une figure ajoutée y apparaît d'elle-même.
+
+**Le contexte technique est relevé sans être demandé** : navigateur, taille
+d'écran, langue de l'interface. C'est exactement ce que personne ne pense à
+joindre et ce dont on a besoin en premier pour reproduire — un bug de caméra
+tient souvent au navigateur, un bug d'affichage à la largeur d'écran. Rien
+de nouveau n'est collecté : ce sont des informations que le navigateur envoie
+déjà à chaque requête.
+
+RLS : chacun dépose et relit les siens, l'administrateur lit tout. La
+suppression de compte emporte les signalements, sans quoi la clé étrangère
+bloquerait l'effacement au milieu du travail de `delete_own_account`.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4

@@ -557,6 +557,45 @@ export const fr = {
     logout: "Se déconnecter",
     deleteAccount: "Supprimer mon compte",
   },
+  bug: {
+    title: "Signaler un bug",
+    hint: "Quelque chose ne marche pas ?",
+    intro:
+      "Dis-moi ce qui s'est passé. Plus c'est précis, plus vite c'est corrigé.",
+    where: "Où ça s'est passé ?",
+    categories: {
+      analysis: "L'analyse ou la note",
+      video: "L'import ou la caméra",
+      export: "La vidéo annotée",
+      progress: "L'historique ou la progression",
+      account: "Le compte ou le profil",
+      other: "Autre chose",
+    } as Record<string, string>,
+    categoryHints: {
+      analysis: "Score faux, figure non reconnue, chrono à zéro",
+      video: "Vidéo refusée, caméra bloquée, découpe impossible",
+      export: "Export qui échoue, partage, filigrane",
+      progress: "Courbes, comparaison avant/après, séance manquante",
+      account: "Connexion, pseudo, photo, suppression",
+      other: "Ce qui ne rentre dans aucune case",
+    } as Record<string, string>,
+    figure: "Figure concernée",
+    figureNone: "Aucune en particulier",
+    what: "Ce qui s'est passé",
+    placeholder:
+      "Ex : j'ai analysé une full planche filmée de profil, la note de hanche est à 2 alors que ma position est correcte.",
+    tooShort: "Encore quelques mots, pour que ce soit exploitable.",
+    context:
+      "Ton navigateur, la taille de ton écran et la langue de l'app sont joints automatiquement. Ce sont eux qui permettent de reproduire le problème.",
+    send: "Envoyer",
+    sending: "Envoi...",
+    sent: "C'est envoyé, merci.",
+    sentHint:
+      "Je lis tous les signalements. Pas de réponse automatique, mais ça part directement chez moi.",
+    another: "Signaler autre chose",
+    failed: (m: string) => `L'envoi a échoué : ${m}`,
+  },
+
 };
 
 // Pas de `as const` : il figerait chaque valeur en type littéral, et le

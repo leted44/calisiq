@@ -551,4 +551,42 @@ export const en: Dictionary = {
     logout: "Sign out",
     deleteAccount: "Delete my account",
   },
+  bug: {
+    title: "Report a bug",
+    hint: "Something not working?",
+    intro: "Tell me what happened. The more precise, the faster it gets fixed.",
+    where: "Where did it happen?",
+    categories: {
+      analysis: "The analysis or the score",
+      video: "Import or camera",
+      export: "The annotated video",
+      progress: "History or progress",
+      account: "Account or profile",
+      other: "Something else",
+    } as Record<string, string>,
+    categoryHints: {
+      analysis: "Wrong score, figure not recognised, timer stuck at zero",
+      video: "Video rejected, camera blocked, trimming impossible",
+      export: "Export fails, sharing, watermark",
+      progress: "Charts, before/after, missing session",
+      account: "Sign-in, handle, picture, deletion",
+      other: "Anything that fits nowhere else",
+    } as Record<string, string>,
+    figure: "Figure involved",
+    figureNone: "None in particular",
+    what: "What happened",
+    placeholder:
+      "e.g. I analysed a full planche filmed from the side, the hip score is 2 although my position is fine.",
+    tooShort: "A few more words, so it can be acted on.",
+    context:
+      "Your browser, screen size and app language are attached automatically. They are what makes the problem reproducible.",
+    send: "Send",
+    sending: "Sending...",
+    sent: "Sent, thank you.",
+    sentHint:
+      "I read every report. No automatic reply, but it lands straight with me.",
+    another: "Report something else",
+    failed: (m: string) => `Sending failed: ${m}`,
+  },
+
 };

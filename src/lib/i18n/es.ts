@@ -552,4 +552,42 @@ export const es: Dictionary = {
     logout: "Cerrar sesión",
     deleteAccount: "Eliminar mi cuenta",
   },
+  bug: {
+    title: "Reportar un error",
+    hint: "¿Algo no funciona?",
+    intro: "Cuéntame qué ha pasado. Cuanto más preciso, antes se corrige.",
+    where: "¿Dónde ha ocurrido?",
+    categories: {
+      analysis: "El análisis o la nota",
+      video: "La importación o la cámara",
+      export: "El vídeo anotado",
+      progress: "El historial o el progreso",
+      account: "La cuenta o el perfil",
+      other: "Otra cosa",
+    } as Record<string, string>,
+    categoryHints: {
+      analysis: "Nota incorrecta, figura no reconocida, cronómetro a cero",
+      video: "Vídeo rechazado, cámara bloqueada, recorte imposible",
+      export: "La exportación falla, compartir, marca de agua",
+      progress: "Gráficas, antes/después, sesión que falta",
+      account: "Inicio de sesión, nombre, foto, eliminación",
+      other: "Lo que no encaja en ninguna casilla",
+    } as Record<string, string>,
+    figure: "Figura implicada",
+    figureNone: "Ninguna en particular",
+    what: "Qué ha pasado",
+    placeholder:
+      "Ej.: he analizado una full planche grabada de perfil y la nota de cadera es 2 aunque mi posición es correcta.",
+    tooShort: "Unas palabras más, para que se pueda trabajar con ello.",
+    context:
+      "Tu navegador, el tamaño de tu pantalla y el idioma de la app se adjuntan automáticamente. Son los que permiten reproducir el problema.",
+    send: "Enviar",
+    sending: "Enviando...",
+    sent: "Enviado, gracias.",
+    sentHint:
+      "Leo todos los reportes. No hay respuesta automática, pero llega directamente a mí.",
+    another: "Reportar otra cosa",
+    failed: (m: string) => `El envío ha fallado: ${m}`,
+  },
+
 };

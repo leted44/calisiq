@@ -667,6 +667,28 @@ export function ApproximateIcon({ className = base }: IconProps) {
 // la variation n'est pas en favori, le contour rempli quand elle l'est. Un
 // aplat sans contour perdrait sa lisibilité sur les fonds clairs des
 // illustrations.
+export function BugIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect
+        x="8"
+        y="8"
+        width="8"
+        height="11"
+        rx="4"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
+      <path
+        d="M9.5 8a2.5 2.5 0 0 1 5 0M9.5 5.5 11 7M14.5 5.5 13 7M8 11H5M16 11h3M8 14.5H4.5M16 14.5H19M8.5 18l-2 2M15.5 18l2 2"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function StarIcon({
   className = base,
   filled = false,
