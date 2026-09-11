@@ -803,6 +803,29 @@ déjà à chaque requête.
 RLS : chacun dépose et relit les siens, l'administrateur lit tout. La
 suppression de compte emporte les signalements, sans quoi la clé étrangère
 bloquerait l'effacement au milieu du travail de `delete_own_account`.
+**Les signalements partent par e-mail.** Un déclencheur sur `bug_reports`
+appelle l'API Resend via `pg_net`, à chaque insertion.
+
+**Un déclencheur plutôt qu'une Edge Function.** La voie officielle passe par
+un webhook de base qui appelle une Edge Function, ce qui suppose la CLI
+Supabase, Docker et un déploiement : trois outils de plus pour envoyer un
+e-mail. `pg_net` fait la requête HTTP depuis Postgres, donc tout se pose
+depuis l'éditeur SQL, y compris depuis un téléphone — ce qui est le mode de
+travail réel sur ce projet.
+
+**Les secrets sont dans le coffre, pas dans le dépôt.** Clé d'API et adresse
+de destination vivent dans `vault`. La migration est donc versionnable sans
+rien exposer, la clé se change sans redéploiement, et tant que les deux
+secrets n'existent pas la fonction ne fait rien.
+
+**L'envoi ne peut pas faire échouer l'enregistrement.** Un signalement perdu
+parce que le service d'e-mail est en panne serait le comble. `net.http_post`
+met la requête en file sans attendre la réponse, et un bloc exception
+rattrape le reste : la ligne est écrite quoi qu'il arrive.
+
+L'expéditeur est `onboarding@resend.dev`, qui fonctionne sans vérifier de
+domaine tant que la destination est l'adresse du compte Resend. Passer à une
+adresse `@calisiq.com` demandera de vérifier le domaine.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4
