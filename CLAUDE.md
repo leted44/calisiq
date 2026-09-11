@@ -747,6 +747,31 @@ La traduction des recommandations n'a pas été recopiée à la main : un script
 a réécrit le fichier anglais en remplaçant chaque libellé par sa traduction,
 et **échoue si une seule chaîne manque**. La structure des deux tables est
 donc identique par construction, pas par relecture.
+**La langue se devine à la première visite.** Tout le monde arrivait en
+français et devait trouver le sélecteur pour en changer, ce que personne ne
+fait sur une page qu'il ne comprend pas. Le proxy lit désormais
+`Accept-Language` quand le cookie est absent, et le fige pour un an.
+
+**La langue du navigateur, pas le pays.** Le pays se devine aussi, par
+l'adresse IP, et Vercel le fournit gratuitement en en-tête. Mais il répond à
+la mauvaise question : un Français en vacances à Barcelone recevrait
+l'espagnol, un hispanophone installé à Lyon recevrait le français. La langue
+du navigateur est le réglage que la personne a choisi elle-même.
+
+**Le repli est l'anglais, pas le français.** Un navigateur allemand ou
+portugais ne correspond à aucune des trois langues ; lui servir du français
+parce que c'est la langue d'origine du projet n'a aucun sens de son point de
+vue. Les francophones reçoivent le français par leur propre en-tête, sans
+dépendre de ce repli.
+
+Deux détails d'implémentation qui comptent. Le cookie est posé **sur la
+requête** avant tout rendu, sinon la première page s'afficherait encore en
+français et ne basculerait qu'au rechargement suivant ; et **sur la réponse
+en dernier**, après Supabase, parce que son client recrée l'objet réponse à
+chaque rafraîchissement de session et emporterait un cookie posé plus tôt.
+
+Un choix explicite n'est jamais écrasé : dès que le cookie existe, l'en-tête
+est ignoré.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4
