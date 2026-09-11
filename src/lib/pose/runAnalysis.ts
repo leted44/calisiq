@@ -29,17 +29,16 @@ import {
   REP_SCORING_GRID,
   type AnyProgression,
 } from "./grid";
+import { DICTIONARIES } from "@/lib/i18n/dictionaries";
 import { detectReps } from "./repAnalysis";
 import { drawAngleLabels } from "./canvasHud";
 import { seekTo } from "@/lib/video/playback";
 import type { Lang } from "@/lib/i18n/config";
-import { fr } from "@/lib/i18n/fr";
-import { en } from "@/lib/i18n/en";
 
 // Avertissements dans la langue demandée. Accès direct aux dictionnaires
 // plutôt qu'au contexte React, qui n'existe pas ici : l'analyse tourne sur
 // une boucle d'animation, hors de tout composant.
-const w = (lang: Lang) => (lang === "en" ? en.warnings : fr.warnings);
+const w = (lang: Lang) => DICTIONARIES[lang].warnings;
 
 // Note minimale, sur le critère le plus faible, pour qu'une image compte
 // comme montrant la figure. Deux sur dix : assez bas pour accepter une

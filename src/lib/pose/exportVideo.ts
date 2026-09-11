@@ -18,8 +18,7 @@ import { buildTargetPose, type TargetPose } from "./targetPose";
 import { isRepProgression, type AnyProgression, type Progression } from "./grid";
 import { levelPoints, tierForPoints, TIER_CANVAS_COLORS } from "./level";
 import type { Lang } from "@/lib/i18n/config";
-import { en } from "@/lib/i18n/en";
-import { fr } from "@/lib/i18n/fr";
+import { DICTIONARIES } from "@/lib/i18n/dictionaries";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -47,20 +46,12 @@ const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ?? "calisiq.com"
 ).replace(/^https?:[/][/]/, "");
 
-// Libellé d'un critère dans la langue de l'export.
+// Libellé d'un critère dans la langue de l'export. Repli sur le français si
+// une langue oubliait une étiquette : mieux vaut un mot dans la mauvaise
+// langue qu'un trou dans la vidéo.
 function critereLabel(critere: CriterionScore["critere"], lang: Lang): string {
-  return lang === "en"
-    ? CRITERE_LABELS_EN[critere] ?? CRITERE_LABELS[critere]
-    : CRITERE_LABELS[critere];
+  return DICTIONARIES[lang].criteria.labels[critere] ?? CRITERE_LABELS[critere];
 }
-
-// Libellés dessinés dans la vidéo. Copie française conservée ici plutôt que
-// lue au dictionnaire : ce module tourne sur un canvas hors React, et la
-// langue lui est passée en paramètre.
-// Libellés anglais des mêmes critères, lus quand la vidéo est exportée en
-// anglais. Repris du dictionnaire d'interface pour que la vidéo et l'écran
-// disent le même mot.
-const CRITERE_LABELS_EN = en.criteria.labels;
 
 const CRITERE_LABELS: Record<CriterionScore["critere"], string> = {
   rep_lockout: "Extension",
@@ -519,7 +510,7 @@ function drawOutro(
   );
   const palier = tierForPoints(palierPoints);
   const palierCouleur = TIER_CANVAS_COLORS[palier];
-  const mots = lang === "en" ? en.result : fr.result;
+  const mots = DICTIONARIES[lang].result;
   const palierTexte = mots.tiers[palier] ?? palier;
   const pointsTexte = mots.points(Math.round(palierPoints));
 
@@ -809,7 +800,7 @@ function drawWeakPointOverlay(
   ctx.fillStyle = accent;
   ctx.font = `700 ${9 * scale}px sans-serif`;
   ctx.fillText(
-    lang === "en" ? en.analysis.weakPointBadge : fr.analysis.weakPointBadge,
+    DICTIONARIES[lang].analysis.weakPointBadge,
     cardX + cardPadding,
     cardY + cardPadding + 8 * scale
   );
@@ -910,7 +901,7 @@ function drawGhostLegend(
 ) {
   const w = canvas.width;
   const scale = w / 400;
-  const text = lang === "en" ? "Ideal position" : "Position idéale";
+  const text = DICTIONARIES[lang].hud.idealPosition;
   const font = `600 ${9 * scale}px sans-serif`;
   ctx.font = font;
   const lineLength = 16 * scale;
@@ -951,7 +942,7 @@ function drawSlowMotionBadge(
 ) {
   const w = canvas.width;
   const scale = w / 400;
-  const text = lang === "en" ? "SLOW MOTION · TO FIX" : "RALENTI · À CORRIGER";
+  const text = DICTIONARIES[lang].hud.slowMotion;
   const font = `700 ${9 * scale}px sans-serif`;
   ctx.font = font;
   const paddingX = 12 * scale;

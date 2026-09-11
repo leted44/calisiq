@@ -1,9 +1,6 @@
 import { cookies } from "next/headers";
 import { DEFAULT_LANG, LANG_COOKIE, isLang, type Lang } from "./config";
-import { fr, type Dictionary } from "./fr";
-import { en } from "./en";
-
-const DICTIONARIES: Record<Lang, Dictionary> = { fr, en };
+import { DICTIONARIES, type Dictionary } from "./dictionaries";
 
 export function dictionaryFor(lang: Lang): Dictionary {
   return DICTIONARIES[lang];

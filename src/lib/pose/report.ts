@@ -3,6 +3,8 @@ import type { Lang } from "@/lib/i18n/config";
 import { reportEn } from "@/lib/i18n/report.en";
 import { figuresFr } from "@/lib/i18n/figures.fr";
 import { figuresEn } from "@/lib/i18n/figures.en";
+import { figuresEs } from "@/lib/i18n/figures.es";
+import { reportEs } from "@/lib/i18n/report.es";
 import { isRepProgression } from "./grid";
 
 export const PROGRESSION_LABELS: Record<string, string> = {
@@ -338,11 +340,71 @@ export const REP_DESCRIPTIONS: Record<string, Record<ScoreTier, string>> = {
     faible:
       "Le corps reste cassé à la hanche pendant les répétitions — la course est raccourcie et la figure plus facile qu'elle en a l'air.",
   },
+  rep_protraction: {
+    optimal: "Épaules bien avancées devant les poignets sur toute la série.",
+    bon: "Avancée d'épaules présente, mais qui se perd au fil de la série.",
+    faible:
+      "Les épaules ne dépassent pas assez les poignets : le mouvement est une pompe, pas une pompe planche.",
+  },
   rep_tempo: {
     optimal: "Tempo régulier d'un bout à l'autre de la série.",
     bon: "Tempo globalement régulier, avec un léger ralentissement.",
     faible:
       "Le tempo se dégrade fortement : les dernières répétitions sont bien plus lentes que les premières.",
+  },
+};
+
+// Textes du rapport, une entrée par langue.
+//
+// Ces fonctions choisissaient la langue avec un ternaire « anglais ou
+// français ». Une troisième langue passait alors silencieusement au français,
+// sans que rien ne le signale : c'est exactement le genre d'oubli qu'une table
+// indexée par Lang rend impossible, puisque la compilation exige une entrée
+// pour chaque langue déclarée.
+const TEXTES: Record<
+  Lang,
+  {
+    tierLabels: Record<ScoreTier, string>;
+    critereDefinitions: Record<string, string>;
+    progressionLabels: Record<string, string>;
+    descriptions: Record<string, Record<string, Record<ScoreTier, string>>>;
+  }
+> = {
+  fr: {
+    tierLabels: TIER_LABELS,
+    critereDefinitions: CRITERE_DEFINITIONS,
+    progressionLabels: figuresFr.progressionLabels,
+    descriptions: {
+      planche: PLANCHE_DESCRIPTIONS,
+      handstand: HANDSTAND_DESCRIPTIONS,
+      front_lever: FRONT_LEVER_DESCRIPTIONS,
+      dragon_flag: DRAGON_FLAG_DESCRIPTIONS,
+      reps: REP_DESCRIPTIONS,
+    },
+  },
+  en: {
+    tierLabels: reportEn.tierLabels,
+    critereDefinitions: reportEn.critereDefinitions,
+    progressionLabels: figuresEn.progressionLabels,
+    descriptions: {
+      planche: reportEn.planche,
+      handstand: reportEn.handstand,
+      front_lever: reportEn.front_lever,
+      dragon_flag: reportEn.dragon_flag,
+      reps: reportEn.reps,
+    },
+  },
+  es: {
+    tierLabels: reportEs.tierLabels,
+    critereDefinitions: reportEs.critereDefinitions,
+    progressionLabels: figuresEs.progressionLabels,
+    descriptions: {
+      planche: reportEs.planche,
+      handstand: reportEs.handstand,
+      front_lever: reportEs.front_lever,
+      dragon_flag: reportEs.dragon_flag,
+      reps: reportEs.reps,
+    },
   },
 };
 
@@ -355,30 +417,12 @@ export function describeCriterion(
   figure: "planche" | "handstand" | "front_lever" | "dragon_flag" | "reps",
   lang: Lang = "fr"
 ): string {
-  const tables =
-    lang === "en"
-      ? {
-          handstand: reportEn.handstand,
-          front_lever: reportEn.front_lever,
-          dragon_flag: reportEn.dragon_flag,
-          reps: reportEn.reps,
-          planche: reportEn.planche,
-        }
-      : {
-          handstand: HANDSTAND_DESCRIPTIONS,
-          front_lever: FRONT_LEVER_DESCRIPTIONS,
-          dragon_flag: DRAGON_FLAG_DESCRIPTIONS,
-          reps: REP_DESCRIPTIONS,
-          planche: PLANCHE_DESCRIPTIONS,
-        };
-  return tables[figure][critere]?.[tierFor(score)] ?? "";
+  return TEXTES[lang].descriptions[figure][critere]?.[tierFor(score)] ?? "";
 }
 
 /** Nom complet d'une progression, dans la langue demandée. */
 export function progressionLabel(progression: string, lang: Lang = "fr"): string {
-  const table =
-    lang === "en" ? figuresEn.progressionLabels : figuresFr.progressionLabels;
-  return table[progression] ?? progression;
+  return TEXTES[lang].progressionLabels[progression] ?? progression;
 }
 
 /** Ce que mesure un critère, dans la langue demandée. */
@@ -386,14 +430,12 @@ export function criterionDefinition(
   critere: CriterionScore["critere"],
   lang: Lang = "fr"
 ): string {
-  return lang === "en"
-    ? reportEn.critereDefinitions[critere] ?? ""
-    : CRITERE_DEFINITIONS[critere];
+  return TEXTES[lang].critereDefinitions[critere] ?? "";
 }
 
 /** Libellé du palier de score, dans la langue demandée. */
 export function tierLabel(tier: ScoreTier, lang: Lang = "fr"): string {
-  return lang === "en" ? reportEn.tierLabels[tier] : TIER_LABELS[tier];
+  return TEXTES[lang].tierLabels[tier];
 }
 
 // Une progression est dite calibrée quand au moins un de ses critères a été

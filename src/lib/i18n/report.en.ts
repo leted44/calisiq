@@ -194,6 +194,12 @@ export const reportEn = {
       faible:
         "The body stays broken at the hips through the reps, the range is shortened and the figure is easier than it looks.",
     },
+    rep_protraction: {
+      optimal: "Shoulders well past the wrists across the whole set.",
+      bon: "The shoulder lean is there but fades over the set.",
+      faible:
+        "The shoulders do not travel far enough past the wrists: this is a push-up, not a planche push-up.",
+    },
     rep_tempo: {
       optimal: "Steady tempo from the first rep to the last.",
       bon: "Broadly steady tempo, with a slight slowdown.",

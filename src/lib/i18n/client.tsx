@@ -7,10 +7,8 @@ import {
   LANG_COOKIE_MAX_AGE,
   type Lang,
 } from "./config";
-import { fr, type Dictionary } from "./fr";
-import { en } from "./en";
-
-const DICTIONARIES: Record<Lang, Dictionary> = { fr, en };
+import { fr } from "./fr";
+import { DICTIONARIES, type Dictionary } from "./dictionaries";
 
 const LangContext = createContext<{ lang: Lang; t: Dictionary }>({
   lang: DEFAULT_LANG,

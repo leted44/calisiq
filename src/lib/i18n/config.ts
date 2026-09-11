@@ -17,7 +17,7 @@
 // est derrière authentification : le coût en refonte du routage ne serait
 // payé par rien.
 
-export const LANGS = ["fr", "en"] as const;
+export const LANGS = ["fr", "en", "es"] as const;
 export type Lang = (typeof LANGS)[number];
 
 export const DEFAULT_LANG: Lang = "fr";
@@ -29,6 +29,7 @@ export const LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 export const LANG_LABELS: Record<Lang, string> = {
   fr: "Français",
   en: "English",
+  es: "Español",
 };
 
 export function isLang(value: unknown): value is Lang {

@@ -10,7 +10,7 @@ import type { Lang } from "./config";
 // c'est délibéré : il assure que le serveur et le navigateur produisent la
 // même chaîne, sans quoi React signale un écart d'hydratation.
 
-const LOCALES: Record<Lang, string> = { fr: "fr-FR", en: "en-GB" };
+const LOCALES: Record<Lang, string> = { fr: "fr-FR", en: "en-GB", es: "es-ES" };
 
 const FUSEAU = "Europe/Paris";
 

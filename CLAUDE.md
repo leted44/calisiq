@@ -720,6 +720,33 @@ l'autre sur les six mesures, ce sont probablement deux prises de la même
 exécution. Cinq échantillons pour quatre exécutions distinctes. Et les cinq
 restent notées 9,5 et plus : toujours aucune série ratée pour vérifier que la
 grille est assez exigeante.
+**L'espagnol, et la fin des ternaires de langue.** Ajouté le 2026-09-11,
+troisième langue complète : interface, textes de rapport, noms de figures et
+les 292 libellés d'exercices correctifs.
+
+Le type fait le travail sur les dictionnaires d'interface : `Dictionary` est
+dérivé de `fr.ts`, donc `es.ts` ne compile que s'il porte exactement les
+mêmes 413 clés. C'est ailleurs que le risque se cachait. Une dizaine
+d'endroits choisissaient la langue avec un ternaire `lang === "en" ? en :
+fr` : le rapport, les recommandations, l'export vidéo, les avertissements
+d'analyse, l'encodeur. **Aucun n'aurait échoué à la compilation** avec une
+troisième langue, tous seraient simplement retombés en français, en silence.
+
+Ils passent tous par des tables indexées par `Lang` — `DICTIONARIES` pour
+l'interface, `TEXTES` dans `report.ts`, `TABLES` dans `recommendations.ts`.
+La prochaine langue ajoutée signalera donc elle-même tout ce qui lui manque,
+au lieu de se taire. C'était la vraie demande derrière « qu'on ne puisse pas
+revenir dessus à chaque fois ».
+
+Deux effets de bord utiles : `server.ts` et `client.tsx` tenaient chacun leur
+copie de la table des dictionnaires, elles n'en font plus qu'une ; et les
+deux textes du ralenti de l'export, jusque-là écrits en dur dans
+`exportVideo.ts`, vivent maintenant dans les dictionnaires comme le reste.
+
+La traduction des recommandations n'a pas été recopiée à la main : un script
+a réécrit le fichier anglais en remplaçant chaque libellé par sa traduction,
+et **échoue si une seule chaîne manque**. La structure des deux tables est
+donc identique par construction, pas par relecture.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4
@@ -742,9 +769,9 @@ grille est assez exigeante.
   (environ 170 Mo pour trente secondes). Si l'encodeur de l'appareil refuse
   la résolution native, `writer.ts` redescend par paliers plutôt que
   d'échouer.
-- **Pas de multi-langue.** Français uniquement. L'anglais a été demandé
-  mais reporté : environ 950 lignes de texte dans 46 fichiers, à faire
-  quand on saura si l'audience est francophone ou internationale.
+- **Trois langues : français, anglais, espagnol.** Le français reste la
+  langue source, celle dont le type `Dictionary` est dérivé : une clé
+  ajoutée dans `fr.ts` et absente ailleurs casse la compilation.
 
 ## Stratégie produit (contexte des priorités)
 

@@ -1,6 +1,7 @@
 import type { CriterionScore } from "./scoring";
 import type { Lang } from "@/lib/i18n/config";
 import { recommendationsEn } from "@/lib/i18n/recommendations.en";
+import { recommendationsEs } from "@/lib/i18n/recommendations.es";
 import type { AnyProgression, Progression } from "./grid";
 import { tierFor, figureFromProgression, type ScoreTier } from "./report";
 
@@ -1057,7 +1058,12 @@ export function recommendationsFor(
     REP: REP_EXERCISE_MAP,
     PLANCHE: PLANCHE_EXERCISE_MAP,
   };
-  const exerciseMap = lang === "en" ? recommendationsEn[cle] : tablesFr[cle];
+  const TABLES: Record<Lang, Record<string, Record<string, TieredRecommendations>>> = {
+    fr: tablesFr,
+    en: recommendationsEn,
+    es: recommendationsEs,
+  };
+  const exerciseMap = TABLES[lang][cle];
   const tier = tierFor(score);
   const isTuckFamily = (TUCK_FAMILY_PROGRESSIONS as string[]).includes(progression);
 
