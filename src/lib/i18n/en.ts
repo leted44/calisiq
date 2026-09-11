@@ -93,6 +93,9 @@ export const en: Dictionary = {
       segmentTooShort: (s: number) =>
         `The selected segment is too short: at least ${s}s are needed to capture a stable hold.`,
       analysisFailed: (msg: string) => `Analysis failed: ${msg}`,
+      saveFailedFallback: "Could not save.",
+      combinationUnavailable:
+        "This figure and variation combination is not available yet.",
     },
     comingSoon: "Coming soon",
     addFavorite: (name: string) => `Add ${name} to favourites`,
@@ -344,6 +347,8 @@ export const en: Dictionary = {
     muxingFailed: "The video could not be assembled on this device.",
     unreadableVideo: "Unreadable video.",
     photoUploadFailed: (m: string) => `The photo could not be uploaded: ${m}`,
+    canvasAnalysisFailed: "Could not start the analysis canvas.",
+    canvasExportFailed: "Could not start the export canvas.",
   },
   landing: {
     resultBody: "Every joint is tracked frame by frame during your hold. The score does not come from an impression, but from the real angle of your elbows, hips and body line, compared against the thresholds of the figure you are working on.",
@@ -522,6 +527,7 @@ export const en: Dictionary = {
   },
   profile: {
     title: "Profile",
+    photoAlt: "Profile picture",
     signedInAs: "Signed in as",
     editProfile: "Edit my profile",
     subscription: "Subscription",

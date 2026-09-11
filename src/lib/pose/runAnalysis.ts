@@ -161,7 +161,7 @@ export async function runPoseAnalysis({
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const context2d = canvas.getContext("2d");
-  if (!context2d) throw new Error("Impossible d'initialiser le canvas d'analyse.");
+  if (!context2d) throw new Error(DICTIONARIES[lang].media.canvasAnalysisFailed);
   const ctx: CanvasRenderingContext2D = context2d;
   const drawingUtils = new DrawingUtils(ctx);
 

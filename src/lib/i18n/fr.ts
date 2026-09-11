@@ -95,6 +95,9 @@ export const fr = {
       segmentTooShort: (s: number) =>
         `Le segment sélectionné est trop court : il faut au moins ${s}s pour capturer un hold stable.`,
       analysisFailed: (msg: string) => `L'analyse a échoué : ${msg}`,
+      saveFailedFallback: "Erreur lors de l'enregistrement.",
+      combinationUnavailable:
+        "Cette combinaison figure/variation n'est pas encore disponible.",
     },
     comingSoon: "Bientôt disponible",
     addFavorite: (name: string) => `Ajouter ${name} aux favoris`,
@@ -349,6 +352,8 @@ export const fr = {
     muxingFailed: "Assemblage de la vidéo impossible sur cet appareil.",
     unreadableVideo: "Vidéo illisible.",
     photoUploadFailed: (m: string) => `La photo n'a pas pu être envoyée : ${m}`,
+    canvasAnalysisFailed: "Impossible d'initialiser le canvas d'analyse.",
+    canvasExportFailed: "Impossible d'initialiser le canvas d'export.",
   },
   landing: {
     resultBody: "Chaque articulation est suivie image par image pendant ton hold. Le score ne vient pas d'une impression, mais de l'angle réel de tes coudes, de tes hanches et de ta ligne de corps, comparé aux seuils de la figure que tu travailles.",
@@ -528,6 +533,7 @@ export const fr = {
   },
   profile: {
     title: "Profil",
+    photoAlt: "Photo de profil",
     signedInAs: "Connecté en tant que",
     editProfile: "Modifier mon profil",
     subscription: "Abonnement",

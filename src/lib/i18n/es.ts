@@ -94,6 +94,9 @@ export const es: Dictionary = {
       segmentTooShort: (s: number) =>
         `El fragmento seleccionado es demasiado corto: hacen falta al menos ${s}s para captar una posición estable.`,
       analysisFailed: (msg: string) => `El análisis ha fallado: ${msg}`,
+      saveFailedFallback: "No se ha podido guardar.",
+      combinationUnavailable:
+        "Esta combinación de figura y variante todavía no está disponible.",
     },
     comingSoon: "Próximamente",
     addFavorite: (name: string) => `Añadir ${name} a favoritos`,
@@ -345,6 +348,8 @@ export const es: Dictionary = {
     muxingFailed: "No se ha podido montar el vídeo en este dispositivo.",
     unreadableVideo: "Vídeo ilegible.",
     photoUploadFailed: (m: string) => `No se ha podido subir la foto: ${m}`,
+    canvasAnalysisFailed: "No se ha podido iniciar el lienzo de análisis.",
+    canvasExportFailed: "No se ha podido iniciar el lienzo de exportación.",
   },
   landing: {
     resultBody: "Cada articulación se sigue imagen por imagen durante tu hold. La nota no sale de una impresión, sino del ángulo real de tus codos, tus caderas y tu línea de cuerpo, comparado con los umbrales de la figura que estás trabajando.",
@@ -523,6 +528,7 @@ export const es: Dictionary = {
   },
   profile: {
     title: "Perfil",
+    photoAlt: "Foto de perfil",
     signedInAs: "Sesión iniciada como",
     editProfile: "Editar mi perfil",
     subscription: "Suscripción",

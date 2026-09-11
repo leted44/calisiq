@@ -1221,7 +1221,7 @@ export default function AnalysisForm() {
       .single();
 
     if (insertError || !session) {
-      setSaveError(insertError?.message ?? "Erreur lors de l'enregistrement.");
+      setSaveError(insertError?.message ?? t.analysis.errors.saveFailedFallback);
       setSaving(false);
       return;
     }
@@ -1270,7 +1270,7 @@ export default function AnalysisForm() {
     }
 
     if (exerciseType !== "hold" || !variationAvailable) {
-      setError("Cette combinaison figure/variation n'est pas encore disponible.");
+      setError(t.analysis.errors.combinationUnavailable);
       return;
     }
 

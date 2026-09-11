@@ -65,7 +65,7 @@ export default async function ProfilPage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={profile.avatar_url}
-              alt="Photo de profil"
+              alt={t.profile.photoAlt}
               className="h-16 w-16 rounded-full object-cover"
             />
           ) : (

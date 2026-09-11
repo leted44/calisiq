@@ -1059,7 +1059,7 @@ export async function recordAnnotatedVideo({
   canvas.width = toEven(video.videoWidth * exportScale);
   canvas.height = toEven(video.videoHeight * exportScale);
   const context2d = canvas.getContext("2d");
-  if (!context2d) throw new Error("Impossible d'initialiser le canvas d'export.");
+  if (!context2d) throw new Error(DICTIONARIES[lang].media.canvasExportFailed);
   const ctx: CanvasRenderingContext2D = context2d;
   const drawingUtils = new DrawingUtils(ctx);
 
