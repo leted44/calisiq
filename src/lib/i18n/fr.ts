@@ -228,7 +228,10 @@ export const fr = {
     pitch: "Filme ta figure, obtiens ton score et ton plan de progression en quelques secondes grâce à l'IA.",
     tagline: "Analyse Intelligente de la Forme",
     confirmTitle: "Confirme ton email",
-    confirmSentTo: "On a envoyé un code à",
+    confirmSentTo: "Nous t'avons envoyé un code à",
+    confirmInstruction: "Saisis-le ci-dessous pour activer ton compte.",
+    confirmSpamHint:
+      "Tu ne le vois pas ? Regarde dans tes spams, le code y atterrit parfois lors des premières inscriptions.",
     codePlaceholder: "Code de confirmation",
     verifying: "Vérification...",
     confirm: "Confirmer",

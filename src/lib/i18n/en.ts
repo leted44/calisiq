@@ -224,6 +224,9 @@ export const en: Dictionary = {
     tagline: "Intelligent Form Analysis",
     confirmTitle: "Confirm your email",
     confirmSentTo: "We sent a code to",
+    confirmInstruction: "Enter it below to activate your account.",
+    confirmSpamHint:
+      "Don't see it? Check your spam folder, the code sometimes ends up there for new signups.",
     codePlaceholder: "Confirmation code",
     verifying: "Verifying...",
     confirm: "Confirm",

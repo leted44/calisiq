@@ -225,6 +225,9 @@ export const es: Dictionary = {
     tagline: "Análisis inteligente de la técnica",
     confirmTitle: "Confirma tu correo",
     confirmSentTo: "Hemos enviado un código a",
+    confirmInstruction: "Introdúcelo abajo para activar tu cuenta.",
+    confirmSpamHint:
+      "¿No lo ves? Revisa tu carpeta de spam, el código a veces acaba ahí en las primeras inscripciones.",
     codePlaceholder: "Código de confirmación",
     verifying: "Verificando...",
     confirm: "Confirmar",

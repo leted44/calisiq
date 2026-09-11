@@ -151,8 +151,8 @@ export default function LoginPage() {
           <div className="space-y-1 text-center">
             <h1 className="text-xl font-semibold text-white">{t.auth2.confirmTitle}</h1>
             <p className="text-sm text-slate-400">
-              {t.auth2.confirmSentTo} <span className="text-slate-300">{pendingEmail}</span>.
-              Saisis-le ci-dessous pour activer ton compte.
+              {t.auth2.confirmSentTo} <span className="text-slate-300">{pendingEmail}</span>.{" "}
+              {t.auth2.confirmInstruction}
             </p>
           </div>
 
@@ -166,6 +166,14 @@ export default function LoginPage() {
             onChange={(e) => setOtpCode(e.target.value)}
             className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-center text-lg tracking-[0.3em] text-white placeholder-slate-500 outline-none focus:border-cyan-500"
           />
+
+          {/* Le domaine est encore neuf pour les messageries, qui classent
+              parfois ce premier e-mail en spam le temps que sa réputation se
+              construise. Sans ce rappel, quelqu'un qui ne voit rien arriver
+              abandonne l'inscription en pensant que rien n'a été envoyé. */}
+          <p className="text-center text-xs leading-relaxed text-slate-500">
+            {t.auth2.confirmSpamHint}
+          </p>
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
