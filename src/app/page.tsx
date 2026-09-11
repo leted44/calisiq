@@ -109,7 +109,30 @@ const FAQ = [
   },
 ];
 
-export default async function LandingPage() {
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
+  // Repli du lien de réinitialisation de mot de passe.
+  //
+  // Supabase n'honore l'adresse de retour demandée que si elle figure dans sa
+  // liste d'adresses autorisées, sinon il retombe sur l'adresse racine du site
+  // en y accrochant quand même le code. Le lien de l'e-mail atterrissait donc
+  // ici, sur la page de présentation, sans que rien ne se passe.
+  //
+  // Plutôt que de dépendre d'un réglage du tableau de bord, la page réexpédie
+  // elle-même le code vers la route qui sait l'échanger. Un code qui arrive à
+  // la racine ne peut venir que de là : la connexion Google vise directement
+  // /auth/callback, et la confirmation d'inscription se fait désormais par
+  // code saisi à la main, sans lien.
+  const { code } = await searchParams;
+  if (code) {
+    redirect(
+      `/auth/callback?code=${encodeURIComponent(code)}&next=/reset-password`
+    );
+  }
+
   const t = await getDictionary();
   const supabase = await createClient();
   const {
