@@ -475,7 +475,7 @@ export const es: Dictionary = {
   handle: {
     label: "Nombre público",
     prefix: "calisiq.com/u/",
-    placeholder: "teddy_974",
+    placeholder: "planche_addict",
     hint: "Será la dirección de tu perfil. Minúsculas, números y guion bajo.",
     tooShort: "Mínimo tres caracteres.",
     checking: "Comprobando...",
