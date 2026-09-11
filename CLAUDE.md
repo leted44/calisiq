@@ -826,6 +826,20 @@ rattrape le reste : la ligne est écrite quoi qu'il arrive.
 L'expéditeur est `onboarding@resend.dev`, qui fonctionne sans vérifier de
 domaine tant que la destination est l'adresse du compte Resend. Passer à une
 adresse `@calisiq.com` demandera de vérifier le domaine.
+**Mot de passe oublié.** Un troisième mode sur l'écran de connexion, à côté
+de connexion et inscription, accessible par un lien sous le champ mot de
+passe. Envoie un e-mail via `resetPasswordForEmail`, dont le lien pointe vers
+`/auth/callback?next=/reset-password` : la route de callback accepte
+désormais un paramètre `next`, avec `/` en repli pour ne rien changer au
+chemin Google existant.
+
+`/reset-password` vérifie qu'une session existe avant d'afficher le
+formulaire — sans le code de récupération fraîchement échangé, il n'y en a
+aucune, et un lien déjà utilisé ou expiré atterrirait sinon sur un
+formulaire qui ne peut aboutir. La page vit hors du groupe `(app)`, donc
+hors de portée de son garde-fou qui redirige vers `/login` : elle doit
+rester joignable par quelqu'un qui n'a justement pas de session applicative
+classique, seulement celle, temporaire, de la récupération.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4

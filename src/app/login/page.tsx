@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const t = useT();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -23,6 +23,13 @@ export default function LoginPage() {
   const [otpCode, setOtpCode] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
+
+  // Écran "mot de passe oublié" : un état à part, distinct de signin/signup,
+  // parce qu'il ne partage ni son formulaire ni son bouton d'action avec eux.
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSending, setForgotSending] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,6 +101,26 @@ export default function LoginPage() {
       return;
     }
     setResendStatus("sent");
+  }
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotSending(true);
+
+    // "next" pointe directement vers l'écran de nouveau mot de passe : sans
+    // lui, le lien de l'e-mail ramènerait sur l'accueil avec une session de
+    // récupération que rien dans l'app n'explique à l'utilisateur.
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+    });
+
+    setForgotSending(false);
+    if (error) {
+      setForgotError(t.auth2.forgotFailed(error.message));
+      return;
+    }
+    setForgotSent(true);
   }
 
   async function handleGoogleSignIn() {
@@ -195,7 +222,7 @@ export default function LoginPage() {
               }}
               className="text-slate-400 hover:text-slate-300"
             >
-              Retour
+              {t.common.back}
             </button>
             <button
               type="button"
@@ -210,6 +237,54 @@ export default function LoginPage() {
                 : t.auth2.resendCode}
             </button>
           </div>
+        </form>
+      ) : mode === "forgot" ? (
+        <form
+          onSubmit={handleForgotPassword}
+          className="relative w-full max-w-sm space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl shadow-black/40"
+        >
+          <div className="space-y-1 text-center">
+            <h1 className="text-xl font-semibold text-white">{t.auth2.forgotTitle}</h1>
+            <p className="text-sm text-slate-400">{t.auth2.forgotBody}</p>
+          </div>
+
+          {forgotSent ? (
+            <p className="text-sm text-cyan-300">{t.auth2.forgotSent}</p>
+          ) : (
+            <>
+              <input
+                type="email"
+                required
+                autoFocus
+                placeholder={t.auth2.email}
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
+              />
+
+              {forgotError && <p className="text-sm text-red-400">{forgotError}</p>}
+
+              <button
+                type="submit"
+                disabled={forgotSending}
+                className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_0_20px_rgba(34,211,238,0.35)] py-2.5 font-medium text-white transition-opacity disabled:opacity-50"
+              >
+                {forgotSending ? t.auth2.forgotSending : t.auth2.forgotSend}
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              setMode("signin");
+              setForgotSent(false);
+              setForgotError(null);
+            }}
+            className="w-full text-sm text-slate-400 underline underline-offset-2 hover:text-slate-300"
+          >
+            {t.auth2.forgotBack}
+          </button>
         </form>
       ) : (
         <form
@@ -259,6 +334,24 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-500"
             />
+            {/* Réservé à la connexion : à l'inscription, il n'existe encore
+                aucun mot de passe à oublier. */}
+            {mode === "signin" && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(email);
+                    setForgotSent(false);
+                    setForgotError(null);
+                    setMode("forgot");
+                  }}
+                  className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-300"
+                >
+                  {t.auth2.forgotPassword}
+                </button>
+              </div>
+            )}
           </div>
 
           {error && <p className="text-sm text-red-400">{error}</p>}
