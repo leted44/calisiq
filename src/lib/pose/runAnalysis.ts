@@ -203,9 +203,10 @@ export async function runPoseAnalysis({
         }
       : null;
 
-  // Chrono direct. Il applique les deux conditions de detectHoldWindow — être
-  // dans la figure ET rester immobile — avec les mêmes constantes, pour que
-  // le nombre affiché pendant l'analyse soit celui qu'annoncera le résultat.
+  // Chrono direct. Il rend deux durées : le temps passé dans la figure, mis
+  // en avant parce que c'est celui que le pratiquant a vécu, et la part de ce
+  // temps restée parfaitement immobile, affichée en petit parce que c'est
+  // elle qui décide de la note. Voir LiveHoldTimer pour ce qui les sépare.
   const chrono = estDansFigure ? new LiveHoldTimer() : null;
 
   const start = rangeStart ?? 0;
@@ -271,11 +272,19 @@ export async function runPoseAnalysis({
             value: String(compteurReps.push(a)),
           });
         } else if (estDansFigure && chrono) {
+          const lecture = chrono.push(landmarks, frameTime, estDansFigure(a));
           drawLiveCounter(ctx, canvas, {
             figureLabel: libelleFigure,
             unitLabel: "HOLD",
-            value: chrono.push(landmarks, frameTime, estDansFigure(a)).toFixed(1),
+            value: lecture.inFigure.toFixed(1),
             suffix: "s",
+            // Tant qu'aucune tenue stable n'a duré assez longtemps pour
+            // compter, la seconde ligne reste absente : afficher « 0.0s »
+            // serait un reproche, pas une information.
+            secondary:
+              lecture.stable > 0
+                ? `${lecture.stable.toFixed(1)}s STABLE`
+                : null,
           });
         }
       }

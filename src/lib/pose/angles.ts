@@ -696,47 +696,75 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
 }
 
 /**
- * Le même hold, mesuré image par image, sans connaître la suite.
+ * Le hold mesuré image par image, sans connaître la suite, sous ses DEUX
+ * formes.
  *
- * POURQUOI CE N'EST PAS « LE TEMPS DANS LA FIGURE »
+ * POURQUOI DEUX CHIFFRES ET NON UN
  *
- * La première version du chrono affiché pendant l'analyse comptait le temps
- * où la position ressemblait à la figure, et affichait 7,0 s là où le
- * résultat annonçait 3,7 s. Les deux chiffres étaient justes et ne parlaient
- * pas de la même chose : `detectHoldWindow` exige DEUX conditions, ressembler
- * à la figure ET rester immobile, et c'est la seconde qui retranchait les
- * trois secondes où la position dérivait encore.
+ * Ils répondent à deux questions différentes, et n'en garder qu'un revient à
+ * mentir dans un sens ou dans l'autre.
  *
- * Un chrono qui annonce le double de ce que dira le résultat est pire que pas
- * de chrono du tout. Celui-ci applique donc exactement les deux mêmes
- * conditions, avec les mêmes constantes, déclarées une seule fois au-dessus.
+ * `inFigure` est le temps passé dans la position, du moment où elle est
+ * reconnue à celui où elle se défait. C'est ce que compte un pratiquant qui
+ * se chronomètre, et ce qu'il attend de voir à l'écran : avoir tenu sept
+ * secondes et lire trois est décourageant, alors que les sept sont vraies.
  *
- * CE QUI RESTE APPROCHÉ, ET DE COMBIEN
+ * `stable` est le temps tenu SANS dériver, la seule fenêtre que
+ * `detectHoldWindow` retient : c'est sur elle que la médiane des angles est
+ * prise, donc c'est elle qui décide de la note. Elle est presque toujours
+ * plus courte, et l'écart entre les deux dit précisément combien de temps la
+ * position bougeait encore.
+ *
+ * D'où l'affichage : le premier en grand, le second en petit dessous. On voit
+ * ce qu'on a tenu, et ce qui a compté.
+ *
+ * CE QUI DIFFÈRE DANS LEUR CALCUL
+ *
+ * `stable` applique exactement les conditions de `detectHoldWindow` — mêmes
+ * constantes, aucune tolérance — pour ne pas contredire le résultat final.
+ * `inFigure` tolère un bref décrochage : un critère qui passe une fraction de
+ * seconde sous le plancher au milieu d'une tenue ne doit pas remettre le
+ * compteur à zéro sous les yeux de quelqu'un qui, lui, n'a pas bougé.
+ *
+ * CE QUI RESTE APPROCHÉ
  *
  * Le lissage de la vitesse est centré hors ligne et ne peut être que traînant
- * ici, faute de connaître les images suivantes : le départ d'une tenue est
- * reconnu deux images plus tard, soit moins d'un dixième de seconde. C'est le
- * seul écart, et il va dans le sens prudent.
+ * ici : le départ d'une tenue stable est reconnu deux images plus tard, soit
+ * moins d'un dixième de seconde, et dans le sens prudent.
  */
+
+/** Décrochage toléré, en secondes, avant que le temps dans la figure reparte. */
+const FIGURE_GAP_TOLERANCE_SECONDS = 0.33;
+
+export type LiveHoldReading = {
+  /** Temps passé dans la figure. Le chiffre mis en avant. */
+  inFigure: number;
+  /** Temps tenu sans dériver : celui qui sert à noter. */
+  stable: number;
+};
+
 export class LiveHoldTimer {
   private precedente: Point[] | null = null;
   private tempsPrecedent = 0;
   private vitesses: number[] = [];
 
-  private debut: number | null = null;
-  private derniere: number | null = null;
-  private images = 0;
-  private meilleure = 0;
+  // Tenue dans la figure, tolérante au décrochage.
+  private figureDebut: number | null = null;
+  private figureDerniere: number | null = null;
+  private figureMeilleure = 0;
 
-  /**
-   * Consomme une image et renvoie la meilleure durée de tenue observée
-   * jusqu'ici, en secondes.
-   */
+  // Tenue stable, à l'identique de detectHoldWindow.
+  private stableDebut: number | null = null;
+  private stableDerniere: number | null = null;
+  private stableImages = 0;
+  private stableMeilleure = 0;
+
+  /** Consomme une image et renvoie les deux durées observées jusqu'ici. */
   push(
     landmarks: NormalizedLandmark[],
     time: number,
     dansLaFigure: boolean
-  ): number {
+  ): LiveHoldReading {
     const pose = normalizedPose(landmarks);
 
     // Première image : aucune vitesse mesurable, comme la version hors ligne
@@ -756,33 +784,55 @@ export class LiveHoldTimer {
     const lissee =
       this.vitesses.reduce((a, b) => a + b, 0) / this.vitesses.length;
 
-    if (dansLaFigure && lissee <= HOLD_MOTION_THRESHOLD) {
-      if (this.debut === null) {
-        this.debut = time;
-        this.images = 0;
-      }
-      this.derniere = time;
-      this.images += 1;
-    } else {
-      this.cloture();
+    // --- Temps dans la figure ---
+    if (dansLaFigure) {
+      if (this.figureDebut === null) this.figureDebut = time;
+      this.figureDerniere = time;
+    } else if (
+      this.figureDebut !== null &&
+      this.figureDerniere !== null &&
+      time - this.figureDerniere > FIGURE_GAP_TOLERANCE_SECONDS
+    ) {
+      // Sortie confirmée. La tenue est versée au meilleur score : un chrono
+      // qui redescend effacerait sous les yeux ce qui vient d'être réussi.
+      this.figureMeilleure = Math.max(
+        this.figureMeilleure,
+        this.figureDerniere - this.figureDebut
+      );
+      this.figureDebut = null;
+      this.figureDerniere = null;
     }
 
-    return Math.max(this.meilleure, this.enCours());
+    // --- Temps stable ---
+    if (dansLaFigure && lissee <= HOLD_MOTION_THRESHOLD) {
+      if (this.stableDebut === null) {
+        this.stableDebut = time;
+        this.stableImages = 0;
+      }
+      this.stableDerniere = time;
+      this.stableImages += 1;
+    } else {
+      this.stableMeilleure = Math.max(this.stableMeilleure, this.stableEnCours());
+      this.stableDebut = null;
+      this.stableDerniere = null;
+      this.stableImages = 0;
+    }
+
+    const figureEnCours =
+      this.figureDebut !== null && this.figureDerniere !== null
+        ? this.figureDerniere - this.figureDebut
+        : 0;
+
+    return {
+      inFigure: Math.max(this.figureMeilleure, figureEnCours),
+      stable: Math.max(this.stableMeilleure, this.stableEnCours()),
+    };
   }
 
-  /** Durée de la tenue en cours, une fois qu'elle est assez longue pour compter. */
-  private enCours(): number {
-    if (this.debut === null || this.derniere === null) return 0;
-    if (this.images < HOLD_MIN_FRAMES) return 0;
-    return this.derniere - this.debut;
-  }
-
-  // Une tenue qui se termine ne doit pas faire redescendre l'affichage : elle
-  // est versée au meilleur score, et seul ce meilleur reste visible.
-  private cloture() {
-    this.meilleure = Math.max(this.meilleure, this.enCours());
-    this.debut = null;
-    this.derniere = null;
-    this.images = 0;
+  /** Tenue stable en cours, une fois qu'elle est assez longue pour compter. */
+  private stableEnCours(): number {
+    if (this.stableDebut === null || this.stableDerniere === null) return 0;
+    if (this.stableImages < HOLD_MIN_FRAMES) return 0;
+    return this.stableDerniere - this.stableDebut;
   }
 }
