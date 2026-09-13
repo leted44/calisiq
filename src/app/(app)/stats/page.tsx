@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { TrendUpIcon, ProfileIcon, BodyIcon, TimerIcon } from "@/components/icons";
+import UsersList, { type AdminUser } from "./_UsersList";
 
 type DailyPoint = { day: string; count: number };
 
@@ -135,6 +136,10 @@ function DailyChart({
 export default async function StatsPage() {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("admin_stats");
+  // Liste nominative. Chargée à part et sans bloquer la page : si la migration
+  // n'est pas encore appliquée en base, les totaux doivent rester lisibles.
+  const { data: usersData } = await supabase.rpc("admin_users");
+  const users = (usersData as AdminUser[] | null) ?? [];
 
   if (error) {
     return (
@@ -176,6 +181,15 @@ export default async function StatsPage() {
       </div>
 
       <div className="w-full max-w-md space-y-4">
+        {users.length > 0 && (
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+              Les inscrits
+            </p>
+            <UsersList users={users} />
+          </div>
+        )}
+
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
             Inscriptions
