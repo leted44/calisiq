@@ -564,7 +564,7 @@ export const fr = {
     notice:
       "CalisIQ est en développement actif. Des bugs sont possibles : les signaler est ce qui aide le plus à les corriger.",
     reportLink: "Signaler un problème",
-    freeTitle: "Bêta · gratuit pour l'instant",
+    freeTitle: "Gratuit pendant la bêta",
     freeBody:
       "CalisIQ est en développement actif. L'accès est entièrement gratuit le temps de la bêta.",
   },

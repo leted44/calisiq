@@ -558,7 +558,7 @@ export const es: Dictionary = {
     notice:
       "CalisIQ está en desarrollo activo. Puede haber errores: reportarlos es lo que más ayuda a corregirlos.",
     reportLink: "Reportar un problema",
-    freeTitle: "Beta · gratis por ahora",
+    freeTitle: "Gratis durante la beta",
     freeBody:
       "CalisIQ está en desarrollo activo. El acceso es totalmente gratuito mientras dure la beta.",
   },

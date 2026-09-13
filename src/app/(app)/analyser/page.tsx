@@ -3,7 +3,7 @@ import { getDictionary } from "@/lib/i18n/server";
 import TodayActivity from "../_components/TodayActivity";
 import { createClient } from "@/lib/supabase/server";
 import { LightbulbIcon, BodyIcon, TimerIcon } from "@/components/icons";
-import BetaFreeNotice from "@/components/BetaFreeNotice";
+import BetaBadge from "@/components/BetaBadge";
 
 export default async function AccueilPage() {
   const t = await getDictionary();
@@ -32,16 +32,16 @@ export default async function AccueilPage() {
         <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
           {t.auth2.tagline}
         </p>
+        <div className="mt-1 flex items-center gap-2">
+          <BetaBadge />
+          <span className="text-[11px] text-slate-500">{t.beta.freeTitle}</span>
+        </div>
       </div>
 
       <div className="relative w-full max-w-md">
         <p className="text-sm text-slate-400">
           {t.dashboard.homeIntro}
         </p>
-      </div>
-
-      <div className="relative w-full max-w-md">
-        <BetaFreeNotice showReport />
       </div>
 
       <div className="relative grid w-full max-w-md grid-cols-3 gap-2">

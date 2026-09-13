@@ -556,7 +556,7 @@ export const en: Dictionary = {
     notice:
       "CalisIQ is under active development. Bugs are possible: reporting them is what helps fix them fastest.",
     reportLink: "Report a problem",
-    freeTitle: "Beta · free for now",
+    freeTitle: "Free during the beta",
     freeBody:
       "CalisIQ is under active development. Access is completely free while the beta lasts.",
   },
