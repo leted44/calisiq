@@ -175,7 +175,14 @@ function AngleRow({
 
 export default function CalibrationForm() {
   const supabase = createClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Deux champs de fichier plutôt qu'un, et c'est la seule raison d'être de
+  // cette duplication : un champ qui déclare « video/* , image/* » laisse
+  // Android choisir quel sélecteur ouvrir, et il ouvre l'explorateur de
+  // fichiers, lequel s'ouvre sur un dossier vide. Un champ qui ne déclare
+  // qu'un seul type ouvre la galerie directement — c'est ce que fait la page
+  // d'analyse, où l'import n'a jamais posé de problème.
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const previewImageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -254,7 +261,10 @@ export default function CalibrationForm() {
     setRatingDepth("");
     setNotes("");
     setSaved(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    // Les deux champs sont vidés : rien ne dit lequel a servi, et un champ
+    // qui garde son fichier refuse la même sélection une seconde fois.
+    if (videoInputRef.current) videoInputRef.current.value = "";
+    if (imageInputRef.current) imageInputRef.current.value = "";
   }
 
   // Garde le même média et la même découpe, ne fait que rejouer la mesure —
@@ -480,18 +490,34 @@ export default function CalibrationForm() {
       </div>
 
       {!mediaUrl && (
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full rounded-xl border border-slate-700 bg-slate-800 py-6 text-sm font-medium text-slate-200 hover:border-cyan-700"
-        >
-          Importer une vidéo ou une photo
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => videoInputRef.current?.click()}
+            className="rounded-xl border border-slate-700 bg-slate-800 py-6 text-sm font-medium text-slate-200 hover:border-cyan-700"
+          >
+            Importer une vidéo
+          </button>
+          <button
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            className="rounded-xl border border-slate-700 bg-slate-800 py-6 text-sm font-medium text-slate-200 hover:border-cyan-700"
+          >
+            Importer une photo
+          </button>
+        </div>
       )}
       <input
-        ref={fileInputRef}
+        ref={videoInputRef}
         type="file"
-        accept="video/*,image/*"
+        accept="video/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
         onChange={handleFileChange}
         className="hidden"
       />
