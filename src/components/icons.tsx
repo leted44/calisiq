@@ -580,6 +580,16 @@ export function IosShareIcon({ className = base }: IconProps) {
 
 // « Sur l'écran d'accueil » : le carré avec un plus, tel qu'il apparaît dans
 // la feuille de partage d'iOS.
+export function MenuDotsIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <circle cx="12" cy="5" r="1.8" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.8" fill="currentColor" />
+      <circle cx="12" cy="19" r="1.8" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function AddToHomeIcon({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>

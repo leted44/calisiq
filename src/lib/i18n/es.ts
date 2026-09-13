@@ -531,6 +531,7 @@ export const es: Dictionary = {
     linkCopied: "Dirección copiada",
     promptHint: "Un toque, desde aquí mismo",
     helpHint: "Ver cómo añadirla a tu pantalla de inicio",
+    androidHint: "Dos toques, desde el menú de Chrome",
     helpStep1: "Abre el menú del navegador, los tres puntos arriba a la derecha.",
     helpStep2: "Elige «Instalar aplicación» o «Añadir a pantalla de inicio».",
     helpWarning:
@@ -538,6 +539,12 @@ export const es: Dictionary = {
   },
   auth: {
     signingOut: "Cerrando sesión...",
+  },
+  beta: {
+    badge: "Beta",
+    notice:
+      "CalisIQ está en desarrollo activo. Puede haber errores: reportarlos es lo que más ayuda a corregirlos.",
+    reportLink: "Reportar un problema",
   },
   resetPassword: {
     title: "Elige una nueva contraseña",

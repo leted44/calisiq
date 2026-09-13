@@ -529,6 +529,7 @@ export const en: Dictionary = {
     linkCopied: "Address copied",
     promptHint: "One tap, right from here",
     helpHint: "See how to add it to your home screen",
+    androidHint: "Two taps, from the Chrome menu",
     helpStep1: "Open your browser menu, the three dots at the top right.",
     helpStep2: "Choose \"Install app\" or \"Add to Home screen\".",
     helpWarning:
@@ -536,6 +537,12 @@ export const en: Dictionary = {
   },
   auth: {
     signingOut: "Signing out...",
+  },
+  beta: {
+    badge: "Beta",
+    notice:
+      "CalisIQ is under active development. Bugs are possible: reporting them is what helps fix them fastest.",
+    reportLink: "Report a problem",
   },
   resetPassword: {
     title: "Choose a new password",

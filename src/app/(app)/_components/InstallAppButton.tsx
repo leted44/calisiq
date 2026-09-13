@@ -7,6 +7,7 @@ import {
   CheckIcon,
   IosShareIcon,
   AddToHomeIcon,
+  MenuDotsIcon,
   LinkIcon,
 } from "@/components/icons";
 
@@ -111,7 +112,6 @@ export default function InstallAppButton() {
   );
 
   const [justInstalled, setJustInstalled] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const installed = standalone || justInstalled;
@@ -238,39 +238,35 @@ export default function InstallAppButton() {
 
   // Pas d'invite native et pas iOS : navigateur qui ne sait pas installer, ou
   // conditions non réunies. On explique où chercher dans le menu.
+  //
+  // Les étapes étaient repliées derrière un bouton et écrites en petits
+  // caractères gris, alors que c'est le seul chemin possible dans ce cas.
+  // Elles sont désormais déployées d'emblée et présentées comme celles d'iOS :
+  // un geste de moins, et une marche à suivre qu'on voit sans la chercher.
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900">
-      <button
-        type="button"
-        onClick={() => setShowHelp((visible) => !visible)}
-        className="flex w-full items-center gap-3 p-4 text-left"
-      >
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-cyan-400">
           <InstallAppIcon className="h-4 w-4" />
         </div>
         <div className="flex-1">
           <p className="font-medium text-white">{t.install.title}</p>
-          <p className="text-xs text-slate-500">{t.install.helpHint}</p>
+          <p className="text-xs text-slate-500">{t.install.androidHint}</p>
         </div>
-      </button>
+      </div>
 
-      {showHelp && (
-        <div className="border-t border-slate-800 px-4 py-3">
-          <ol className="space-y-2 text-xs leading-relaxed text-slate-400">
-            <li>
-              <span className="font-semibold text-slate-200">1.</span>{" "}
-              {t.install.helpStep1}
-            </li>
-            <li>
-              <span className="font-semibold text-slate-200">2.</span>{" "}
-              {t.install.helpStep2}
-            </li>
-          </ol>
-          <p className="mt-2.5 text-[11px] text-slate-500">
-            {t.install.helpWarning}
-          </p>
-        </div>
-      )}
+      <ul className="mt-4 space-y-3">
+        <Step index={1} icon={<MenuDotsIcon className="h-5 w-5" />}>
+          {t.install.helpStep1}
+        </Step>
+        <Step index={2} icon={<AddToHomeIcon className="h-5 w-5" />}>
+          {t.install.helpStep2}
+        </Step>
+      </ul>
+
+      <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+        {t.install.helpWarning}
+      </p>
     </div>
   );
 }

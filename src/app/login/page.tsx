@@ -6,6 +6,7 @@ import LanguagePicker from "../_components/LanguagePicker";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { GoogleIcon } from "@/components/icons";
+import BetaBadge from "@/components/BetaBadge";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -196,9 +197,12 @@ export default function LoginPage() {
             className="relative w-full mix-blend-screen"
           />
         </div>
-        <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
-          {t.auth2.tagline}
-        </p>
+        <div className="flex items-center justify-center gap-2">
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
+            {t.auth2.tagline}
+          </p>
+          <BetaBadge />
+        </div>
       </div>
 
       {pendingEmail ? (

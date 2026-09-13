@@ -13,6 +13,7 @@ import {
   TimerIcon,
   CheckIcon,
 } from "@/components/icons";
+import BetaBadge from "@/components/BetaBadge";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getDictionary();
@@ -166,9 +167,12 @@ export default async function LandingPage({
             alt="CalisIQ"
             className="w-full max-w-[300px] mix-blend-screen"
           />
-          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
-            {t.auth2.tagline}
-          </p>
+          <div className="mt-1 flex items-center justify-center gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-cyan-400/90">
+              {t.auth2.tagline}
+            </p>
+            <BetaBadge />
+          </div>
 
           <h1 className="mt-7 text-[27px] font-bold leading-[1.15] text-white">
             {t.landing.heroQuestion}

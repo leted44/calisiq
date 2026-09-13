@@ -535,6 +535,7 @@ export const fr = {
     linkCopied: "Adresse copiée",
     promptHint: "Un seul geste, directement depuis ici",
     helpHint: "Voir comment l'ajouter à ton écran d'accueil",
+    androidHint: "Deux gestes, depuis le menu de Chrome",
     helpStep1: "Ouvre le menu de ton navigateur, les trois points en haut à droite.",
     helpStep2:
       "Choisis « Installer l'application » ou « Ajouter à l'écran d'accueil ».",
@@ -543,6 +544,12 @@ export const fr = {
   },
   auth: {
     signingOut: "Déconnexion...",
+  },
+  beta: {
+    badge: "Bêta",
+    notice:
+      "CalisIQ est en développement actif. Des bugs sont possibles : les signaler est ce qui aide le plus à les corriger.",
+    reportLink: "Signaler un problème",
   },
   resetPassword: {
     title: "Choisis un nouveau mot de passe",

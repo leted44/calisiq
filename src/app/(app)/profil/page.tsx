@@ -16,6 +16,7 @@ import {
   TrendUpIcon,
   BugIcon,
 } from "@/components/icons";
+import BetaBadge from "@/components/BetaBadge";
 import { getDictionary, getLang } from "@/lib/i18n/server";
 import type { Dictionary } from "@/lib/i18n/fr";
 
@@ -187,6 +188,18 @@ export default async function ProfilPage() {
 
         {/* Au-dessus de la déconnexion : c'est un réglage, pas une sortie. */}
         <LanguageSwitcher />
+
+        <div className="rounded-xl border border-amber-900/50 bg-amber-500/5 p-4">
+          <div className="flex items-center gap-2">
+            <BetaBadge />
+            <p className="text-xs font-medium uppercase tracking-wide text-amber-300/80">
+              {t.beta.reportLink}
+            </p>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-slate-400">
+            {t.beta.notice}
+          </p>
+        </div>
 
         <Link
           href="/bug"
