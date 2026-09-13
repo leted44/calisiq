@@ -251,6 +251,8 @@ export const es: Dictionary = {
     forgotSend: "Enviar el enlace",
     forgotSending: "Enviando...",
     forgotSent: "Enlace enviado. Revisa tu correo, y la carpeta de spam si no lo ves.",
+    forgotCodeInstruction:
+      "Introdúcelo abajo para elegir una nueva contraseña.",
     forgotBack: "Volver al inicio de sesión",
     forgotFailed: (m: string) => `El envío ha fallado: ${m}`,
   },

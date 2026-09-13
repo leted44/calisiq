@@ -30,6 +30,8 @@ export default function LoginPage() {
   const [forgotSending, setForgotSending] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotError, setForgotError] = useState<string | null>(null);
+  const [forgotCode, setForgotCode] = useState("");
+  const [forgotVerifying, setForgotVerifying] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -108,12 +110,18 @@ export default function LoginPage() {
     setForgotError(null);
     setForgotSending(true);
 
-    // "next" pointe directement vers l'écran de nouveau mot de passe : sans
-    // lui, le lien de l'e-mail ramènerait sur l'accueil avec une session de
-    // récupération que rien dans l'app n'explique à l'utilisateur.
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
-    });
+    // Pas de redirection : l'e-mail porte un code à saisir, pas un lien.
+    //
+    // Le lien avait deux défauts insurmontables. Les analyseurs anti-hameçonnage
+    // de certaines messageries, Outlook en tête, ouvrent les liens reçus pour
+    // les inspecter, ce qui consomme un jeton à usage unique avant même que la
+    // personne y touche — d'où un « lien invalide » systématique. Et sa
+    // destination dépendait d'une liste d'adresses autorisées côté Supabase,
+    // silencieusement ignorée quand elle ne correspondait pas.
+    //
+    // Un code saisi à la main n'a ni l'un ni l'autre de ces problèmes, et
+    // reprend exactement le parcours déjà en place pour l'inscription.
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail);
 
     setForgotSending(false);
     if (error) {
@@ -121,6 +129,29 @@ export default function LoginPage() {
       return;
     }
     setForgotSent(true);
+  }
+
+  async function handleVerifyResetCode(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotVerifying(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email: forgotEmail,
+      token: forgotCode,
+      type: "recovery",
+    });
+
+    setForgotVerifying(false);
+    if (error) {
+      setForgotError(error.message);
+      return;
+    }
+
+    // La vérification ouvre une session : l'écran de nouveau mot de passe la
+    // trouve et affiche directement son formulaire.
+    router.push("/reset-password");
+    router.refresh();
   }
 
   async function handleGoogleSignIn() {
@@ -249,7 +280,41 @@ export default function LoginPage() {
           </div>
 
           {forgotSent ? (
-            <p className="text-sm text-cyan-300">{t.auth2.forgotSent}</p>
+            <>
+              <p className="text-sm text-slate-400">
+                {t.auth2.confirmSentTo}{" "}
+                <span className="text-slate-300">{forgotEmail}</span>.{" "}
+                {t.auth2.forgotCodeInstruction}
+              </p>
+
+              <input
+                type="text"
+                required
+                autoFocus
+                inputMode="text"
+                placeholder={t.auth2.codePlaceholder}
+                value={forgotCode}
+                onChange={(e) => setForgotCode(e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-center text-lg tracking-[0.3em] text-white placeholder-slate-500 outline-none focus:border-cyan-500"
+              />
+
+              <p className="text-center text-xs leading-relaxed text-slate-500">
+                {t.auth2.confirmSpamHint}
+              </p>
+
+              {forgotError && (
+                <p className="text-sm text-red-400">{forgotError}</p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleVerifyResetCode}
+                disabled={forgotVerifying}
+                className="w-full rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_0_20px_rgba(34,211,238,0.35)] py-2.5 font-medium text-white transition-opacity disabled:opacity-50"
+              >
+                {forgotVerifying ? t.auth2.verifying : t.auth2.confirm}
+              </button>
+            </>
           ) : (
             <>
               <input

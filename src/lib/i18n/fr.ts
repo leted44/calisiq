@@ -255,6 +255,8 @@ export const fr = {
     forgotSend: "Envoyer le lien",
     forgotSending: "Envoi...",
     forgotSent: "Lien envoyé. Vérifie ta boîte mail, et tes spams si tu ne le vois pas.",
+    forgotCodeInstruction:
+      "Saisis-le ci-dessous pour choisir un nouveau mot de passe.",
     forgotBack: "Retour à la connexion",
     forgotFailed: (m: string) => `L'envoi a échoué : ${m}`,
   },

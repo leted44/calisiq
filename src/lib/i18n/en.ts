@@ -250,6 +250,7 @@ export const en: Dictionary = {
     forgotSend: "Send the link",
     forgotSending: "Sending...",
     forgotSent: "Link sent. Check your inbox, and your spam folder if you don't see it.",
+    forgotCodeInstruction: "Enter it below to choose a new password.",
     forgotBack: "Back to sign in",
     forgotFailed: (m: string) => `Sending failed: ${m}`,
   },
