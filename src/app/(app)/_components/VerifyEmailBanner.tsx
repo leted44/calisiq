@@ -29,6 +29,17 @@ import { CheckIcon } from "@/components/icons";
  * refus définitif se traduirait par un compte irrécupérable dont personne ne
  * se souviendrait avant le jour du problème.
  */
+// Longueur du code envoyé par Supabase.
+//
+// Elle est RÉGLABLE côté serveur, de six à dix chiffres, et ce champ était
+// figé à six : un projet réglé sur huit envoyait un code que l'application
+// refusait de saisir, sans rien dire de plus qu'un bouton grisé. La borne
+// haute est donc celle du réglage maximal, et le bouton s'active dès la borne
+// basse plutôt qu'à une longueur exacte — ainsi un changement de réglage ne
+// casse plus rien.
+const CODE_MIN = 6;
+const CODE_MAX = 10;
+
 export default function VerifyEmailBanner({ email }: { email: string }) {
   const t = useT();
   const supabase = createClient();
@@ -137,7 +148,7 @@ export default function VerifyEmailBanner({ email }: { email: string }) {
           <form onSubmit={valider} className="flex gap-2">
             <input
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_MAX))}
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder={t.verifyEmail.codeLabel}
@@ -145,7 +156,7 @@ export default function VerifyEmailBanner({ email }: { email: string }) {
             />
             <button
               type="submit"
-              disabled={code.length < 6 || verifie}
+              disabled={code.length < CODE_MIN || verifie}
               className="shrink-0 rounded-lg bg-amber-500/20 px-3 text-[12px] font-semibold text-amber-200 disabled:opacity-40"
             >
               {verifie ? t.verifyEmail.verifying : t.verifyEmail.verify}

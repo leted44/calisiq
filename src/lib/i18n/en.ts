@@ -568,7 +568,7 @@ export const en: Dictionary = {
     send: "Send me a code",
     sending: "Sending...",
     sent: (email) => `Code sent to ${email}`,
-    codeLabel: "6-digit code",
+    codeLabel: "Code from your email",
     verify: "Verify",
     verifying: "Verifying...",
     done: "Address confirmed",

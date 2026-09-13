@@ -576,7 +576,7 @@ export const fr = {
     send: "Recevoir un code",
     sending: "Envoi...",
     sent: (email: string) => `Code envoyé à ${email}`,
-    codeLabel: "Code à 6 chiffres",
+    codeLabel: "Code reçu par mail",
     verify: "Valider",
     verifying: "Vérification...",
     done: "Adresse confirmée",
