@@ -696,44 +696,52 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
 }
 
 /**
- * La durée d'un hold : de l'instant où la figure est clairement là à celui
- * où elle ne l'est plus.
+ * La durée d'un hold : de l'instant où la figure est atteinte à celui où
+ * elle est perdue.
  *
  * POURQUOI PAS LA FENÊTRE DE NOTATION
  *
  * `detectHoldWindow` cherche le segment le plus PROPRE, celui sur lequel
  * prendre la médiane des angles : il coupe tout ce qui dérive encore. C'est
  * le bon outil pour noter et un mauvais pour chronométrer — sur une tenue de
- * sept secondes dont trois passées à se stabiliser, il en retenait trois, et
- * l'application répondait trois à quelqu'un qui venait d'en tenir sept.
+ * sept secondes dont trois passées à se stabiliser, il en retenait trois.
  *
- * POURQUOI PAS NON PLUS « LE TEMPS DANS LA FIGURE »
+ * DEUX SEUILS, ET CHACUN SON RÔLE
  *
- * Parce que le seuil qui décide qu'une image montre la figure est
- * délibérément bas : il sert à écarter une position qui n'a rien à voir, pas
- * à dire qu'on y est arrivé. Une montée en position le franchit bien avant
- * que la figure existe, et le chrono partait trop tôt — sept secondes
- * annoncées huit et demie.
+ * Le seuil bas dit « ça ressemble encore à la figure ». Il est délibérément
+ * permissif, et une montée en position le franchit bien avant que la figure
+ * existe : s'en servir pour démarrer donnait huit secondes et demie pour sept
+ * tenues.
  *
- * DEUX SEUILS, PAS UN
+ * Le seuil haut dit « on y est ». C'est lui qui DÉMARRE le chrono.
  *
- * Le chrono démarre quand la figure est CLAIREMENT là, et ne s'arrête que
- * lorsqu'elle n'y est plus du tout. C'est la même hystérésis que celle qui
- * découpe les répétitions, et elle règle les deux défauts d'un coup : un
- * seuil unique et haut couperait la tenue au premier tremblement, un seuil
- * unique et bas avale la mise en place.
+ * Mais lui seul ne peut pas l'arrêter, et c'est la leçon de la version
+ * précédente : elle datait la fin sur la dernière image nette, si bien qu'une
+ * tenue dont la forme se dégrade sur la fin perdait ses dernières secondes —
+ * cinq comptées pour sept tenues — et que le chrono se figeait à chaque creux
+ * au lieu d'avancer. Or une forme qui se dégrade reste une forme tenue : c'est
+ * même là que l'effort est le plus grand.
  *
- * La durée court donc de la première image nette à la dernière. Ce qui se
- * passe entre les deux ne l'interrompt pas tant que la position reste
- * reconnaissable : c'est le tremblement d'une tenue difficile, pas une sortie.
+ * La tenue court donc de la première image nette à la dernière image
+ * reconnaissable. Elle démarre exigeante et se termine indulgente, ce qui est
+ * l'ordre juste : entrer dans une figure est un fait, en sortir est un
+ * effondrement progressif.
  *
- * La notation, elle, ne dépend d'aucun de ces deux seuils : elle continue de
- * se faire sur la fenêtre stable. Les deux mesures coexistent, chacune pour
- * ce qu'elle sait faire.
+ * La notation, elle, ne dépend d'aucun des deux seuils : elle continue de se
+ * faire sur la fenêtre stable. Les deux mesures coexistent, chacune pour ce
+ * qu'elle sait faire.
  */
 
-/** Décrochage toléré, en secondes, avant que la tenue soit close. */
-const FIGURE_GAP_TOLERANCE_SECONDS = 0.33;
+/**
+ * Décrochage toléré, en secondes, avant que la tenue soit close.
+ *
+ * Il ne couvre pas une sortie de position — une demi-seconde n'y suffit pas —
+ * mais les pertes de repère de la détection, qui durent quelques images quand
+ * un membre passe devant le tronc ou qu'une image est floue. Sans lui, une
+ * tenue ininterrompue se retrouvait coupée en deux morceaux dont seul le plus
+ * long était retenu.
+ */
+const FIGURE_GAP_TOLERANCE_SECONDS = 0.5;
 
 /** En deçà, la tenue n'est pas enregistrée comme durée officielle. */
 const FIGURE_MIN_SECONDS = 0.5;
@@ -741,12 +749,10 @@ const FIGURE_MIN_SECONDS = 0.5;
 export type FigureHold = { seconds: number; start: number; end: number };
 
 export class LiveHoldTimer {
-  // Continuité de la tenue : dernier instant où la position restait
-  // reconnaissable, même imparfaitement.
-  private derniereReconnue: number | null = null;
-  // Bornes de la tenue : première et dernière image où la figure était nette.
+  // Début de la tenue : première image où la figure était nette.
   private debutNet: number | null = null;
-  private derniereNette: number | null = null;
+  // Fin de la tenue : dernière image où la position restait reconnaissable.
+  private derniereReconnue: number | null = null;
   private meilleure: FigureHold | null = null;
 
   /**
@@ -761,14 +767,9 @@ export class LiveHoldTimer {
    * monte vaut mieux qu'un compteur qui reste éteint une demi-seconde.
    */
   push(time: number, reconnue: boolean, nette: boolean): number {
-    if (nette) {
-      if (this.debutNet === null) this.debutNet = time;
-      this.derniereNette = time;
-      this.derniereReconnue = time;
-    } else if (reconnue) {
-      // La tenue continue, mais ce moment ne l'allonge pas : il n'entre ni
-      // dans son début ni dans sa fin. C'est ce qui empêche la mise en place
-      // et la sortie de gonfler la durée.
+    if (nette && this.debutNet === null) this.debutNet = time;
+
+    if (reconnue || nette) {
       this.derniereReconnue = time;
     } else if (
       this.derniereReconnue !== null &&
@@ -797,11 +798,13 @@ export class LiveHoldTimer {
   }
 
   private enCours(): FigureHold | null {
-    if (this.debutNet === null || this.derniereNette === null) return null;
+    // Tant que la figure n'a pas été atteinte, il n'y a pas de tenue, même si
+    // la position ressemble déjà à quelque chose.
+    if (this.debutNet === null || this.derniereReconnue === null) return null;
     return {
-      seconds: this.derniereNette - this.debutNet,
+      seconds: Math.max(0, this.derniereReconnue - this.debutNet),
       start: this.debutNet,
-      end: this.derniereNette,
+      end: this.derniereReconnue,
     };
   }
 
@@ -811,7 +814,6 @@ export class LiveHoldTimer {
       this.meilleure = courante;
     }
     this.debutNet = null;
-    this.derniereNette = null;
     this.derniereReconnue = null;
   }
 }
