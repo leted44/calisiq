@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import TabBar from "./_components/TabBar";
+import VerifyEmailBanner from "./_components/VerifyEmailBanner";
 
 export default async function AppLayout({
   children,
@@ -19,7 +20,7 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_completed, country")
+    .select("onboarding_completed, country, email_verified")
     .eq("id", user.id)
     .single();
 
@@ -50,8 +51,22 @@ export default async function AppLayout({
     redirect("/onboarding");
   }
 
+  // Le rappel de confirmation, au-dessus de la page et non à sa place : il
+  // n'interdit rien, il prévient. Voir VerifyEmailBanner pour le raisonnement.
+  //
+  // Le repli sur `true` quand la colonne est absente est délibéré : tant que
+  // la migration n'est pas appliquée, mieux vaut ne rien afficher que de
+  // réclamer une confirmation à des comptes qui l'ont déjà faite.
+  const adresseAConfirmer =
+    profile?.email_verified === false && Boolean(user.email);
+
   return (
     <div className="min-h-screen bg-slate-950 pb-20">
+      {adresseAConfirmer && (
+        <div className="px-4 pt-4">
+          <VerifyEmailBanner email={user.email as string} />
+        </div>
+      )}
       {children}
       <TabBar />
     </div>

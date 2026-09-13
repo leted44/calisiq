@@ -568,6 +568,22 @@ export const fr = {
   auth: {
     signingOut: "Déconnexion...",
   },
+  verifyEmail: {
+    title: "Confirme ton adresse",
+    body: "Sans elle, impossible de récupérer ton compte si tu oublies ton mot de passe.",
+    action: "Confirmer",
+    later: "Plus tard",
+    send: "Recevoir un code",
+    sending: "Envoi...",
+    sent: (email: string) => `Code envoyé à ${email}`,
+    codeLabel: "Code à 6 chiffres",
+    verify: "Valider",
+    verifying: "Vérification...",
+    done: "Adresse confirmée",
+    wrongAddress: "Ce n'est pas la bonne adresse ?",
+    wrongAddressBody:
+      "Écris-nous à calisiq.app@gmail.com depuis la bonne, on la corrigera.",
+  },
   social: {
     follow: "Suivre CalisIQ sur Instagram",
     handle: "@calisiq.app",

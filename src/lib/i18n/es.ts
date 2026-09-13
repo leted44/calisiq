@@ -562,6 +562,22 @@ export const es: Dictionary = {
   auth: {
     signingOut: "Cerrando sesión...",
   },
+  verifyEmail: {
+    title: "Confirma tu correo",
+    body: "Sin él no hay forma de recuperar tu cuenta si olvidas la contraseña.",
+    action: "Confirmar",
+    later: "Más tarde",
+    send: "Enviarme un código",
+    sending: "Enviando...",
+    sent: (email) => `Código enviado a ${email}`,
+    codeLabel: "Código de 6 dígitos",
+    verify: "Validar",
+    verifying: "Verificando...",
+    done: "Correo confirmado",
+    wrongAddress: "¿No es el correo correcto?",
+    wrongAddressBody:
+      "Escríbenos a calisiq.app@gmail.com desde el correcto y lo arreglamos.",
+  },
   social: {
     follow: "Sigue a CalisIQ en Instagram",
     handle: "@calisiq.app",

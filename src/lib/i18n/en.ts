@@ -560,6 +560,22 @@ export const en: Dictionary = {
   auth: {
     signingOut: "Signing out...",
   },
+  verifyEmail: {
+    title: "Confirm your address",
+    body: "Without it, there is no way to recover your account if you forget your password.",
+    action: "Confirm",
+    later: "Later",
+    send: "Send me a code",
+    sending: "Sending...",
+    sent: (email) => `Code sent to ${email}`,
+    codeLabel: "6-digit code",
+    verify: "Verify",
+    verifying: "Verifying...",
+    done: "Address confirmed",
+    wrongAddress: "Wrong address?",
+    wrongAddressBody:
+      "Email us at calisiq.app@gmail.com from the right one and we will fix it.",
+  },
   social: {
     follow: "Follow CalisIQ on Instagram",
     handle: "@calisiq.app",
