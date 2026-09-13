@@ -826,20 +826,39 @@ rattrape le reste : la ligne est écrite quoi qu'il arrive.
 L'expéditeur est `onboarding@resend.dev`, qui fonctionne sans vérifier de
 domaine tant que la destination est l'adresse du compte Resend. Passer à une
 adresse `@calisiq.com` demandera de vérifier le domaine.
-**Mot de passe oublié.** Un troisième mode sur l'écran de connexion, à côté
-de connexion et inscription, accessible par un lien sous le champ mot de
-passe. Envoie un e-mail via `resetPasswordForEmail`, dont le lien pointe vers
-`/auth/callback?next=/reset-password` : la route de callback accepte
-désormais un paramètre `next`, avec `/` en repli pour ne rien changer au
-chemin Google existant.
+**Mot de passe oublié, par code et non par lien.** Un troisième mode sur
+l'écran de connexion, à côté de connexion et inscription, accessible sous le
+champ mot de passe. `resetPasswordForEmail` est appelé **sans redirection**,
+et le modèle d'e-mail affiche `{{ .Token }}` : la personne saisit un code,
+que `verifyOtp({ type: "recovery" })` échange contre une session, puis
+`/reset-password` trouve cette session et affiche son formulaire.
 
-`/reset-password` vérifie qu'une session existe avant d'afficher le
-formulaire — sans le code de récupération fraîchement échangé, il n'y en a
-aucune, et un lien déjà utilisé ou expiré atterrirait sinon sur un
-formulaire qui ne peut aboutir. La page vit hors du groupe `(app)`, donc
-hors de portée de son garde-fou qui redirige vers `/login` : elle doit
-rester joignable par quelqu'un qui n'a justement pas de session applicative
-classique, seulement celle, temporaire, de la récupération.
+**Le lien a été essayé d'abord, et ne pouvait pas marcher.** Deux raisons,
+toutes deux hors de notre contrôle.
+
+Les analyseurs anti-hameçonnage de certaines messageries, Outlook et Hotmail
+en tête, **ouvrent les liens reçus pour les inspecter**. Un jeton à usage
+unique est donc consommé avant que le destinataire y touche, ce qui produit un
+« lien invalide » systématique, impossible à distinguer d'un bug.
+
+Et la destination du lien dépend de la liste d'adresses autorisées de
+Supabase, **ignorée en silence** quand elle ne correspond pas : le lien est
+alors renvoyé sur l'adresse racine du site, avec le code accroché. Une
+tentative de rattrapage depuis la page d'accueil, qui réexpédiait tout code
+reçu vers l'écran de nouveau mot de passe, a cassé la connexion Google : elle
+retombe au même endroit pour la même raison, et tous ceux qui se connectaient
+avec Google se sont retrouvés devant un formulaire de réinitialisation. La
+page d'accueil réexpédie toujours un code vers `/auth/callback`, mais sans
+destination imposée.
+
+Leçon générale : **un parcours d'authentification par lien est à la merci du
+client de messagerie**, un parcours par code ne l'est pas. C'est déjà le choix
+fait pour la confirmation d'inscription.
+
+`/reset-password` vit hors du groupe `(app)`, donc hors de portée de son
+garde-fou qui redirige vers `/login`, et vérifie elle-même qu'une session
+existe : sans elle, elle le dit au lieu d'afficher un formulaire qui ne peut
+pas aboutir.
 ## Stack technique (fixée, ne pas relitiger)
 
 - **Frontend** : Next.js 16 (App Router, Turbopack), TypeScript, Tailwind v4
