@@ -749,3 +749,35 @@ export function InstagramIcon({ className = base }: IconProps) {
     </svg>
   );
 }
+
+export function FlameIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M12 3s.6 3-1.5 5.2C8.2 10.6 7 12.2 7 14.3 7 17.4 9.2 20 12 20s5-2.6 5-5.7c0-2.6-1.6-4.2-2.8-6C13 6.4 12 3 12 3Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 20c-1.5 0-2.6-1.3-2.6-2.9 0-1.6 1.4-2.3 2-3.6.7 1.3 3.2 2 3.2 3.6 0 1.6-1.1 2.9-2.6 2.9Z"
+        fill="currentColor"
+        fillOpacity="0.9"
+      />
+    </svg>
+  );
+}
+
+export function PieIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M12 3.5v8.5h8.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

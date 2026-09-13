@@ -269,6 +269,15 @@ export const fr = {
     statusError: "Erreur",
   },
   progressPage: {
+    thisWeek: "Ma semaine",
+    sessionsThisWeek: "Séances",
+    streak: "Jours de suite",
+    totalAnalyses: "Analyses",
+    globalCurve: "Ma progression globale",
+    lastWeeks: "12 dernières semaines",
+    split: "Répartition des entraînements",
+    sessionsWord: "séances",
+    sessionWord: "séance",
     title: "Progression",
   },
   session: {

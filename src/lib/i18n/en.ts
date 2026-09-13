@@ -263,6 +263,15 @@ export const en: Dictionary = {
     statusError: "Error",
   },
   progressPage: {
+    thisWeek: "My week",
+    sessionsThisWeek: "Sessions",
+    streak: "Day streak",
+    totalAnalyses: "Analyses",
+    globalCurve: "My overall progress",
+    lastWeeks: "Last 12 weeks",
+    split: "Training split",
+    sessionsWord: "sessions",
+    sessionWord: "session",
     title: "Progress",
   },
   session: {

@@ -11,6 +11,14 @@ import {
 import { progressionLabel } from "@/lib/pose/report";
 import FigureMedal from "../_components/FigureMedal";
 import { loadProgression } from "./_data";
+import { WeekStrip, GlobalCurve, TrainingSplit } from "./_panels";
+import {
+  serieEnCours,
+  debutDeSemaine,
+  courbeHebdomadaire,
+  repartitionParFigure,
+  type SeanceBrute,
+} from "@/lib/pose/activity";
 
 /**
  * La collection de figures.
@@ -31,7 +39,26 @@ import { loadProgression } from "./_data";
 export default async function ProgressionPage() {
   const t = await getDictionary();
   const lang = await getLang();
-  const { bestPoints } = await loadProgression(lang);
+  const { variations, bestPoints } = await loadProgression(lang);
+
+  // Toutes les séances à plat. Les panneaux d'activité ne s'intéressent pas à
+  // quelle figure appartient quoi, mais à quand les choses ont eu lieu.
+  const seances: SeanceBrute[] = variations.flatMap((v) =>
+    v.points.map((point) => ({
+      variation: v.variation,
+      date: point.date,
+      score: point.score,
+      holdDuration: point.holdDuration,
+    }))
+  );
+
+  const debutSemaine = debutDeSemaine();
+  const seancesSemaine = seances.filter(
+    (s) => new Date(s.date) >= debutSemaine
+  ).length;
+  const serie = serieEnCours(seances.map((s) => s.date));
+  const courbe = courbeHebdomadaire(seances);
+  const repartition = repartitionParFigure(seances);
 
   const figures = figureLadders().map((ladder) => {
     const meilleur = ladder.variations.reduce(
@@ -97,6 +124,18 @@ export default async function ProgressionPage() {
           >
             {t.landing.ctaFirst}
           </Link>
+        </div>
+      )}
+
+      {seances.length > 0 && (
+        <div className="w-full max-w-md space-y-3">
+          <WeekStrip
+            seancesSemaine={seancesSemaine}
+            serie={serie}
+            total={seances.length}
+            t={t}
+          />
+          <GlobalCurve semaines={courbe} t={t} />
         </div>
       )}
 
@@ -172,6 +211,22 @@ export default async function ProgressionPage() {
           ))}
         </div>
       </div>
+
+      {/* La répartition ferme la page : elle ne dit pas où on en est mais sur
+          quoi le travail a porté, et c'est la question qu'on se pose après
+          avoir regardé ses figures, pas avant. */}
+      {repartition.length > 0 && (
+        <div className="w-full max-w-md">
+          <TrainingSplit
+            parts={repartition}
+            labels={Object.fromEntries(
+              figures.map((f) => [f.family, f.label])
+            )}
+            total={seances.length}
+            t={t}
+          />
+        </div>
+      )}
     </div>
   );
 }
