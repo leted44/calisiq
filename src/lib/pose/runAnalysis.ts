@@ -203,10 +203,11 @@ export async function runPoseAnalysis({
         }
       : null;
 
-  // Chrono direct. Il rend deux durées : le temps passé dans la figure, mis
-  // en avant parce que c'est celui que le pratiquant a vécu, et la part de ce
-  // temps restée parfaitement immobile, affichée en petit parce que c'est
-  // elle qui décide de la note. Voir LiveHoldTimer pour ce qui les sépare.
+  // Le chrono du hold. Il mesure le temps passé dans la figure, et c'est lui
+  // qui donne la durée retenue à la fin : le même nombre défile pendant
+  // l'analyse, s'affiche dans le résultat et se retrouve dans la vidéo
+  // exportée. Voir LiveHoldTimer pour ce qui le sépare de la fenêtre stable,
+  // qui reste, elle, ce sur quoi la note est calculée.
   const chrono = estDansFigure ? new LiveHoldTimer() : null;
 
   const start = rangeStart ?? 0;
@@ -272,19 +273,11 @@ export async function runPoseAnalysis({
             value: String(compteurReps.push(a)),
           });
         } else if (estDansFigure && chrono) {
-          const lecture = chrono.push(landmarks, frameTime, estDansFigure(a));
           drawLiveCounter(ctx, canvas, {
             figureLabel: libelleFigure,
             unitLabel: "HOLD",
-            value: lecture.inFigure.toFixed(1),
+            value: chrono.push(frameTime, estDansFigure(a)).toFixed(1),
             suffix: "s",
-            // Tant qu'aucune tenue stable n'a duré assez longtemps pour
-            // compter, la seconde ligne reste absente : afficher « 0.0s »
-            // serait un reproche, pas une information.
-            secondary:
-              lecture.stable > 0
-                ? `${lecture.stable.toFixed(1)}s STABLE`
-                : null,
           });
         }
       }
@@ -317,23 +310,35 @@ export async function runPoseAnalysis({
   const window = detectHoldWindow(frames, { isInFigure, times: frameTimes });
   const holdAngles = angles.slice(window.start, window.end + 1);
   const median = medianAngles(holdAngles);
-  // Si aucun segment immobile assez long n'est trouvé, detectHoldWindow
-  // retombe sur la vidéo entière (voir angles.ts) — dans ce cas la "durée"
-  // ne correspond à aucun hold réel, mieux vaut ne rien afficher que de
-  // faire croire que la figure a été tenue pendant tout le clip.
+  // La tenue retenue vient du chrono, pas de la fenêtre de notation.
   //
-  // Bornes lues sur les instants réellement horodatés plutôt que déduites
-  // d'une règle de trois sur l'indice : les images d'analyse n'étant pas
-  // capturées à intervalles réguliers, la conversion proportionnelle
-  // décalait le début et la fin du hold, et faussait donc sa durée.
-  const holdStartSeconds = window.detected ? frameTimes[window.start] : null;
-  const holdEndSeconds = window.detected
-    ? frameTimes[Math.min(window.end, frameTimes.length - 1)]
+  // Les deux fenêtres ne sont pas rivales, elles ne servent pas à la même
+  // chose : celle de detectHoldWindow cherche le segment le plus PROPRE, sur
+  // lequel prendre la médiane des angles, et coupe donc tout ce qui dérive
+  // encore ; celle-ci mesure la tenue telle qu'elle a eu lieu, du moment où
+  // la figure est reconnue à celui où elle se défait. Annoncer la première
+  // comme durée revenait à dire trois secondes à quelqu'un qui venait d'en
+  // tenir sept.
+  //
+  // Sans chrono — mode mesure de la calibration, où aucune figure n'est
+  // attendue — on retombe sur la fenêtre stable, faute de mieux.
+  const tenue = chrono
+    ? chrono.best()
+    : window.detected
+    ? {
+        seconds: Math.max(
+          0,
+          frameTimes[Math.min(window.end, frameTimes.length - 1)] -
+            frameTimes[window.start]
+        ),
+        start: frameTimes[window.start],
+        end: frameTimes[Math.min(window.end, frameTimes.length - 1)],
+      }
     : null;
-  const holdDurationSeconds =
-    holdStartSeconds !== null && holdEndSeconds !== null
-      ? Math.max(0, holdEndSeconds - holdStartSeconds)
-      : null;
+
+  const holdStartSeconds = tenue?.start ?? null;
+  const holdEndSeconds = tenue?.end ?? null;
+  const holdDurationSeconds = tenue?.seconds ?? null;
 
   const warningParts: string[] = [];
   if (detectionRate < 0.5) {

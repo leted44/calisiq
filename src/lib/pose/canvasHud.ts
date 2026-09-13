@@ -107,20 +107,12 @@ export function drawLiveCounter(
     unitLabel,
     value,
     suffix = "",
-    secondary = null,
   }: {
     figureLabel: string;
     /** « HOLD » ou « REPS » : ce que mesure le grand chiffre. */
     unitLabel: string;
     value: string;
     suffix?: string;
-    /**
-     * Seconde mesure, en petit sous la première. Sur un hold, la part de la
-     * tenue restée parfaitement immobile : c'est elle qui décide de la note,
-     * alors que le grand chiffre dit ce qui a été tenu. Les deux comptent, et
-     * leur écart est lui-même une information.
-     */
-    secondary?: string | null;
   }
 ) {
   const scale = canvas.width / 400;
@@ -132,7 +124,6 @@ export function drawLiveCounter(
   const policeUnite = `700 ${7 * scale}px sans-serif`;
   const policeValeur = `700 ${20 * scale}px sans-serif`;
   const policeSuffixe = `600 ${10 * scale}px sans-serif`;
-  const policeSecondaire = `600 ${8 * scale}px sans-serif`;
 
   ctx.save();
 
@@ -142,17 +133,14 @@ export function drawLiveCounter(
   const largeurValeur = ctx.measureText(value).width;
   ctx.font = policeSuffixe;
   const largeurSuffixe = suffix ? ctx.measureText(suffix).width : 0;
-  ctx.font = policeSecondaire;
-  const largeurSecondaire = secondary ? ctx.measureText(secondary).width : 0;
 
   const contenu = Math.max(
     largeurFigure,
     largeurValeur + largeurSuffixe,
-    largeurSecondaire,
     50 * scale
   );
   const largeur = contenu + paddingX * 2;
-  const hauteur = (secondary ? 74 : 62) * scale;
+  const hauteur = 62 * scale;
   const x = (canvas.width - largeur) / 2;
   const y = marge;
   const cx = x + largeur / 2;
@@ -184,13 +172,6 @@ export function drawLiveCounter(
   if (suffix) {
     ctx.font = policeSuffixe;
     ctx.fillText(suffix, baseX + largeurValeur, y + 52 * scale);
-  }
-
-  if (secondary) {
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = policeSecondaire;
-    ctx.fillText(secondary, cx, y + 65 * scale);
   }
 
   ctx.restore();
