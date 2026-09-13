@@ -15,8 +15,10 @@ import {
   ProfileIcon,
   TrendUpIcon,
   BugIcon,
+  InstagramIcon,
 } from "@/components/icons";
 import BetaBadge from "@/components/BetaBadge";
+import { INSTAGRAM_URL } from "@/lib/links";
 import { getDictionary, getLang } from "@/lib/i18n/server";
 import type { Dictionary } from "@/lib/i18n/fr";
 
@@ -200,6 +202,21 @@ export default async function ProfilPage() {
             {t.beta.notice}
           </p>
         </div>
+
+        <a
+          href={INSTAGRAM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4 transition-colors hover:border-cyan-800"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-cyan-400">
+            <InstagramIcon className="h-4 w-4" />
+          </div>
+          <div className="flex-1">
+            <p className="font-medium text-white">{t.social.follow}</p>
+            <p className="text-xs text-slate-500">{t.social.followHint}</p>
+          </div>
+        </a>
 
         <Link
           href="/bug"

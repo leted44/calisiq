@@ -731,3 +731,21 @@ export function GlobeIcon({ className = base }: IconProps) {
     </svg>
   );
 }
+
+export function InstagramIcon({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect
+        x="3.5"
+        y="3.5"
+        width="17"
+        height="17"
+        rx="5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="17" cy="7" r="1.2" fill="currentColor" />
+    </svg>
+  );
+}

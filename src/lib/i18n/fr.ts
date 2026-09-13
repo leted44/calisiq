@@ -559,6 +559,11 @@ export const fr = {
   auth: {
     signingOut: "Déconnexion...",
   },
+  social: {
+    follow: "Suivre CalisIQ sur Instagram",
+    handle: "@calisiq.app",
+    followHint: "Les nouveautés, et des figures passées au crible",
+  },
   beta: {
     badge: "Bêta",
     notice:

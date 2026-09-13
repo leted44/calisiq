@@ -551,6 +551,11 @@ export const en: Dictionary = {
   auth: {
     signingOut: "Signing out...",
   },
+  social: {
+    follow: "Follow CalisIQ on Instagram",
+    handle: "@calisiq.app",
+    followHint: "Updates, and figures put to the test",
+  },
   beta: {
     badge: "Beta",
     notice:

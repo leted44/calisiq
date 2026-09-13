@@ -15,6 +15,8 @@ import {
 } from "@/components/icons";
 import BetaBadge from "@/components/BetaBadge";
 import BetaFreeNotice from "@/components/BetaFreeNotice";
+import { InstagramIcon } from "@/components/icons";
+import { INSTAGRAM_URL } from "@/lib/links";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getDictionary();
@@ -372,14 +374,28 @@ export default async function LandingPage({
       </section>
 
       <footer className="border-t border-slate-900 px-5 py-8">
-        <div className="mx-auto flex max-w-md items-center justify-between text-xs text-slate-600">
+        <div className="mx-auto flex max-w-md items-center justify-between gap-4 text-xs text-slate-600">
           <span>CalisIQ</span>
-          <Link
-            href="/confidentialite"
-            className="text-slate-500 hover:text-slate-400"
-          >
-            {t.landing.privacy}
-          </Link>
+          <div className="flex items-center gap-4">
+            {/* rel="noopener" est obligatoire sur une cible externe ouverte
+                dans un onglet : sans lui, la page d'arrivée peut manipuler
+                celle qu'on vient de quitter. */}
+            <a
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-slate-500 hover:text-slate-400"
+            >
+              <InstagramIcon className="h-4 w-4" />
+              {t.social.handle}
+            </a>
+            <Link
+              href="/confidentialite"
+              className="text-slate-500 hover:text-slate-400"
+            >
+              {t.landing.privacy}
+            </Link>
+          </div>
         </div>
       </footer>
     </main>
