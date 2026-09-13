@@ -151,6 +151,7 @@ export async function runPoseAnalysis({
   video,
   canvas,
   progression,
+  chronoProgression,
   rangeStart,
   rangeEnd,
   onProgress,
@@ -163,6 +164,19 @@ export async function runPoseAnalysis({
   // null = mode mesure : renvoie les angles réels sans les noter (figure
   // pas encore calibrée, utilisé pour collecter des échantillons)
   progression: AnyProgression | null;
+  /**
+   * Figure dont le barème sert UNIQUEMENT à faire tourner le chrono affiché.
+   *
+   * La page de calibration mesure sans barème, délibérément : filtrer les
+   * images retenues par les seuils qu'on cherche justement à régler
+   * fausserait les angles collectés. Elle veut pourtant le même chrono que
+   * la page d'analyse, et il n'y a pas de contradiction : ce barème-ci ne
+   * décide que de ce qui s'affiche, jamais de ce qui est mesuré ni noté.
+   *
+   * Ignoré quand `progression` est déjà une figure de hold, qui fournit alors
+   * son propre barème.
+   */
+  chronoProgression?: Progression | null;
   rangeStart?: number;
   rangeEnd?: number;
   onProgress?: (percent: number) => void;
@@ -197,39 +211,50 @@ export async function runPoseAnalysis({
     progression !== null && isRepProgression(progression)
       ? new LiveRepCounter(REP_SCORING_GRID[progression])
       : null;
-  const libelleFigure =
-    progression !== null ? progressionLabel(progression, lang) : "";
-
-  // Une image montre-t-elle la figure ? Son critère le PLUS FAIBLE doit
-  // dépasser un plancher. La moyenne ne suffit pas : quelqu'un suspendu bras
-  // tendus avant son front lever obtient un excellent score de coude, ce qui
-  // la remonte alors que la hanche dit clairement qu'il n'y est pas encore.
+  // Note du critère le plus faible d'une image, sur 10, ou null si rien n'est
+  // mesurable. C'est elle que lisent les deux seuils du chrono, et c'est aussi
+  // elle qui décide si une image est retenue pour la note : le critère le plus
+  // bas trahit une position absente, là où la moyenne la masque — quelqu'un
+  // suspendu bras tendus avant son front lever a un excellent score de coude.
   //
-  // Le même juge sert au chrono en direct et à la détection de la fenêtre de
-  // hold après coup, pour que les deux ne puissent pas se contredire.
-  // Renvoie la note du critère le plus faible, ou null si rien n'est mesurable.
-  // Les deux seuils la lisent, ce qui évite de noter deux fois la même image.
-  const noteLaPlusFaible =
-    progression !== null && !compteurReps
-      ? (a: PoseAngles) => {
-          const scores = scoreAngles(a, progression as Progression).filter((s) =>
-            Number.isFinite(s.score)
-          );
-          if (scores.length === 0) return null;
-          return Math.min(...scores.map((s) => s.score));
-        }
-      : null;
+  // La suite sépare soigneusement ces deux usages : ils lisent la même
+  // fonction, pas forcément le même barème.
+  const noteSelon = (figure: Progression) => (a: PoseAngles) => {
+    const scores = scoreAngles(a, figure).filter((s) => Number.isFinite(s.score));
+    if (scores.length === 0) return null;
+    return Math.min(...scores.map((s) => s.score));
+  };
 
-  const estDansFigure = noteLaPlusFaible
-    ? (a: PoseAngles) => (noteLaPlusFaible(a) ?? -1) >= IN_FIGURE_FLOOR
+  const figureDuHold =
+    progression !== null && !compteurReps ? (progression as Progression) : null;
+
+  // Ce qui FILTRE les images retenues pour la note. Il ne dépend que de la
+  // progression réellement demandée : c'est ce qui garantit qu'une mesure de
+  // calibration reste vierge des seuils qu'elle sert à régler.
+  const estDansFigure = figureDuHold
+    ? (a: PoseAngles) => (noteSelon(figureDuHold)(a) ?? -1) >= IN_FIGURE_FLOOR
     : null;
+
+  // Ce qui fait AVANCER le chrono. Même barème dans le cas courant, et celui
+  // de la figure choisie quand la mesure se fait sans barème.
+  const figureDuChrono = figureDuHold ?? chronoProgression ?? null;
+  const noteLaPlusFaible = figureDuChrono ? noteSelon(figureDuChrono) : null;
+
+  // Nom porté par la carte. Il suit ce que le compteur mesure, pas ce que
+  // l'analyse note : en calibration, la progression est nulle et la carte se
+  // serait affichée sans nom.
+  const libelleFigure = compteurReps
+    ? progressionLabel(progression as string, lang)
+    : figureDuChrono
+    ? progressionLabel(figureDuChrono, lang)
+    : "";
 
   // Le chrono du hold. Il mesure le temps passé dans la figure, et c'est lui
   // qui donne la durée retenue à la fin : le même nombre défile pendant
   // l'analyse, s'affiche dans le résultat et se retrouve dans la vidéo
   // exportée. Voir LiveHoldTimer pour ce qui le sépare de la fenêtre stable,
   // qui reste, elle, ce sur quoi la note est calculée.
-  const chrono = estDansFigure ? new LiveHoldTimer() : null;
+  const chrono = noteLaPlusFaible ? new LiveHoldTimer() : null;
 
   const start = rangeStart ?? 0;
   const end = rangeEnd ?? video.duration;
@@ -350,7 +375,7 @@ export async function runPoseAnalysis({
   //
   // Sans chrono — mode mesure de la calibration, où aucune figure n'est
   // attendue — on retombe sur la fenêtre stable, faute de mieux.
-  const tenue = chrono
+  const tenue = chrono && figureDuHold
     ? chrono.best()
     : window.detected
     ? {

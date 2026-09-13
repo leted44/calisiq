@@ -349,6 +349,15 @@ export default function CalibrationForm() {
         // des paramètres de détection (angle pilote, amplitude attendue), pas
         // des cibles de notation qu'on est en train de calibrer.
         progression: isRepProgression(variation) ? variation : null,
+        // Le chrono, lui, a besoin du barème pour savoir quand la figure est
+        // atteinte. Le lui donner ne rouvre pas la porte au biais : il ne
+        // décide que de l'affichage, pas des images retenues pour la mesure.
+        // Écarté pour une variation qui n'a encore aucun barème, où il n'y
+        // aurait rien à lire.
+        chronoProgression:
+          !isRepProgression(variation) && variation in SCORING_GRID
+            ? (variation as Progression)
+            : null,
         rangeStart: trimStart,
         rangeEnd: trimEnd,
         onProgress: setProgressPercent,
