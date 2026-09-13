@@ -696,39 +696,40 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
 }
 
 /**
- * La durée d'un hold : le temps passé dans la figure.
+ * La durée d'un hold : de l'instant où la figure est clairement là à celui
+ * où elle ne l'est plus.
  *
- * POURQUOI PAS LA FENÊTRE STABLE
+ * POURQUOI PAS LA FENÊTRE DE NOTATION
  *
- * `detectHoldWindow` cherche le plus long segment à la fois conforme à la
- * figure ET immobile, et c'est le bon outil pour NOTER : la médiane des
- * angles doit être prise là où la position ne dérive plus, sinon la note
- * mesure la mise en place autant que la figure.
+ * `detectHoldWindow` cherche le segment le plus PROPRE, celui sur lequel
+ * prendre la médiane des angles : il coupe tout ce qui dérive encore. C'est
+ * le bon outil pour noter et un mauvais pour chronométrer — sur une tenue de
+ * sept secondes dont trois passées à se stabiliser, il en retenait trois, et
+ * l'application répondait trois à quelqu'un qui venait d'en tenir sept.
  *
- * Mais ce segment fait une mauvaise DURÉE. Sur une tenue de sept secondes
- * dont trois passées à se stabiliser, il en retient trois : un chiffre juste
- * au sens où il est défini, et faux au sens où personne ne compte ainsi. Une
- * application qui répond « trois » à quelqu'un qui vient de tenir sept
- * secondes lui donne tort sur ce qu'il a fait, et le découragement est un
- * défaut de mesure comme un autre.
+ * POURQUOI PAS NON PLUS « LE TEMPS DANS LA FIGURE »
  *
- * La durée retenue est donc le temps où la position est reconnue, du moment
- * où elle l'est jusqu'à celui où elle se défait. La notation, elle, continue
- * de se faire sur la fenêtre stable : les deux fenêtres coexistent, chacune
- * pour ce qu'elle sait faire.
+ * Parce que le seuil qui décide qu'une image montre la figure est
+ * délibérément bas : il sert à écarter une position qui n'a rien à voir, pas
+ * à dire qu'on y est arrivé. Une montée en position le franchit bien avant
+ * que la figure existe, et le chrono partait trop tôt — sept secondes
+ * annoncées huit et demie.
  *
- * CE QUI EST TOLÉRÉ
+ * DEUX SEUILS, PAS UN
  *
- * Un décrochage bref. Un critère qui passe une fraction de seconde sous le
- * plancher au milieu d'une tenue ne doit pas remettre le compteur à zéro
- * sous les yeux de quelqu'un qui, lui, n'a pas bougé. Un tiers de seconde est
- * trop court pour couvrir une vraie sortie de position.
+ * Le chrono démarre quand la figure est CLAIREMENT là, et ne s'arrête que
+ * lorsqu'elle n'y est plus du tout. C'est la même hystérésis que celle qui
+ * découpe les répétitions, et elle règle les deux défauts d'un coup : un
+ * seuil unique et haut couperait la tenue au premier tremblement, un seuil
+ * unique et bas avale la mise en place.
  *
- * CE QUI EST ÉCARTÉ
+ * La durée court donc de la première image nette à la dernière. Ce qui se
+ * passe entre les deux ne l'interrompt pas tant que la position reste
+ * reconnaissable : c'est le tremblement d'une tenue difficile, pas une sortie.
  *
- * Les tenues d'une demi-seconde. Affichées en direct elles ne gênent
- * personne, mais enregistrées comme durée officielle elles pollueraient la
- * progression avec des passages fugaces qui ne sont pas des holds.
+ * La notation, elle, ne dépend d'aucun de ces deux seuils : elle continue de
+ * se faire sur la fenêtre stable. Les deux mesures coexistent, chacune pour
+ * ce qu'elle sait faire.
  */
 
 /** Décrochage toléré, en secondes, avant que la tenue soit close. */
@@ -740,31 +741,48 @@ const FIGURE_MIN_SECONDS = 0.5;
 export type FigureHold = { seconds: number; start: number; end: number };
 
 export class LiveHoldTimer {
-  private debut: number | null = null;
-  private derniere: number | null = null;
+  // Continuité de la tenue : dernier instant où la position restait
+  // reconnaissable, même imparfaitement.
+  private derniereReconnue: number | null = null;
+  // Bornes de la tenue : première et dernière image où la figure était nette.
+  private debutNet: number | null = null;
+  private derniereNette: number | null = null;
   private meilleure: FigureHold | null = null;
 
   /**
    * Consomme une image et renvoie la meilleure tenue observée jusqu'ici, en
-   * secondes. Aucun plancher ici : pendant l'analyse, un compteur qui part de
-   * zéro et monte vaut mieux qu'un compteur qui reste éteint une demi-seconde.
+   * secondes.
+   *
+   * `reconnue` : la position ressemble encore à la figure, seuil bas.
+   * `nette` : elle y est clairement, seuil haut. Une image nette est
+   * forcément reconnue, l'appelant n'a pas à le garantir.
+   *
+   * Aucun plancher ici : pendant l'analyse, un compteur qui part de zéro et
+   * monte vaut mieux qu'un compteur qui reste éteint une demi-seconde.
    */
-  push(time: number, dansLaFigure: boolean): number {
-    if (dansLaFigure) {
-      if (this.debut === null) this.debut = time;
-      this.derniere = time;
+  push(time: number, reconnue: boolean, nette: boolean): number {
+    if (nette) {
+      if (this.debutNet === null) this.debutNet = time;
+      this.derniereNette = time;
+      this.derniereReconnue = time;
+    } else if (reconnue) {
+      // La tenue continue, mais ce moment ne l'allonge pas : il n'entre ni
+      // dans son début ni dans sa fin. C'est ce qui empêche la mise en place
+      // et la sortie de gonfler la durée.
+      this.derniereReconnue = time;
     } else if (
-      this.debut !== null &&
-      this.derniere !== null &&
-      time - this.derniere > FIGURE_GAP_TOLERANCE_SECONDS
+      this.derniereReconnue !== null &&
+      time - this.derniereReconnue > FIGURE_GAP_TOLERANCE_SECONDS
     ) {
       // Sortie confirmée. La tenue est versée au meilleur score : un chrono
       // qui redescend effacerait sous les yeux ce qui vient d'être réussi.
       this.cloture();
     }
 
-    const meilleure = this.meilleure?.seconds ?? 0;
-    return Math.max(meilleure, this.enCours()?.seconds ?? 0);
+    return Math.max(
+      this.meilleure?.seconds ?? 0,
+      this.enCours()?.seconds ?? 0
+    );
   }
 
   /**
@@ -779,11 +797,11 @@ export class LiveHoldTimer {
   }
 
   private enCours(): FigureHold | null {
-    if (this.debut === null || this.derniere === null) return null;
+    if (this.debutNet === null || this.derniereNette === null) return null;
     return {
-      seconds: this.derniere - this.debut,
-      start: this.debut,
-      end: this.derniere,
+      seconds: this.derniereNette - this.debutNet,
+      start: this.debutNet,
+      end: this.derniereNette,
     };
   }
 
@@ -792,7 +810,8 @@ export class LiveHoldTimer {
     if (courante && courante.seconds > (this.meilleure?.seconds ?? 0)) {
       this.meilleure = courante;
     }
-    this.debut = null;
-    this.derniere = null;
+    this.debutNet = null;
+    this.derniereNette = null;
+    this.derniereReconnue = null;
   }
 }

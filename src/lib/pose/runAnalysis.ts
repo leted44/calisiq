@@ -48,6 +48,21 @@ const w = (lang: Lang) => DICTIONARIES[lang].warnings;
 // voir, comme une suspension avant l'entrée en figure.
 const IN_FIGURE_FLOOR = 2;
 
+// Note minimale, sur le critère le plus faible, pour que le chrono considère
+// la figure comme ATTEINTE et se mette en marche.
+//
+// POURQUOI PAS LE MÊME PLANCHER
+//
+// Celui du dessus répond à « est-ce que ça pourrait être la figure ? », et sa
+// réponse est oui bien avant qu'elle existe : une montée en position le
+// franchit, d'où un chrono qui partait une seconde et demie trop tôt. Celui-ci
+// répond à « y est-on ? », et demande donc que le critère le plus faible soit
+// au moins à la moitié de sa cible, pas juste au-dessus du ridicule.
+//
+// Ne sert qu'à dater le début et la fin de la tenue. La note, elle, ne dépend
+// d'aucun des deux : elle se calcule sur la fenêtre stable.
+const IN_FIGURE_CLEAR_FLOOR = 4;
+
 
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
@@ -192,16 +207,22 @@ export async function runPoseAnalysis({
   //
   // Le même juge sert au chrono en direct et à la détection de la fenêtre de
   // hold après coup, pour que les deux ne puissent pas se contredire.
-  const estDansFigure =
+  // Renvoie la note du critère le plus faible, ou null si rien n'est mesurable.
+  // Les deux seuils la lisent, ce qui évite de noter deux fois la même image.
+  const noteLaPlusFaible =
     progression !== null && !compteurReps
       ? (a: PoseAngles) => {
           const scores = scoreAngles(a, progression as Progression).filter((s) =>
             Number.isFinite(s.score)
           );
-          if (scores.length === 0) return false;
-          return Math.min(...scores.map((s) => s.score)) >= IN_FIGURE_FLOOR;
+          if (scores.length === 0) return null;
+          return Math.min(...scores.map((s) => s.score));
         }
       : null;
+
+  const estDansFigure = noteLaPlusFaible
+    ? (a: PoseAngles) => (noteLaPlusFaible(a) ?? -1) >= IN_FIGURE_FLOOR
+    : null;
 
   // Le chrono du hold. Il mesure le temps passé dans la figure, et c'est lui
   // qui donne la durée retenue à la fin : le même nombre défile pendant
@@ -272,11 +293,18 @@ export async function runPoseAnalysis({
             unitLabel: "REPS",
             value: String(compteurReps.push(a)),
           });
-        } else if (estDansFigure && chrono) {
+        } else if (noteLaPlusFaible && chrono) {
+          const note = noteLaPlusFaible(a) ?? -1;
           drawLiveCounter(ctx, canvas, {
             figureLabel: libelleFigure,
             unitLabel: "HOLD",
-            value: chrono.push(frameTime, estDansFigure(a)).toFixed(1),
+            value: chrono
+              .push(
+                frameTime,
+                note >= IN_FIGURE_FLOOR,
+                note >= IN_FIGURE_CLEAR_FLOOR
+              )
+              .toFixed(1),
             suffix: "s",
           });
         }
