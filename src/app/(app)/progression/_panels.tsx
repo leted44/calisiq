@@ -236,7 +236,7 @@ export function TrainingSplit({
   t: Dictionary;
 }) {
   const RAYON = 42;
-  const EPAISSEUR = 14;
+  const EPAISSEUR = 16;
   const perimetre = 2 * Math.PI * RAYON;
 
   const arcs = parts.reduce<
@@ -281,6 +281,7 @@ export function TrainingSplit({
                 strokeDasharray={`${arc.longueur} ${perimetre}`}
                 strokeDashoffset={arc.decalage}
                 strokeLinecap="butt"
+                style={{ filter: `drop-shadow(0 0 5px ${arc.couleur}99)` }}
               />
             ))}
           </svg>
@@ -300,12 +301,18 @@ export function TrainingSplit({
             <li key={part.family} className="flex items-center gap-2">
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: FIGURE_COLORS[part.family] ?? "#64748b" }}
+                style={{
+                  backgroundColor: FIGURE_COLORS[part.family] ?? "#64748b",
+                  boxShadow: `0 0 7px ${FIGURE_COLORS[part.family] ?? "#64748b"}`,
+                }}
               />
-              <span className="min-w-0 flex-1 truncate text-[12px] text-slate-300">
+              <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-200">
                 {labels[part.family] ?? part.family}
               </span>
-              <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">
+              <span
+                className="shrink-0 font-mono text-[12px] font-semibold tabular-nums"
+                style={{ color: FIGURE_COLORS[part.family] ?? "#94a3b8" }}
+              >
                 {Math.round(part.share * 100)}%
               </span>
             </li>

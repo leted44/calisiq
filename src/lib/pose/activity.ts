@@ -149,18 +149,32 @@ export function repartitionParFigure(seances: SeanceBrute[]): Part[] {
  *
  * Les deux ne disent pas la même chose et ne doivent pas se ressembler : la
  * couleur de palier dit un niveau atteint, celle-ci ne fait que distinguer
- * une figure d'une autre dans un graphique. Les teintes sont choisies assez
- * éloignées les unes des autres pour rester séparables sur une part de
- * camembert de quelques pixels.
+ * une figure d'une autre dans un graphique.
+ *
+ * L'ORDRE DES TEINTES N'EST PAS LIBRE
+ *
+ * La première version donnait du cyan à la planche et du bleu au handstand,
+ * deux teintes voisines. Or ce sont les deux figures les plus travaillées :
+ * l'anneau les montrait côte à côte et paraissait monochrome, exactement le
+ * défaut qu'un camembert doit éviter.
+ *
+ * Les couleurs sont donc attribuées dans l'ordre de popularité des figures,
+ * en sautant à chaque fois à l'opposé du cercle chromatique. Les deux
+ * premières — cyan et ambre — sont complémentaires, donc aussi éloignées que
+ * deux couleurs peuvent l'être ; les suivantes s'intercalent. Une part de
+ * quelques pixels reste ainsi identifiable sans lire la légende.
+ *
+ * Saturations élevées assumées : sur un fond presque noir, une teinte pastel
+ * perd la moitié de sa présence et l'ensemble devient terne.
  */
 export const FIGURE_COLORS: Record<string, string> = {
-  planche: "#38bdf8",
-  front_lever: "#4ade80",
-  human_flag: "#c084fc",
-  dragon_flag: "#fb923c",
-  handstand: "#60a5fa",
-  traction: "#2dd4bf",
-  dips: "#f472b6",
-  pompes: "#fbbf24",
-  pistol: "#a78bfa",
+  planche: "#22d3ee",
+  handstand: "#f59e0b",
+  front_lever: "#22c55e",
+  human_flag: "#a855f7",
+  dragon_flag: "#ec4899",
+  traction: "#3b82f6",
+  dips: "#f43f5e",
+  pompes: "#eab308",
+  pistol: "#a3e635",
 };
