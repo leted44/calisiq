@@ -114,23 +114,25 @@ export default async function LandingPage({
 }: {
   searchParams: Promise<{ code?: string }>;
 }) {
-  // Repli du lien de réinitialisation de mot de passe.
+  // Code d'authentification retombé sur la racine.
   //
   // Supabase n'honore l'adresse de retour demandée que si elle figure dans sa
-  // liste d'adresses autorisées, sinon il retombe sur l'adresse racine du site
-  // en y accrochant quand même le code. Le lien de l'e-mail atterrissait donc
-  // ici, sur la page de présentation, sans que rien ne se passe.
+  // liste d'adresses autorisées ; sinon il utilise l'adresse racine du site en
+  // y accrochant quand même le code. C'est ce qui arrive ici, aussi bien à la
+  // connexion Google qu'au lien de réinitialisation de mot de passe.
   //
-  // Plutôt que de dépendre d'un réglage du tableau de bord, la page réexpédie
-  // elle-même le code vers la route qui sait l'échanger. Un code qui arrive à
-  // la racine ne peut venir que de là : la connexion Google vise directement
-  // /auth/callback, et la confirmation d'inscription se fait désormais par
-  // code saisi à la main, sans lien.
+  // La page réexpédie donc le code vers la route qui sait l'échanger, et rien
+  // de plus. Une version précédente y ajoutait une destination vers l'écran de
+  // nouveau mot de passe, en supposant qu'un code arrivant ici ne pouvait
+  // venir que de là : c'était faux, et tous ceux qui se connectaient avec
+  // Google se retrouvaient devant un formulaire de réinitialisation.
+  //
+  // Distinguer les deux cas demande que Supabase respecte l'adresse de retour,
+  // donc que la liste d'adresses autorisées couvre /auth/callback avec sa
+  // chaîne de requête.
   const { code } = await searchParams;
   if (code) {
-    redirect(
-      `/auth/callback?code=${encodeURIComponent(code)}&next=/reset-password`
-    );
+    redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
   }
 
   const t = await getDictionary();
