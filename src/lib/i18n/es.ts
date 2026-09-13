@@ -439,6 +439,9 @@ export const es: Dictionary = {
     stepInfo: "Datos",
     stepMeasurements: "Medidas",
     stepPhoto: "Foto de perfil",
+    stepInstall: "Instalación",
+    installBody:
+      "CalisIQ se instala en tu pantalla de inicio como una app de verdad: pantalla completa, acceso directo a la cámara y un análisis a un solo toque.",
     personalInfo: "Datos personales",
     optionalProgress: "Opcional, sirve para afinar tus marcadores de progreso.",
     optionalSkip: "Opcional, puedes saltarte este paso.",
@@ -484,11 +487,16 @@ export const es: Dictionary = {
     total: "Total",
     figuresTracked: "Figuras",
     byFigure: "Por figura",
-    journey: "Tu recorrido",
     nextGoal: "Próximo objetivo",
-    notStarted: "Todavía sin empezar",
-    proven: "probada",
-    provenPlural: "probadas",
+    hallSubtitle:
+      "Cada figura tiene sus niveles. Toca una para ver todo el camino, de la primera variante a la última.",
+    yourFigures: "Tus figuras",
+    theLevels: "Los niveles",
+    evolution: "Tu evolución",
+    allFigures: "Todas las figuras",
+    levelsUnlocked: (n, total) => `${n}/${total} niveles desbloqueados`,
+    notStartedFigure: "Sin empezar",
+    toUnlock: "Por desbloquear",
   },
   handle: {
     label: "Nombre público",
@@ -550,6 +558,9 @@ export const es: Dictionary = {
     notice:
       "CalisIQ está en desarrollo activo. Puede haber errores: reportarlos es lo que más ayuda a corregirlos.",
     reportLink: "Reportar un problema",
+    freeTitle: "Beta · gratis por ahora",
+    freeBody:
+      "CalisIQ está en desarrollo activo. El acceso es totalmente gratuito mientras dure la beta.",
   },
   resetPassword: {
     title: "Elige una nueva contraseña",

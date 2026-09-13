@@ -443,6 +443,9 @@ export const fr = {
     stepInfo: "Informations",
     stepMeasurements: "Mensurations",
     stepPhoto: "Photo de profil",
+    stepInstall: "Installation",
+    installBody:
+      "CalisIQ s'installe sur ton écran d'accueil comme une vraie application : plein écran, accès direct à la caméra, et une analyse à portée d'un geste.",
     personalInfo: "Informations personnelles",
     optionalProgress: "Facultatif — utilisé pour affiner les repères de progression.",
     optionalSkip: "Facultatif — tu peux passer cette étape.",
@@ -488,11 +491,17 @@ export const fr = {
     total: "Total",
     figuresTracked: "Figures",
     byFigure: "Par figure",
-    journey: "Ton parcours",
     nextGoal: "Prochain objectif",
-    notStarted: "Pas encore abordées",
-    proven: "prouvée",
-    provenPlural: "prouvées",
+    hallSubtitle:
+      "Chaque figure a ses paliers. Touche-en une pour voir tout le chemin, de la première variante à la dernière.",
+    yourFigures: "Tes figures",
+    theLevels: "Les niveaux",
+    evolution: "Ton évolution",
+    allFigures: "Toutes les figures",
+    levelsUnlocked: (n: number, total: number) =>
+      `${n}/${total} niveaux débloqués`,
+    notStartedFigure: "Non commencée",
+    toUnlock: "À débloquer",
   },
   handle: {
     label: "Pseudo public",
@@ -555,6 +564,9 @@ export const fr = {
     notice:
       "CalisIQ est en développement actif. Des bugs sont possibles : les signaler est ce qui aide le plus à les corriger.",
     reportLink: "Signaler un problème",
+    freeTitle: "Bêta · gratuit pour l'instant",
+    freeBody:
+      "CalisIQ est en développement actif. L'accès est entièrement gratuit le temps de la bêta.",
   },
   resetPassword: {
     title: "Choisis un nouveau mot de passe",

@@ -3,6 +3,7 @@ import { getDictionary } from "@/lib/i18n/server";
 import TodayActivity from "../_components/TodayActivity";
 import { createClient } from "@/lib/supabase/server";
 import { LightbulbIcon, BodyIcon, TimerIcon } from "@/components/icons";
+import BetaFreeNotice from "@/components/BetaFreeNotice";
 
 export default async function AccueilPage() {
   const t = await getDictionary();
@@ -37,6 +38,10 @@ export default async function AccueilPage() {
         <p className="text-sm text-slate-400">
           {t.dashboard.homeIntro}
         </p>
+      </div>
+
+      <div className="relative w-full max-w-md">
+        <BetaFreeNotice showReport />
       </div>
 
       <div className="relative grid w-full max-w-md grid-cols-3 gap-2">

@@ -14,6 +14,7 @@ import {
   CheckIcon,
 } from "@/components/icons";
 import BetaBadge from "@/components/BetaBadge";
+import BetaFreeNotice from "@/components/BetaFreeNotice";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getDictionary();
@@ -190,6 +191,10 @@ export default async function LandingPage({
           <p className="mt-2.5 text-xs text-slate-500">
             {t.landing.heroFree}
           </p>
+
+          <div className="mt-5 w-full text-left">
+            <BetaFreeNotice />
+          </div>
         </div>
       </section>
 

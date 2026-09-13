@@ -2,6 +2,7 @@
 
 import { useT } from "@/lib/i18n/client";
 import HandleField from "@/components/HandleField";
+import InstallAppButton from "@/app/(app)/_components/InstallAppButton";
 import type { Dictionary } from "@/lib/i18n/fr";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -25,7 +26,13 @@ const STEP_LABELS: ((t: Dictionary) => string)[] = [
   (t) => t.onboarding.stepInfo,
   (t) => t.onboarding.stepMeasurements,
   (t) => t.onboarding.stepPhoto,
+  // L'installation en dernier, et pas ailleurs. C'est le seul moment où
+  // quelqu'un a déjà investi assez pour accepter un geste de plus, et le
+  // seul où l'app est sur le point de servir : proposée avant, elle passe
+  // pour une formalité administrative de plus.
+  (t) => t.onboarding.stepInstall,
 ];
+const DERNIERE_ETAPE = STEP_LABELS.length - 1;
 
 export default function OnboardingWizard({
   userId,
@@ -258,7 +265,7 @@ export default function OnboardingWizard({
         </div>
       )}
 
-      {step === 2 && (
+      {step === DERNIERE_ETAPE - 1 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white">Photo de profil</h2>
           <p className="text-sm text-slate-400">
@@ -301,10 +308,25 @@ export default function OnboardingWizard({
         </div>
       )}
 
+      {step === DERNIERE_ETAPE && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-white">{t.install.title}</h2>
+          <p className="text-sm leading-relaxed text-slate-400">
+            {t.onboarding.installBody}
+          </p>
+
+          {/* Le même bloc que dans les réglages, mode d'emploi compris : il
+              sait déjà reconnaître iOS, Chrome, et les navigateurs intégrés
+              d'Instagram ou TikTok où l'installation est impossible. Le
+              dupliquer ici aurait garanti que les deux divergent. */}
+          <InstallAppButton />
+        </div>
+      )}
+
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <div className="space-y-2">
-        {step < 2 ? (
+        {step < DERNIERE_ETAPE ? (
           <button
             type="button"
             onClick={() => setStep(step + 1)}
@@ -336,7 +358,7 @@ export default function OnboardingWizard({
             <span />
           )}
 
-          {step < 2 ? (
+          {step < DERNIERE_ETAPE ? (
             <button
               type="button"
               onClick={() => setStep(step + 1)}
