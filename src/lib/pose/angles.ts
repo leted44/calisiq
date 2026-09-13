@@ -494,7 +494,7 @@ function poseShift(a: Point[], b: Point[]): number {
   return somme / a.length;
 }
 
-function smooth(values: number[], windowSize = 5): number[] {
+function smooth(values: number[], windowSize = HOLD_MOTION_SMOOTHING): number[] {
   return values.map((_, i) => {
     const start = Math.max(0, i - Math.floor(windowSize / 2));
     const end = Math.min(values.length, i + Math.ceil(windowSize / 2));
@@ -532,6 +532,40 @@ export type HoldWindow = {
 //
 // D'où le second critère : le segment doit RESSEMBLER à la figure. Le
 // prédicat est fourni par l'appelant, seul à connaître la grille de notation.
+/**
+ * Vitesse de déformation au-delà de laquelle le corps n'est plus considéré
+ * comme tenu, en largeurs de silhouette par seconde (voir normalizedPose).
+ *
+ * Le réglage historique (0.004 puis 0.008 puis 0.02) portait sur le
+ * déplacement du corps dans l'image, une grandeur que la mesure n'utilise
+ * plus : il a fallu le reprendre à zéro. Valeurs obtenues en simulant un
+ * corps qui pivote sur ses appuis, à 30 images par seconde :
+ *
+ *   tenue calme (±1.5°, 1 Hz)         0.09 à 0.14
+ *   tenue très instable (±6°, 1.5 Hz) 0.55, pointes à 0.86
+ *   sortie lente (90° en 1.5 s)       0.92
+ *   entrée en figure (90° en 0.6 s)   2.31
+ *
+ * 0.9 passe donc entre la tenue la plus instable et la sortie la plus lente.
+ * La marge côté tremblement est volontairement large : un hold qui tremble
+ * beaucoup (manque de force, fatigue) doit rester détecté, et c'est le filtre
+ * de forme, pas ce seuil, qui empêche d'avaler la mise en place.
+ *
+ * À revalider sur les vidéos réelles : ces chiffres viennent d'un modèle
+ * géométrique, pas encore d'un lot d'échantillons notés.
+ */
+export const HOLD_MOTION_THRESHOLD = 0.9;
+
+/** Nombre d'images minimum pour qu'un segment compte comme une tenue. */
+export const HOLD_MIN_FRAMES = 15;
+
+/** Largeur du lissage appliqué à la vitesse, en images. */
+export const HOLD_MOTION_SMOOTHING = 5;
+
+// Repli quand les instants ne sont pas fournis : le déplacement par image est
+// ramené à une vitesse en supposant ce rythme.
+const IMAGES_PAR_SECONDE_SUPPOSE = 30;
+
 export function detectHoldWindow(
   frames: NormalizedLandmark[][],
   options?: {
@@ -546,31 +580,8 @@ export function detectHoldWindow(
     isInFigure?: (index: number) => boolean;
   }
 ): HoldWindow {
-  // Seuil en largeurs de silhouette par seconde (voir normalizedPose).
-  //
-  // Le réglage historique (0.004 puis 0.008 puis 0.02) portait sur le
-  // déplacement du corps dans l'image, une grandeur que la mesure n'utilise
-  // plus : il a fallu le reprendre à zéro. Valeurs obtenues en simulant un
-  // corps qui pivote sur ses appuis, à 30 images par seconde :
-  //
-  //   tenue calme (±1.5°, 1 Hz)        0.09 à 0.14
-  //   tenue très instable (±6°, 1.5 Hz) 0.55, pointes à 0.86
-  //   sortie lente (90° en 1.5 s)       0.92
-  //   entrée en figure (90° en 0.6 s)   2.31
-  //
-  // 0.9 passe donc entre la tenue la plus instable et la sortie la plus
-  // lente. La marge côté tremblement est volontairement large : un hold qui
-  // tremble beaucoup (manque de force, fatigue) doit rester détecté, et
-  // c'est le filtre de forme ci-dessous, pas ce seuil, qui empêche d'avaler
-  // la mise en place.
-  //
-  // À revalider sur les vidéos réelles : ces chiffres viennent d'un modèle
-  // géométrique, pas encore d'un lot d'échantillons notés.
-  const threshold = options?.threshold ?? 0.9;
-  const minFrames = options?.minFrames ?? 15;
-  // Repli quand les instants ne sont pas fournis : le déplacement par image
-  // est ramené à une vitesse en supposant ce rythme.
-  const IMAGES_PAR_SECONDE_SUPPOSE = 30;
+  const threshold = options?.threshold ?? HOLD_MOTION_THRESHOLD;
+  const minFrames = options?.minFrames ?? HOLD_MIN_FRAMES;
 
   if (frames.length === 0)
     return { start: 0, end: 0, detected: false, matchedFigure: false };
@@ -682,4 +693,96 @@ export function medianAngles(frames: PoseAngles[]): PoseAngles {
     kneeAngle3d: median(frames.map((f) => f.kneeAngle3d)),
     shoulderFacing: median(frames.map((f) => f.shoulderFacing)),
   };
+}
+
+/**
+ * Le même hold, mesuré image par image, sans connaître la suite.
+ *
+ * POURQUOI CE N'EST PAS « LE TEMPS DANS LA FIGURE »
+ *
+ * La première version du chrono affiché pendant l'analyse comptait le temps
+ * où la position ressemblait à la figure, et affichait 7,0 s là où le
+ * résultat annonçait 3,7 s. Les deux chiffres étaient justes et ne parlaient
+ * pas de la même chose : `detectHoldWindow` exige DEUX conditions, ressembler
+ * à la figure ET rester immobile, et c'est la seconde qui retranchait les
+ * trois secondes où la position dérivait encore.
+ *
+ * Un chrono qui annonce le double de ce que dira le résultat est pire que pas
+ * de chrono du tout. Celui-ci applique donc exactement les deux mêmes
+ * conditions, avec les mêmes constantes, déclarées une seule fois au-dessus.
+ *
+ * CE QUI RESTE APPROCHÉ, ET DE COMBIEN
+ *
+ * Le lissage de la vitesse est centré hors ligne et ne peut être que traînant
+ * ici, faute de connaître les images suivantes : le départ d'une tenue est
+ * reconnu deux images plus tard, soit moins d'un dixième de seconde. C'est le
+ * seul écart, et il va dans le sens prudent.
+ */
+export class LiveHoldTimer {
+  private precedente: Point[] | null = null;
+  private tempsPrecedent = 0;
+  private vitesses: number[] = [];
+
+  private debut: number | null = null;
+  private derniere: number | null = null;
+  private images = 0;
+  private meilleure = 0;
+
+  /**
+   * Consomme une image et renvoie la meilleure durée de tenue observée
+   * jusqu'ici, en secondes.
+   */
+  push(
+    landmarks: NormalizedLandmark[],
+    time: number,
+    dansLaFigure: boolean
+  ): number {
+    const pose = normalizedPose(landmarks);
+
+    // Première image : aucune vitesse mesurable, comme la version hors ligne
+    // qui ouvre sa série de mouvements par un zéro.
+    let vitesse = 0;
+    if (this.precedente) {
+      const deformation = poseShift(this.precedente, pose);
+      const dt = time - this.tempsPrecedent;
+      vitesse =
+        dt > 0 ? deformation / dt : deformation * IMAGES_PAR_SECONDE_SUPPOSE;
+    }
+    this.precedente = pose;
+    this.tempsPrecedent = time;
+
+    this.vitesses.push(vitesse);
+    if (this.vitesses.length > HOLD_MOTION_SMOOTHING) this.vitesses.shift();
+    const lissee =
+      this.vitesses.reduce((a, b) => a + b, 0) / this.vitesses.length;
+
+    if (dansLaFigure && lissee <= HOLD_MOTION_THRESHOLD) {
+      if (this.debut === null) {
+        this.debut = time;
+        this.images = 0;
+      }
+      this.derniere = time;
+      this.images += 1;
+    } else {
+      this.cloture();
+    }
+
+    return Math.max(this.meilleure, this.enCours());
+  }
+
+  /** Durée de la tenue en cours, une fois qu'elle est assez longue pour compter. */
+  private enCours(): number {
+    if (this.debut === null || this.derniere === null) return 0;
+    if (this.images < HOLD_MIN_FRAMES) return 0;
+    return this.derniere - this.debut;
+  }
+
+  // Une tenue qui se termine ne doit pas faire redescendre l'affichage : elle
+  // est versée au meilleur score, et seul ce meilleur reste visible.
+  private cloture() {
+    this.meilleure = Math.max(this.meilleure, this.enCours());
+    this.debut = null;
+    this.derniere = null;
+    this.images = 0;
+  }
 }

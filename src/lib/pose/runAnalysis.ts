@@ -8,6 +8,7 @@ import {
   computeAngles,
   medianAngles,
   detectHoldWindow,
+  LiveHoldTimer,
   type PoseAngles,
   type HoldWindow,
 } from "./angles";
@@ -47,16 +48,6 @@ const w = (lang: Lang) => DICTIONARIES[lang].warnings;
 // voir, comme une suspension avant l'entrée en figure.
 const IN_FIGURE_FLOOR = 2;
 
-// Combien de temps la figure peut disparaître sans que le chrono affiché
-// reparte de zéro.
-//
-// La détection de pose rate des images isolées — un bras qui passe devant le
-// tronc, un flou de mouvement. Sans tolérance, le chrono se remettrait à zéro
-// sur un trou de deux images au milieu d'un hold parfaitement tenu, ce qui
-// serait faux à l'écran et contredirait la durée annoncée à la fin. Un tiers
-// de seconde est trop court pour couvrir une vraie sortie de figure, et
-// largement assez pour absorber un raté de détection.
-const HOLD_GAP_TOLERANCE_SECONDS = 0.33;
 
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
@@ -212,11 +203,10 @@ export async function runPoseAnalysis({
         }
       : null;
 
-  // Chrono direct : début de la tenue en cours, dernier instant où la figure
-  // était encore là, et meilleure tenue déjà bouclée.
-  let tenueDepuis: number | null = null;
-  let derniereVue: number | null = null;
-  let meilleureTenue = 0;
+  // Chrono direct. Il applique les deux conditions de detectHoldWindow — être
+  // dans la figure ET rester immobile — avec les mêmes constantes, pour que
+  // le nombre affiché pendant l'analyse soit celui qu'annoncera le résultat.
+  const chrono = estDansFigure ? new LiveHoldTimer() : null;
 
   const start = rangeStart ?? 0;
   const end = rangeEnd ?? video.duration;
@@ -280,30 +270,11 @@ export async function runPoseAnalysis({
             unitLabel: "REPS",
             value: String(compteurReps.push(a)),
           });
-        } else if (estDansFigure) {
-          if (estDansFigure(a)) {
-            if (tenueDepuis === null) tenueDepuis = frameTime;
-            derniereVue = frameTime;
-          } else if (
-            tenueDepuis !== null &&
-            derniereVue !== null &&
-            frameTime - derniereVue > HOLD_GAP_TOLERANCE_SECONDS
-          ) {
-            // Sortie confirmée : la tenue est close, et seule la meilleure
-            // reste affichée. Un chrono qui redescend à zéro effacerait sous
-            // les yeux de l'utilisateur ce qu'il vient de réussir.
-            meilleureTenue = Math.max(meilleureTenue, derniereVue - tenueDepuis);
-            tenueDepuis = null;
-          }
-
-          const enCours =
-            tenueDepuis !== null && derniereVue !== null
-              ? derniereVue - tenueDepuis
-              : 0;
+        } else if (estDansFigure && chrono) {
           drawLiveCounter(ctx, canvas, {
             figureLabel: libelleFigure,
             unitLabel: "HOLD",
-            value: Math.max(meilleureTenue, enCours).toFixed(1),
+            value: chrono.push(landmarks, frameTime, estDansFigure(a)).toFixed(1),
             suffix: "s",
           });
         }
