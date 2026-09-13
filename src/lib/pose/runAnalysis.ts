@@ -30,8 +30,9 @@ import {
   type AnyProgression,
 } from "./grid";
 import { DICTIONARIES } from "@/lib/i18n/dictionaries";
-import { detectReps } from "./repAnalysis";
-import { drawAngleLabels } from "./canvasHud";
+import { detectReps, LiveRepCounter } from "./repAnalysis";
+import { drawAngleLabels, drawLiveCounter } from "./canvasHud";
+import { progressionLabel } from "./report";
 import { seekTo } from "@/lib/video/playback";
 import type { Lang } from "@/lib/i18n/config";
 
@@ -45,6 +46,17 @@ const w = (lang: Lang) => DICTIONARIES[lang].warnings;
 // exécution médiocre, assez haut pour rejeter une position qui n'a rien à
 // voir, comme une suspension avant l'entrée en figure.
 const IN_FIGURE_FLOOR = 2;
+
+// Combien de temps la figure peut disparaître sans que le chrono affiché
+// reparte de zéro.
+//
+// La détection de pose rate des images isolées — un bras qui passe devant le
+// tronc, un flou de mouvement. Sans tolérance, le chrono se remettrait à zéro
+// sur un trou de deux images au milieu d'un hold parfaitement tenu, ce qui
+// serait faux à l'écran et contredirait la durée annoncée à la fin. Un tiers
+// de seconde est trop court pour couvrir une vraie sortie de figure, et
+// largement assez pour absorber un raté de détection.
+const HOLD_GAP_TOLERANCE_SECONDS = 0.33;
 
 let sharedLandmarkerPromise: Promise<PoseLandmarker> | null = null;
 
@@ -171,6 +183,41 @@ export async function runPoseAnalysis({
   const angles: PoseAngles[] = [];
   let attempted = 0;
 
+  // Le compteur affiché pendant l'analyse. Sur une série, il compte les
+  // répétitions au fil du mouvement ; sur un hold, il chronomètre le temps
+  // passé dans la figure. En mode mesure (progression nulle, calibration) il
+  // n'y a ni figure attendue ni répétition à compter : rien ne s'affiche.
+  const compteurReps =
+    progression !== null && isRepProgression(progression)
+      ? new LiveRepCounter(REP_SCORING_GRID[progression])
+      : null;
+  const libelleFigure =
+    progression !== null ? progressionLabel(progression, lang) : "";
+
+  // Une image montre-t-elle la figure ? Son critère le PLUS FAIBLE doit
+  // dépasser un plancher. La moyenne ne suffit pas : quelqu'un suspendu bras
+  // tendus avant son front lever obtient un excellent score de coude, ce qui
+  // la remonte alors que la hanche dit clairement qu'il n'y est pas encore.
+  //
+  // Le même juge sert au chrono en direct et à la détection de la fenêtre de
+  // hold après coup, pour que les deux ne puissent pas se contredire.
+  const estDansFigure =
+    progression !== null && !compteurReps
+      ? (a: PoseAngles) => {
+          const scores = scoreAngles(a, progression as Progression).filter((s) =>
+            Number.isFinite(s.score)
+          );
+          if (scores.length === 0) return false;
+          return Math.min(...scores.map((s) => s.score)) >= IN_FIGURE_FLOOR;
+        }
+      : null;
+
+  // Chrono direct : début de la tenue en cours, dernier instant où la figure
+  // était encore là, et meilleure tenue déjà bouclée.
+  let tenueDepuis: number | null = null;
+  let derniereVue: number | null = null;
+  let meilleureTenue = 0;
+
   const start = rangeStart ?? 0;
   const end = rangeEnd ?? video.duration;
 
@@ -226,6 +273,40 @@ export async function runPoseAnalysis({
         drawingUtils.drawLandmarks(landmarks, { radius: 3 });
         drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS);
         drawAngleLabels(ctx, canvas, landmarks, a);
+
+        if (compteurReps) {
+          drawLiveCounter(ctx, canvas, {
+            figureLabel: libelleFigure,
+            unitLabel: "REPS",
+            value: String(compteurReps.push(a)),
+          });
+        } else if (estDansFigure) {
+          if (estDansFigure(a)) {
+            if (tenueDepuis === null) tenueDepuis = frameTime;
+            derniereVue = frameTime;
+          } else if (
+            tenueDepuis !== null &&
+            derniereVue !== null &&
+            frameTime - derniereVue > HOLD_GAP_TOLERANCE_SECONDS
+          ) {
+            // Sortie confirmée : la tenue est close, et seule la meilleure
+            // reste affichée. Un chrono qui redescend à zéro effacerait sous
+            // les yeux de l'utilisateur ce qu'il vient de réussir.
+            meilleureTenue = Math.max(meilleureTenue, derniereVue - tenueDepuis);
+            tenueDepuis = null;
+          }
+
+          const enCours =
+            tenueDepuis !== null && derniereVue !== null
+              ? derniereVue - tenueDepuis
+              : 0;
+          drawLiveCounter(ctx, canvas, {
+            figureLabel: libelleFigure,
+            unitLabel: "HOLD",
+            value: Math.max(meilleureTenue, enCours).toFixed(1),
+            suffix: "s",
+          });
+        }
       }
 
       requestAnimationFrame(loop);
@@ -245,28 +326,13 @@ export async function runPoseAnalysis({
     };
   }
 
-  // Filtre de forme passé à la détection de fenêtre.
-  //
-  // Une image compte comme « dans la figure » quand son critère le PLUS FAIBLE
-  // reste au-dessus d'un plancher. La moyenne ne suffisait pas : quelqu'un
-  // suspendu bras tendus avant son front lever obtient un excellent score de
-  // coude, ce qui remonte la moyenne alors que la hanche, elle, dit clairement
-  // qu'il n'est pas dans la figure. C'est le critère le plus bas qui trahit
-  // une position absente, pas la moyenne.
-  //
-  // Sans progression — mode mesure de la calibration — aucun filtre : on
-  // cherche alors les angles réels sans présumer d'une figure.
-  const isInFigure =
-    progression !== null && !isRepProgression(progression)
-      ? (index: number) => {
-          const scores = scoreAngles(
-            angles[index],
-            progression as Progression
-          ).filter((s) => Number.isFinite(s.score));
-          if (scores.length === 0) return false;
-          return Math.min(...scores.map((s) => s.score)) >= IN_FIGURE_FLOOR;
-        }
-      : undefined;
+  // Filtre de forme passé à la détection de fenêtre : exactement le juge qui
+  // a piloté le chrono pendant la lecture. Sans progression — mode mesure de
+  // la calibration — aucun filtre : on cherche alors les angles réels sans
+  // présumer d'une figure.
+  const isInFigure = estDansFigure
+    ? (index: number) => estDansFigure(angles[index])
+    : undefined;
 
   const window = detectHoldWindow(frames, { isInFigure, times: frameTimes });
   const holdAngles = angles.slice(window.start, window.end + 1);

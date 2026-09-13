@@ -341,3 +341,92 @@ export function meanHipAngle(angles: PoseAngles[], reps: Rep[]): number {
   }
   return count > 0 ? sum / count : 0;
 }
+
+/**
+ * Le même découpage, mais image par image, sans connaître la suite.
+ *
+ * POURQUOI UN SECOND COMPTEUR
+ *
+ * `detectReps` travaille sur la série complète : il lui faut la vidéo entière
+ * avant de rendre un chiffre. Pendant l'analyse, on n'a que le passé, et
+ * pourtant c'est là qu'il faut afficher le compte qui monte.
+ *
+ * L'automate est volontairement copié à l'identique — mêmes seuils, même
+ * bande morte, même règle d'amplitude minimale, même exigence d'avoir vu le
+ * départ. Aucun des critères ignorés ici (les index, l'amplitude retenue) ne
+ * participe à la DÉCISION de compter, seulement à la notation qui suit. Le
+ * compte affiché en direct est donc le compte final, pas une estimation, et
+ * un écart entre les deux serait un bug et non une approximation admise.
+ */
+export class LiveRepCounter {
+  private readonly driver: DriverAngle;
+  private readonly enterFlexed: number;
+  private readonly enterExtended: number;
+  private readonly flexedIsLow: boolean;
+  private readonly minRange: number;
+  private readonly utilisable: boolean;
+
+  private state: "flexed" | "extended" | null = null;
+  // Le départ de la répétition en cours a-t-il été observé ? Une vidéo qui
+  // commence au milieu d'une descente ne doit pas produire de répétition
+  // fantôme, ici comme dans `detectReps`.
+  private departVu = false;
+  private minValue = Infinity;
+  private maxValue = -Infinity;
+  private compte = 0;
+
+  constructor(config: RepExerciseConfig) {
+    const amplitude = Math.abs(config.extendedValue - config.flexedValue);
+    const low = Math.min(config.extendedValue, config.flexedValue);
+    this.driver = config.driver;
+    this.enterFlexed = low + amplitude * 0.3;
+    this.enterExtended = low + amplitude * 0.7;
+    this.flexedIsLow = config.flexedValue < config.extendedValue;
+    this.minRange = amplitude * config.minRangeRatio;
+    this.utilisable = amplitude >= 1;
+  }
+
+  get count(): number {
+    return this.compte;
+  }
+
+  /** Consomme une image et renvoie le nombre de répétitions vues jusqu'ici. */
+  push(angles: PoseAngles): number {
+    if (!this.utilisable) return this.compte;
+
+    const value = angles[this.driver];
+    if (!Number.isFinite(value)) return this.compte;
+
+    if (value < this.minValue) this.minValue = value;
+    if (value > this.maxValue) this.maxValue = value;
+
+    const flechi = this.flexedIsLow
+      ? value < this.enterFlexed
+      : value > this.enterExtended;
+    const tendu = this.flexedIsLow
+      ? value > this.enterExtended
+      : value < this.enterFlexed;
+
+    const suivant: "flexed" | "extended" | null = flechi
+      ? "flexed"
+      : tendu
+      ? "extended"
+      : this.state;
+    if (suivant === this.state || suivant === null) return this.compte;
+
+    if (this.state === "extended" && suivant === "flexed") {
+      this.departVu = true;
+    }
+    if (this.state === "flexed" && suivant === "extended") {
+      if (this.departVu && this.maxValue - this.minValue >= this.minRange) {
+        this.compte += 1;
+      }
+      this.departVu = false;
+      this.minValue = value;
+      this.maxValue = value;
+    }
+    this.state = suivant;
+
+    return this.compte;
+  }
+}

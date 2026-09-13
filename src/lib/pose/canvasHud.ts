@@ -83,3 +83,96 @@ export function drawAngleLabels(
   drawPill(ctx, hip.x, hip.y - 16 * scale, `${angles.hipAngle.toFixed(0)}°`, scale);
   drawPill(ctx, knee.x, knee.y - 16 * scale, `${angles.kneeAngle.toFixed(0)}°`, scale);
 }
+
+/**
+ * Carte compacte en haut : nom de la figure, et le chiffre qui compte.
+ *
+ * POURQUOI PENDANT L'ANALYSE, ET PAS SEULEMENT À L'EXPORT
+ *
+ * Le chrono et le compteur de répétitions n'existaient que dans la vidéo
+ * téléchargée, c'est-à-dire après coup et à côté. Or c'est pendant que
+ * l'analyse défile qu'on regarde l'écran, et c'est là que voir les secondes
+ * monter dit ce que la machine est en train de mesurer. Un pourcentage de
+ * progression dit qu'il se passe quelque chose ; un chrono dit quoi.
+ *
+ * La carte reprend délibérément les proportions et les couleurs de celle de
+ * l'export : ce qu'on voit défiler est exactement ce qu'on retrouvera dans la
+ * vidéo, à l'image près.
+ */
+export function drawLiveCounter(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  {
+    figureLabel,
+    unitLabel,
+    value,
+    suffix = "",
+  }: {
+    figureLabel: string;
+    /** « HOLD » ou « REPS » : ce que mesure le grand chiffre. */
+    unitLabel: string;
+    value: string;
+    suffix?: string;
+  }
+) {
+  const scale = canvas.width / 400;
+  const marge = 16 * scale;
+  const rayon = 14 * scale;
+  const paddingX = 14 * scale;
+
+  const policeFigure = `700 ${11 * scale}px sans-serif`;
+  const policeUnite = `700 ${7 * scale}px sans-serif`;
+  const policeValeur = `700 ${20 * scale}px sans-serif`;
+  const policeSuffixe = `600 ${10 * scale}px sans-serif`;
+
+  ctx.save();
+
+  ctx.font = policeFigure;
+  const largeurFigure = ctx.measureText(figureLabel).width;
+  ctx.font = policeValeur;
+  const largeurValeur = ctx.measureText(value).width;
+  ctx.font = policeSuffixe;
+  const largeurSuffixe = suffix ? ctx.measureText(suffix).width : 0;
+
+  const contenu = Math.max(
+    largeurFigure,
+    largeurValeur + largeurSuffixe,
+    50 * scale
+  );
+  const largeur = contenu + paddingX * 2;
+  const hauteur = 62 * scale;
+  const x = (canvas.width - largeur) / 2;
+  const y = marge;
+  const cx = x + largeur / 2;
+
+  roundedRect(ctx, x, y, largeur, hauteur, rayon);
+  ctx.fillStyle = "rgba(2,6,23,0.62)";
+  ctx.fill();
+  ctx.lineWidth = 1.2 * scale;
+  ctx.strokeStyle = "rgba(56,189,248,0.55)";
+  ctx.stroke();
+
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = policeFigure;
+  ctx.fillText(figureLabel, cx, y + 17 * scale);
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = policeUnite;
+  ctx.fillText(unitLabel, cx, y + 28 * scale);
+
+  // Valeur et suffixe posés côte à côte à partir de la gauche : centrer
+  // chacun séparément les ferait se chevaucher.
+  const baseX = cx - (largeurValeur + largeurSuffixe) / 2;
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#38bdf8";
+  ctx.font = policeValeur;
+  ctx.fillText(value, baseX, y + 52 * scale);
+  if (suffix) {
+    ctx.font = policeSuffixe;
+    ctx.fillText(suffix, baseX + largeurValeur, y + 52 * scale);
+  }
+
+  ctx.restore();
+}
