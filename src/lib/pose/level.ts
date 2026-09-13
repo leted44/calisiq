@@ -250,6 +250,25 @@ export function tierFor(
 }
 
 /**
+ * Avancement à l'intérieur du palier courant, de 0 à 1.
+ *
+ * Le palier seul ne dit pas si on vient d'y entrer ou si on en sort : deux
+ * personnes « Élite » peuvent être à dix-neuf points d'écart. C'est cette
+ * fraction qui permet de remplir un anneau plutôt que d'afficher un mot fixe.
+ *
+ * Vaut 1 au sommet, où il n'y a plus rien à remplir.
+ */
+export function tierProgress(points: number): number {
+  const courant = tierForPoints(points);
+  const suivant = TIERS[TIERS.indexOf(courant) + 1];
+  if (!suivant) return 1;
+
+  const plancher = TIER_MIN[courant];
+  const plafond = TIER_MIN[suivant];
+  return Math.max(0, Math.min(1, (points - plancher) / (plafond - plancher)));
+}
+
+/**
  * Points restants avant le palier suivant, et le palier visé.
  *
  * Null au sommet : rien n'est plus décourageant qu'une barre de progression

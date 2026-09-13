@@ -482,6 +482,11 @@ export const en: Dictionary = {
     total: "Total",
     figuresTracked: "Figures",
     byFigure: "By figure",
+    journey: "Your journey",
+    nextGoal: "Next goal",
+    notStarted: "Not started yet",
+    proven: "proven",
+    provenPlural: "proven",
   },
   handle: {
     label: "Public handle",

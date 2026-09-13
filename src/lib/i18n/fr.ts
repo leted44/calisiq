@@ -488,6 +488,11 @@ export const fr = {
     total: "Total",
     figuresTracked: "Figures",
     byFigure: "Par figure",
+    journey: "Ton parcours",
+    nextGoal: "Prochain objectif",
+    notStarted: "Pas encore abordées",
+    proven: "prouvée",
+    provenPlural: "prouvées",
   },
   handle: {
     label: "Pseudo public",

@@ -4,7 +4,8 @@ import { getLang, getDictionary } from "@/lib/i18n/server";
 import ProgressionDashboard, {
   type VariationProgression,
 } from "../_components/ProgressionDashboard";
-import LevelPanel, { type FigureLevel } from "../_components/LevelPanel";
+import LevelJourney from "../_components/LevelJourney";
+import { type FigureLevel } from "../_components/LevelPanel";
 import { levelPoints, tierForPoints } from "@/lib/pose/level";
 
 export default async function ProgressionPage() {
@@ -82,6 +83,13 @@ export default async function ProgressionPage() {
 
   const totalPoints = figureLevels.reduce((somme, f) => somme + f.points, 0);
 
+  // Meilleurs points par variation, seule forme dont le parcours a besoin :
+  // il reconstruit lui-même la liste complète des étapes, y compris celles
+  // qui n'ont jamais été tentées.
+  const pointsParVariation = Object.fromEntries(
+    figureLevels.map((f) => [f.variation, f.points])
+  );
+
   return (
     <div className="flex flex-col items-center gap-6 px-4 pb-4 pt-10">
       <div className="w-full max-w-md">
@@ -92,7 +100,7 @@ export default async function ProgressionPage() {
       </div>
 
       <div className="w-full max-w-md">
-        <LevelPanel figures={figureLevels} total={totalPoints} />
+        <LevelJourney points={pointsParVariation} total={totalPoints} />
       </div>
 
       <div className="w-full max-w-md">
