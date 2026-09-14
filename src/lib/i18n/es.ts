@@ -263,6 +263,10 @@ export const es: Dictionary = {
     analysed: "Analizado",
     statusProcessing: "Esperando el análisis",
     statusError: "Error",
+    all: "Todas",
+    analyses: (n) => (n > 1 ? `${n} análisis` : "1 análisis"),
+    record: "Récord",
+    noneForFigure: "Ningún análisis de esta figura.",
   },
   progressPage: {
     thisWeek: "Mi semana",

@@ -54,3 +54,22 @@ export function formatDateTime(value: string | number | Date, lang: Lang) {
     timeZone: FUSEAU,
   });
 }
+
+/** Mois et année : « septembre 2026 » / « September 2026 ». */
+export function formatMonthYear(value: string | number | Date, lang: Lang) {
+  return new Date(value).toLocaleDateString(LOCALES[lang], {
+    month: "long",
+    year: "numeric",
+    timeZone: FUSEAU,
+  });
+}
+
+/** Jour de la semaine et date : « jeu. 5 sept. » / « Thu 5 Sep ». */
+export function formatWeekdayDay(value: string | number | Date, lang: Lang) {
+  return new Date(value).toLocaleDateString(LOCALES[lang], {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: FUSEAU,
+  });
+}

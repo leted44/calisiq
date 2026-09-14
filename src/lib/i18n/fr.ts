@@ -267,6 +267,10 @@ export const fr = {
     analysed: "Analysé",
     statusProcessing: "En attente d'analyse",
     statusError: "Erreur",
+    all: "Toutes",
+    analyses: (n: number) => (n > 1 ? `${n} analyses` : "1 analyse"),
+    record: "Record",
+    noneForFigure: "Aucune analyse sur cette figure.",
   },
   progressPage: {
     thisWeek: "Ma semaine",
