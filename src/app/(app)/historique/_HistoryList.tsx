@@ -6,6 +6,7 @@ import { useT, useLang } from "@/lib/i18n/client";
 import { formatMonthYear, formatWeekdayDay } from "@/lib/i18n/dates";
 import { formatHoldDuration } from "@/lib/pose/report";
 import { FIGURE_COLORS } from "@/lib/pose/activity";
+import { VARIATION_DIFFICULTY } from "@/lib/pose/level";
 import { CrownIcon, TimerIcon } from "@/components/icons";
 
 /**
@@ -26,6 +27,18 @@ import { CrownIcon, TimerIcon } from "@/components/icons";
  * à laquelle un entraînement se raconte. Et le meilleur essai de chaque figure
  * marqué d'une couronne, parce qu'une liste sans relief est une liste qu'on ne
  * parcourt pas.
+ *
+ * DEUX NIVEAUX DE FILTRE, PAS UN
+ *
+ * « Planche » réunissait tuck, advanced tuck, straddle et full, qui ne sont
+ * pas la même chose : cinquante-six lignes sous une seule étiquette mélangent
+ * des figures séparées par des années de travail. Choisir une figure ouvre
+ * donc une seconde rangée, celle de ses variantes, rangées de la plus simple
+ * à la plus dure — le même ordre que l'échelle de la page de progression,
+ * puisqu'il vient de la même table de difficulté.
+ *
+ * La seconde rangée n'apparaît que s'il y a un choix à faire : une figure dont
+ * une seule variante a été analysée n'en propose pas.
  *
  * Les lignes remplacent les cartes : à soixante entrées, la densité est une
  * qualité. Le rail coloré à gauche dit la figure sans qu'on lise son nom, et
@@ -65,8 +78,36 @@ export default function HistoryList({
   const t = useT();
   const lang = useLang();
   const [filtre, setFiltre] = useState<string | null>(null);
+  const [variante, setVariante] = useState<string | null>(null);
 
-  const visibles = filtre ? rows.filter((r) => r.family === filtre) : rows;
+  const deLaFigure = filtre ? rows.filter((r) => r.family === filtre) : rows;
+  const visibles = variante
+    ? deLaFigure.filter((r) => r.progression === variante)
+    : deLaFigure;
+
+  // Variantes réellement présentes dans la figure choisie, de la plus simple à
+  // la plus dure. Les libellés courts suffisent : le nom de la figure est déjà
+  // porté par la rangée du dessus.
+  const libellesVariation = t.variations as Record<
+    string,
+    { label: string } | undefined
+  >;
+  const compteParVariante = new Map<string, number>();
+  for (const r of deLaFigure) {
+    compteParVariante.set(r.progression, (compteParVariante.get(r.progression) ?? 0) + 1);
+  }
+  const variantes = [...compteParVariante.entries()]
+    .map(([progression, count]) => ({
+      progression,
+      label: libellesVariation[progression]?.label ?? progression,
+      count,
+    }))
+    .sort(
+      (a, b) =>
+        (VARIATION_DIFFICULTY[a.progression] ?? 0) -
+        (VARIATION_DIFFICULTY[b.progression] ?? 0)
+    );
+  const couleurFigure = filtre ? FIGURE_COLORS[filtre] ?? "#94a3b8" : "#94a3b8";
 
   // Regroupement par mois. Les lignes arrivent déjà triées de la plus récente
   // à la plus ancienne, donc l'ordre des mois se déduit de leur parcours : pas
@@ -99,7 +140,10 @@ export default function HistoryList({
               couleur="#94a3b8"
               label={t.history.all}
               compte={rows.length}
-              onClick={() => setFiltre(null)}
+              onClick={() => {
+                setFiltre(null);
+                setVariante(null);
+              }}
             />
             {figures.map((f) => (
               <Puce
@@ -108,7 +152,39 @@ export default function HistoryList({
                 couleur={FIGURE_COLORS[f.family] ?? "#94a3b8"}
                 label={f.label}
                 compte={f.count}
-                onClick={() => setFiltre(f.family)}
+                onClick={() => {
+                  setFiltre(f.family);
+                  // Changer de figure remet les variantes à zéro : celles de
+                  // l'ancienne n'existent pas dans la nouvelle.
+                  setVariante(null);
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Seconde rangée : les variantes de la figure choisie. Plus discrète
+          que la première — pastilles sans point de couleur, texte plus petit —
+          pour qu'on voie d'un coup d'oeil laquelle des deux commande. */}
+      {filtre !== null && variantes.length > 1 && (
+        <div className="-mx-4 -mt-2 overflow-x-auto px-4">
+          <div className="flex gap-1.5 pb-1">
+            <SousPuce
+              actif={variante === null}
+              couleur={couleurFigure}
+              label={t.history.all}
+              compte={deLaFigure.length}
+              onClick={() => setVariante(null)}
+            />
+            {variantes.map((v) => (
+              <SousPuce
+                key={v.progression}
+                actif={variante === v.progression}
+                couleur={couleurFigure}
+                label={v.label}
+                compte={v.count}
+                onClick={() => setVariante(v.progression)}
               />
             ))}
           </div>
@@ -176,6 +252,36 @@ function Puce({
           boxShadow: actif ? `0 0 6px ${couleur}` : undefined,
         }}
       />
+      {label}
+      <span className="font-mono text-[10px] tabular-nums opacity-60">{compte}</span>
+    </button>
+  );
+}
+
+function SousPuce({
+  actif,
+  couleur,
+  label,
+  compte,
+  onClick,
+}: {
+  actif: boolean;
+  couleur: string;
+  label: string;
+  compte: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors"
+      style={{
+        borderColor: actif ? `${couleur}80` : "#1e293b",
+        backgroundColor: actif ? `${couleur}14` : "transparent",
+        color: actif ? couleur : "#64748b",
+      }}
+    >
       {label}
       <span className="font-mono text-[10px] tabular-nums opacity-60">{compte}</span>
     </button>
