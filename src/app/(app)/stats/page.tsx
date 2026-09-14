@@ -16,6 +16,8 @@ type AdminStats = {
   total_sessions: number;
   sessions_7d: number;
   returning_users: number;
+  d7_eligible: number;
+  d7_returned: number;
   daily_users: DailyPoint[];
   daily_sessions: DailyPoint[];
 };
@@ -269,16 +271,29 @@ export default async function StatsPage() {
               icon={BodyIcon}
             />
             <StatCard
-              label="Revenus"
-              value={stats.returning_users}
-              hint="au moins 2 jours différents"
+              label="Rétention J7"
+              value={
+                stats.d7_eligible > 0
+                  ? percent(stats.d7_returned, stats.d7_eligible)
+                  : "—"
+              }
+              hint={
+                stats.d7_eligible > 0
+                  ? `${stats.d7_returned}/${stats.d7_eligible} revenus sous 7 j`
+                  : "pas encore mesurable"
+              }
               icon={TimerIcon}
             />
           </div>
           <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
             L&apos;écart entre inscrits et « ont analysé » est le chiffre à
             surveiller : un compte créé qui n&apos;analyse jamais rien signale un
-            problème de prise en main, pas de trafic.
+            problème de prise en main, pas de trafic. La rétention J7 ne compte
+            que les comptes ayant déjà eu sept jours pour revenir, sinon chaque
+            nouvelle inscription la ferait baisser.
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
+            Les comptes internes sont exclus de tous ces chiffres.
           </p>
         </div>
 

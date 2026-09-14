@@ -18,6 +18,7 @@ import { ProfileIcon, BodyIcon } from "@/components/icons";
 export type AdminUser = {
   id: string;
   email: string;
+  is_internal?: boolean;
   handle: string | null;
   country: string | null;
   created_at: string;
@@ -64,16 +65,23 @@ export default function UsersList({ users }: { users: AdminUser[] }) {
     );
   }
 
-  // Les inactifs d'abord, puis les plus récents : l'ordre suit ce qu'il y a à
-  // faire, pas la chronologie.
+  // Les comptes internes passent en fin de liste et ne comptent nulle part.
+  // Ce sont ceux du développeur : les laisser dans les compteurs ferait dire
+  // aux chiffres le contraire de ce qu'ils mesurent, puisqu'ils portent
+  // l'essentiel des analyses.
+  const reels = users.filter((u) => !u.is_internal);
+
   const ordonnes = [...users].sort((a, b) => {
+    if (Boolean(a.is_internal) !== Boolean(b.is_internal)) {
+      return a.is_internal ? 1 : -1;
+    }
     if ((a.sessions_done === 0) !== (b.sessions_done === 0)) {
       return a.sessions_done === 0 ? -1 : 1;
     }
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
-  const inactifs = users.filter((u) => u.sessions_done === 0).length;
+  const inactifs = reels.filter((u) => u.sessions_done === 0).length;
 
   return (
     <div className="space-y-2">
@@ -90,10 +98,15 @@ export default function UsersList({ users }: { users: AdminUser[] }) {
         {ordonnes.map((u) => {
           const actif = u.sessions_done > 0;
           return (
-            <li key={u.id} className="flex items-center gap-3 px-3.5 py-3">
+            <li
+              key={u.id}
+              className={`flex items-center gap-3 px-3.5 py-3 ${
+                u.is_internal ? "opacity-45" : ""
+              }`}
+            >
               <span
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                  actif
+                  actif && !u.is_internal
                     ? "bg-cyan-500/15 text-cyan-400"
                     : "bg-slate-800 text-slate-600"
                 }`}
@@ -111,6 +124,11 @@ export default function UsersList({ users }: { users: AdminUser[] }) {
                   {u.email}
                 </p>
                 <p className="truncate text-[11px] text-slate-500">
+                  {u.is_internal && (
+                    <span className="mr-1 rounded border border-slate-700 px-1 text-[9px] uppercase tracking-wide text-slate-500">
+                      interne
+                    </span>
+                  )}
                   {u.handle ? `@${u.handle} · ` : ""}
                   inscrit {ilYA(u.created_at)}
                   {!u.onboarding_completed && " · profil non terminé"}
