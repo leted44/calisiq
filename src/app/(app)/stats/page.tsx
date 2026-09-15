@@ -143,7 +143,8 @@ export default async function StatsPage() {
   // n'est pas encore appliquée en base, les totaux doivent rester lisibles.
   const { data: usersData } = await supabase.rpc("admin_users");
   const users = (usersData as AdminUser[] | null) ?? [];
-  const { data: platformData } = await supabase.rpc("admin_platforms");
+  const { data: platformData, error: platformError } =
+    await supabase.rpc("admin_platforms");
   const appareils = platformData as {
     platforms: PlatformRow[];
     browsers: PlatformRow[];
@@ -303,17 +304,34 @@ export default async function StatsPage() {
           </p>
         </div>
 
-        {appareils && (
-          <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-              Appareils
-            </p>
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+            Appareils
+          </p>
+          {appareils ? (
             <PlatformSplit
               platforms={appareils.platforms ?? []}
               browsers={appareils.browsers ?? []}
             />
-          </div>
-        )}
+          ) : (
+            <div className="rounded-xl border border-amber-900/50 bg-amber-500/5 p-4">
+              <p className="text-sm font-medium text-amber-200">
+                Migration non appliquée
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                La fonction <code>admin_platforms</code> n&apos;existe pas encore
+                en base. Exécute le SQL de la migration
+                <code> 20260915120000_profile_platform.sql</code> dans Supabase,
+                puis recharge cette page.
+              </p>
+              {platformError?.message && (
+                <p className="mt-2 font-mono text-[10px] text-slate-600">
+                  {platformError.message}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
 
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
