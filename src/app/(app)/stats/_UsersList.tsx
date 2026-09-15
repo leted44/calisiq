@@ -1,4 +1,10 @@
 import { ProfileIcon, BodyIcon } from "@/components/icons";
+import {
+  PLATFORM_LABELS,
+  BROWSER_LABELS,
+  type Platform,
+  type Browser,
+} from "@/lib/device";
 
 /**
  * Qui s'est inscrit, ligne par ligne.
@@ -21,6 +27,8 @@ export type AdminUser = {
   is_internal?: boolean;
   handle: string | null;
   country: string | null;
+  platform: string | null;
+  browser: string | null;
   created_at: string;
   onboarding_completed: boolean;
   sessions_done: number;
@@ -46,6 +54,20 @@ function ilYA(iso: string): string {
 // Deux lettres de code pays en drapeau. Les indicatifs régionaux Unicode
 // occupent un bloc à part : décaler chaque lettre de A vers ce bloc suffit,
 // aucune table de correspondance n'est nécessaire.
+// Appareil d'arrivée, en une chaîne courte. C'est sur une ligne inactive
+// qu'il sert : il dit sur quoi la personne a essayé, donc s'il faut soupçonner
+// un bug plutôt qu'un désintérêt.
+function appareil(u: AdminUser): string | null {
+  const plateforme = u.platform
+    ? PLATFORM_LABELS[u.platform as Platform] ?? u.platform
+    : null;
+  const navigateur = u.browser
+    ? BROWSER_LABELS[u.browser as Browser] ?? u.browser
+    : null;
+  if (!plateforme && !navigateur) return null;
+  return [plateforme, navigateur].filter(Boolean).join(" · ");
+}
+
 function drapeau(code: string): string {
   if (!/^[A-Za-z]{2}$/.test(code)) return "";
   return String.fromCodePoint(
@@ -133,6 +155,22 @@ export default function UsersList({ users }: { users: AdminUser[] }) {
                   inscrit {ilYA(u.created_at)}
                   {!u.onboarding_completed && " · profil non terminé"}
                 </p>
+                {appareil(u) && (
+                  <p
+                    className={`truncate text-[10px] ${
+                      // Le navigateur intégré d'un réseau social est le premier
+                      // suspect quand rien n'a été analysé : il est signalé.
+                      !actif &&
+                      (u.browser === "instagram" ||
+                        u.browser === "tiktok" ||
+                        u.browser === "facebook")
+                        ? "text-amber-400/80"
+                        : "text-slate-600"
+                    }`}
+                  >
+                    {appareil(u)}
+                  </p>
+                )}
               </div>
 
               <div className="shrink-0 text-right">

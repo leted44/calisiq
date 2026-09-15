@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { TrendUpIcon, ProfileIcon, BodyIcon, TimerIcon } from "@/components/icons";
 import UsersList, { type AdminUser } from "./_UsersList";
+import PlatformSplit, { type PlatformRow } from "./_PlatformSplit";
 
 type DailyPoint = { day: string; count: number };
 
@@ -142,6 +143,11 @@ export default async function StatsPage() {
   // n'est pas encore appliquée en base, les totaux doivent rester lisibles.
   const { data: usersData } = await supabase.rpc("admin_users");
   const users = (usersData as AdminUser[] | null) ?? [];
+  const { data: platformData } = await supabase.rpc("admin_platforms");
+  const appareils = platformData as {
+    platforms: PlatformRow[];
+    browsers: PlatformRow[];
+  } | null;
 
   if (error) {
     return (
@@ -296,6 +302,18 @@ export default async function StatsPage() {
             Les comptes internes sont exclus de tous ces chiffres.
           </p>
         </div>
+
+        {appareils && (
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+              Appareils
+            </p>
+            <PlatformSplit
+              platforms={appareils.platforms ?? []}
+              browsers={appareils.browsers ?? []}
+            />
+          </div>
+        )}
 
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">

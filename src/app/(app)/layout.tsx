@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import TabBar from "./_components/TabBar";
 import VerifyEmailBanner from "./_components/VerifyEmailBanner";
+import { platformFromUserAgent, browserFromUserAgent } from "@/lib/device";
 
 export default async function AppLayout({
   children,
@@ -20,30 +21,44 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_completed, country, email_verified")
+    .select("onboarding_completed, country, platform, email_verified")
     .eq("id", user.id)
     .single();
 
-  // Pays d'origine, relevé une seule fois.
+  // Provenance et appareil, relevés une seule fois.
   //
   // POURQUOI ICI ET PAS À L'INSCRIPTION
   //
-  // L'en-tête n'existe que sur une requête servie par l'hébergeur, et le
+  // Ces en-têtes n'existent que sur une requête servie par l'hébergeur, et le
   // formulaire d'inscription parle directement à Supabase depuis le
-  // navigateur : le pays n'y passe jamais. Ce layout, lui, est rendu côté
-  // serveur à chaque page de l'application, donc la première visite d'un
-  // compte existant le renseignera aussi, sans migration de données.
+  // navigateur : rien n'y passe. Ce layout, lui, est rendu côté serveur à
+  // chaque page de l'application, donc la première visite d'un compte
+  // existant le renseignera aussi, sans migration de données.
   //
-  // Écrit une fois, jamais mis à jour : c'est la provenance à l'inscription
-  // qui est utile, pas l'endroit d'où l'on consulte en vacances. L'échec est
-  // silencieux — un pays manquant ne doit pas empêcher d'ouvrir l'app.
-  if (profile && !profile.country) {
-    const pays = (await headers()).get("x-vercel-ip-country");
-    if (pays) {
-      await supabase
-        .from("profiles")
-        .update({ country: pays })
-        .eq("id", user.id);
+  // Écrits une fois, jamais mis à jour. Le pays d'inscription est ce qui dit
+  // d'où vient quelqu'un, pas l'endroit d'où il consulte en vacances ; et
+  // c'est l'appareil d'ARRIVÉE qui explique un échec de prise en main, celui
+  // d'une consultation trois mois plus tard ne dit plus rien de ce moment-là.
+  //
+  // Une seule écriture pour les deux, conditionnée au pays comme au reste :
+  // l'échec est silencieux, un champ manquant ne doit pas empêcher d'ouvrir
+  // l'application.
+  if (profile && (!profile.country || !profile.platform)) {
+    const entetes = await headers();
+    const pays = entetes.get("x-vercel-ip-country");
+    const ua = entetes.get("user-agent");
+
+    const champs: Record<string, string> = {};
+    if (!profile.country && pays) champs.country = pays;
+    if (!profile.platform) {
+      const plateforme = platformFromUserAgent(ua);
+      const navigateur = browserFromUserAgent(ua);
+      if (plateforme) champs.platform = plateforme;
+      if (navigateur) champs.browser = navigateur;
+    }
+
+    if (Object.keys(champs).length > 0) {
+      await supabase.from("profiles").update(champs).eq("id", user.id);
     }
   }
 
